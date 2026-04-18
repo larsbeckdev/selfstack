@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { icons, Link as LinkIcon } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { icons, Link as LinkIcon, Upload } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 
 const allIconNames = Object.keys(icons).map((name) =>
   name
@@ -35,6 +36,35 @@ export function IconPicker({
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState(iconUrl ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.svg,.ico";
+
+  const handleFileUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload/icon", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast.error(json.error || "Upload fehlgeschlagen");
+        return;
+      }
+      setUploadPreview(json.url);
+      onIconUrlChange?.(json.url);
+      setOpen(false);
+    } catch {
+      toast.error("Upload fehlgeschlagen");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const filtered = useMemo(() => {
     if (!search) return allIconNames.slice(0, 100);
@@ -55,6 +85,10 @@ export function IconPicker({
           <TabsList className="w-full">
             <TabsTrigger value="icons" className="flex-1">
               Icons
+            </TabsTrigger>
+            <TabsTrigger value="upload" className="flex-1">
+              <Upload className="mr-1 size-3" />
+              Upload
             </TabsTrigger>
             <TabsTrigger value="url" className="flex-1">
               <LinkIcon className="mr-1 size-3" />
