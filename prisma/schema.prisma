@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  name          String
+  password      String
+  image         String?
+  role          String   @default("user") // user | admin
+  locale        String   @default("de")
+  emailVerified Boolean  @default(false)
+  themePreset   String   @default("default")
+  customColors  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  boards   Board[]
+  sessions Session[]
+}
+
+model SystemSetting {
+  key   String @id
+  value String
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Board {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String   @default("layout-dashboard")
+  iconUrl   String?
+  isPublic  Boolean  @default(false)
+  order     Int      @default(0)
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories Category[]
+}
+
+model Category {
+  id      String  @id @default(cuid())
+  name    String
+  icon    String  @default("folder")
+  iconUrl String?
+  color   String  @default("#6366f1")
+  order   Int     @default(0)
+  boardId String
+
+  board  Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  groups Group[]
+}
+
+model Group {
+  id         String  @id @default(cuid())
+  name       String
+  icon       String  @default("grid-3x3")
+  iconUrl    String?
+  viewMode   String  @default("grid")
+  order      Int     @default(0)
+  categoryId String
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tiles    Tile[]
+}
+
+model Tile {
+  id             String  @id @default(cuid())
+  name           String
+  icon           String  @default("square")
+  iconUrl        String?
+  color          String  @default("#6366f1")
+  bgColor        String?
+  borderColor    String?
+  borderMatchesBg Boolean @default(false)
+  url            String?
+  description    String?
+  order          Int     @default(0)
+  groupId        String
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
