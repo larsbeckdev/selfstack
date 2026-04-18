@@ -34,13 +34,18 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
   const { user } = await requireAuth();
   const parsed = boardSchema.parse(data);
 
-  const slug =
-    parsed.name
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") +
-    "-" +
-    Date.now().toString(36);
+  const baseSlug = parsed.name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+
+  // Ensure slug uniqueness by checking existing slugs
+  let slug = baseSlug;
+  let counter = 0;
+  while (await db.board.findUnique({ where: { slug } })) {
+    counter++;
+    slug = `${baseSlug}-${counter}`;
+  }
 
   const maxOrder = await db.board.aggregate({
     where: { userId: user.id },

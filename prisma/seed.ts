@@ -31,8 +31,8 @@ async function main() {
   if (!existingBoard) {
     const board = await prisma.board.create({
       data: {
-        name: "Mein Dashboard",
-        slug: `dashboard-${admin.id.slice(0, 8)}`,
+        name: "Dashboard",
+        slug: "dashboard",
         userId: admin.id,
         order: 0,
       },
@@ -41,7 +41,7 @@ async function main() {
     // Add sample data
     const category = await prisma.category.create({
       data: {
-        name: "Entwicklung",
+        name: "Development",
         icon: "code",
         color: "#6366f1",
         order: 0,
