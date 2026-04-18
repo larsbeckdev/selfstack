@@ -53,6 +53,7 @@ const de = {
   "nav.admin": "Administration",
   "nav.boards": "Boards",
   "nav.myAccount": "Mein Konto",
+  "nav.media": "Medien",
   "nav.noBoards": "Noch keine Boards",
 
   // Dashboard

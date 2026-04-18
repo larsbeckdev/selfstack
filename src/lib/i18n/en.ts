@@ -54,6 +54,7 @@ const en: Record<TranslationKey, string> = {
   "nav.admin": "Administration",
   "nav.boards": "Boards",
   "nav.myAccount": "My Account",
+  "nav.media": "Media",
   "nav.noBoards": "No boards yet",
 
   // Dashboard

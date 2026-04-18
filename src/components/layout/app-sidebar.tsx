@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Settings, Shield, Plus, Layers } from "lucide-react";
+import {
+  LayoutDashboard,
+  Settings,
+  Shield,
+  Plus,
+  Layers,
+  Image as ImageIcon,
+} from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { useTranslation } from "@/components/locale-provider";
 import type { SessionUser } from "@/types";
@@ -101,6 +108,16 @@ export function AppSidebar({
                   <Link href="/dashboard">
                     <LayoutDashboard className="size-4" />
                     <span>{t("nav.dashboard")}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/media"}>
+                  <Link href="/media">
+                    <ImageIcon className="size-4" />
+                    <span>{t("nav.media")}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
