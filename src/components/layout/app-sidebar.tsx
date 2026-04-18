@@ -112,9 +112,7 @@ export function AppSidebar({
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === "/media"}>
+                <SidebarMenuButton asChild isActive={pathname === "/media"}>
                   <Link href="/media">
                     <ImageIcon className="size-4" />
                     <span>{t("nav.media")}</span>

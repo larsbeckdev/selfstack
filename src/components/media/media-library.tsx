@@ -46,7 +46,13 @@ type MediaFile = {
   createdAt: string;
 };
 
-type SortBy = "date-desc" | "date-asc" | "name-asc" | "name-desc" | "size-desc" | "size-asc";
+type SortBy =
+  | "date-desc"
+  | "date-asc"
+  | "name-asc"
+  | "name-desc"
+  | "size-desc"
+  | "size-asc";
 type ViewMode = "grid" | "list";
 type FilterType = "all" | "png" | "jpg" | "svg" | "webp" | "ico";
 
@@ -174,9 +180,13 @@ export function MediaLibrary() {
     result = [...result].sort((a, b) => {
       switch (sortBy) {
         case "date-desc":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         case "date-asc":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          return (
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          );
         case "name-asc":
           return a.name.localeCompare(b.name);
         case "name-desc":
@@ -206,7 +216,9 @@ export function MediaLibrary() {
             className="pl-9"
           />
         </div>
-        <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+        <Select
+          value={filterType}
+          onValueChange={(v) => setFilterType(v as FilterType)}>
           <SelectTrigger className="w-[120px]">
             <SelectValue placeholder="Typ" />
           </SelectTrigger>
@@ -238,16 +250,14 @@ export function MediaLibrary() {
             variant={viewMode === "grid" ? "secondary" : "ghost"}
             size="icon"
             className="size-8 rounded-r-none"
-            onClick={() => setViewMode("grid")}
-          >
+            onClick={() => setViewMode("grid")}>
             <Grid3x3 className="size-4" />
           </Button>
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}
             size="icon"
             className="size-8 rounded-l-none"
-            onClick={() => setViewMode("list")}
-          >
+            onClick={() => setViewMode("list")}>
             <List className="size-4" />
           </Button>
         </div>
@@ -262,7 +272,9 @@ export function MediaLibrary() {
             e.target.value = "";
           }}
         />
-        <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+        <Button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}>
           <Upload className="mr-2 size-4" />
           {uploading ? "Wird hochgeladen..." : "Hochladen"}
         </Button>
@@ -284,8 +296,7 @@ export function MediaLibrary() {
           {files.length === 0 && (
             <Button
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-            >
+              onClick={() => fileInputRef.current?.click()}>
               <Upload className="mr-2 size-4" />
               Erstes Icon hochladen
             </Button>
@@ -294,7 +305,9 @@ export function MediaLibrary() {
       ) : viewMode === "grid" ? (
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
           {filtered.map((file) => (
-            <Card key={file.name} className="group relative overflow-hidden p-0">
+            <Card
+              key={file.name}
+              className="group relative overflow-hidden p-0">
               <div className="flex aspect-square items-center justify-center bg-muted/30 p-4">
                 <img
                   src={file.url}
@@ -319,16 +332,14 @@ export function MediaLibrary() {
                   variant="secondary"
                   size="icon"
                   className="size-7"
-                  onClick={() => handleDownload(file)}
-                >
+                  onClick={() => handleDownload(file)}>
                   <Download className="size-3.5" />
                 </Button>
                 <Button
                   variant="destructive"
                   size="icon"
                   className="size-7"
-                  onClick={() => setDeleteTarget(file)}
-                >
+                  onClick={() => setDeleteTarget(file)}>
                   <Trash2 className="size-3.5" />
                 </Button>
               </div>
@@ -347,8 +358,7 @@ export function MediaLibrary() {
           {filtered.map((file) => (
             <div
               key={file.name}
-              className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-2 last:border-b-0 hover:bg-muted/50"
-            >
+              className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-2 last:border-b-0 hover:bg-muted/50">
               <div className="flex size-8 items-center justify-center rounded bg-muted/30">
                 <img
                   src={file.url}
@@ -374,16 +384,14 @@ export function MediaLibrary() {
                   variant="ghost"
                   size="icon"
                   className="size-7"
-                  onClick={() => handleDownload(file)}
-                >
+                  onClick={() => handleDownload(file)}>
                   <Download className="size-3.5" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="size-7 text-destructive hover:text-destructive"
-                  onClick={() => setDeleteTarget(file)}
-                >
+                  onClick={() => setDeleteTarget(file)}>
                   <Trash2 className="size-3.5" />
                 </Button>
               </div>
@@ -400,21 +408,23 @@ export function MediaLibrary() {
       )}
 
       {/* Delete confirmation */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Datei löschen?</AlertDialogTitle>
             <AlertDialogDescription>
               &quot;{deleteTarget?.name}&quot; wird unwiderruflich gelöscht.
-              Icons, die diese Datei verwenden, werden danach nicht mehr angezeigt.
+              Icons, die diese Datei verwenden, werden danach nicht mehr
+              angezeigt.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Abbrechen</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && handleDelete(deleteTarget)}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
               Löschen
             </AlertDialogAction>
           </AlertDialogFooter>
