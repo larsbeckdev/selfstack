@@ -131,6 +131,68 @@ export function IconPicker({
               </div>
             </ScrollArea>
           </TabsContent>
+          <TabsContent value="upload" className="mt-0 p-3 space-y-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={ACCEPTED_TYPES}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) handleFileUpload(file);
+                e.target.value = "";
+              }}
+            />
+            <div
+              className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => fileInputRef.current?.click()}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const file = e.dataTransfer.files[0];
+                if (file) handleFileUpload(file);
+              }}
+            >
+              <Upload className="size-8 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground text-center">
+                {uploading
+                  ? "Wird hochgeladen..."
+                  : "Klicken oder Datei hierher ziehen"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                PNG, JPG, WEBP, SVG, ICO (max. 512 KB)
+              </p>
+            </div>
+            {(uploadPreview || iconUrl) && (
+              <div className="flex items-center gap-2 rounded-md border p-2">
+                <img
+                  src={uploadPreview || iconUrl || ""}
+                  alt="Preview"
+                  className="size-8 object-contain"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
+                />
+                <span className="text-xs text-muted-foreground truncate flex-1">
+                  Hochgeladenes Icon
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setUploadPreview(null);
+                    onIconUrlChange?.(null);
+                  }}
+                >
+                  Entfernen
+                </Button>
+              </div>
+            )}
+          </TabsContent>
           <TabsContent value="url" className="mt-0 p-3 space-y-3">
             <div className="space-y-2">
               <Label htmlFor="icon-url">Icon-URL</Label>

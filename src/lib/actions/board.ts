@@ -15,10 +15,18 @@ async function revalidateBoard(boardId: string) {
 
 // ─── Board Actions ───────────────────────────────────────────────────────────
 
+const iconUrlSchema = z
+  .string()
+  .refine((v) => v.startsWith("/uploads/") || /^https?:\/\//.test(v), {
+    message: "Must be a URL or uploaded file path",
+  })
+  .nullable()
+  .optional();
+
 const boardSchema = z.object({
   name: z.string().min(1).max(100),
   icon: z.string().default("layout-dashboard"),
-  iconUrl: z.string().url().nullable().optional(),
+  iconUrl: iconUrlSchema,
   isPublic: z.boolean().default(false),
 });
 
@@ -146,7 +154,7 @@ export async function getPublicBoard(slug: string) {
 const categorySchema = z.object({
   name: z.string().min(1).max(100),
   icon: z.string().default("folder"),
-  iconUrl: z.string().url().nullable().optional(),
+  iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1"),
   boardId: z.string(),
 });
@@ -216,7 +224,7 @@ export async function deleteCategory(categoryId: string) {
 const groupSchema = z.object({
   name: z.string().min(1).max(100),
   icon: z.string().default("grid-3x3"),
-  iconUrl: z.string().url().nullable().optional(),
+  iconUrl: iconUrlSchema,
   viewMode: z
     .enum(["grid", "grid-sm", "grid-lg", "list"])
     .default("grid")
@@ -292,7 +300,7 @@ export async function deleteGroup(groupId: string) {
 const tileSchema = z.object({
   name: z.string().min(1).max(100),
   icon: z.string().default("square"),
-  iconUrl: z.string().url().nullable().optional(),
+  iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1"),
   bgColor: z.string().nullable().optional(),
   borderColor: z.string().nullable().optional(),

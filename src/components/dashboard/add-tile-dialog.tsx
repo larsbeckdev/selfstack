@@ -77,6 +77,7 @@ export function AddTileDialog({
   );
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("square");
+  const [iconUrl, setIconUrl] = useState<string | null>(null);
   const [color, setColor] = useState("#6366f1");
   const [bgColor, setBgColor] = useState("");
   const [borderColor, setBorderColor] = useState("");
@@ -95,6 +96,7 @@ export function AddTileDialog({
       await createTile({
         name,
         icon,
+        iconUrl,
         color,
         bgColor: bgColor || undefined,
         borderColor: borderMatchesBg
@@ -109,6 +111,7 @@ export function AddTileDialog({
       onOpenChange(false);
       setName("");
       setIcon("square");
+      setIconUrl(null);
       setColor("#6366f1");
       setBgColor("");
       setBorderColor("");
@@ -156,7 +159,12 @@ export function AddTileDialog({
           </div>
           <div className="space-y-2">
             <Label>Icon</Label>
-            <IconPicker value={icon} onChange={setIcon} />
+            <IconPicker
+              value={icon}
+              onChange={setIcon}
+              iconUrl={iconUrl}
+              onIconUrlChange={setIconUrl}
+            />
           </div>
 
           {/* Colors */}
