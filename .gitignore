@@ -44,5 +44,8 @@ next-env.d.ts
 /src/generated/prisma
 prisma/*.db
 
+# uploaded files
+/public/uploads
+
 # sensitive files
 cookies.txt
