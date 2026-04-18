@@ -14,6 +14,13 @@ export default async function AppLayout({
   const session = await getSession();
   if (!session) redirect("/login");
 
+  // Force password change if required
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { mustChangePassword: true },
+  });
+  if (user?.mustChangePassword) redirect("/change-password");
+
   const boards = await db.board.findMany({
     where: { userId: session.user.id },
     orderBy: { order: "asc" },

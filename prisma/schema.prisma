@@ -9,18 +9,19 @@ datasource db {
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String
-  password      String
-  image         String?
-  role          String   @default("user") // user | admin
-  locale        String   @default("de")
-  emailVerified Boolean  @default(false)
-  themePreset   String   @default("default")
-  customColors  String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String
+  password           String
+  image              String?
+  role               String   @default("user") // user | admin
+  locale             String   @default("de")
+  emailVerified      Boolean  @default(false)
+  mustChangePassword Boolean  @default(false)
+  themePreset        String   @default("default")
+  customColors       String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   boards   Board[]
   sessions Session[]

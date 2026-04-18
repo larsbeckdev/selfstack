@@ -5,6 +5,11 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth, requireAdmin } from "@/lib/auth";
+import {
+  sendWelcomeEmail,
+  sendPasswordResetEmail,
+  generatePassword,
+} from "@/lib/email";
 
 // ─── User Settings Actions ──────────────────────────────────────────────────
 
@@ -57,7 +62,7 @@ export async function changePassword(
   const hashed = await bcrypt.hash(parsed.newPassword, 12);
   await db.user.update({
     where: { id: user.id },
-    data: { password: hashed },
+    data: { password: hashed, mustChangePassword: false },
   });
 }
 
@@ -112,9 +117,10 @@ export async function deleteUser(userId: string) {
 export async function adminCreateUser(data: {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   role: string;
-}) {
+  sendEmail?: boolean;
+}): Promise<{ generatedPassword?: string }> {
   await requireAdmin();
 
   const existing = await db.user.findUnique({
@@ -122,7 +128,9 @@ export async function adminCreateUser(data: {
   });
   if (existing) throw new Error("E-Mail wird bereits verwendet");
 
-  const hashedPassword = await bcrypt.hash(data.password, 12);
+  const plainPassword = data.password || generatePassword();
+  const hashedPassword = await bcrypt.hash(plainPassword, 12);
+  const mustChange = !data.password; // generated password → must change
 
   const user = await db.user.create({
     data: {
@@ -130,6 +138,7 @@ export async function adminCreateUser(data: {
       email: data.email,
       password: hashedPassword,
       role: data.role,
+      mustChangePassword: mustChange,
     },
   });
 
@@ -142,8 +151,41 @@ export async function adminCreateUser(data: {
     },
   });
 
+  if (data.sendEmail) {
+    const loginUrl = `${process.env.APP_URL || "http://localhost:3025"}/login`;
+    await sendWelcomeEmail(data.email, data.name, plainPassword, loginUrl);
+  }
+
   revalidatePath("/admin/users");
-  return user;
+  return { generatedPassword: mustChange ? plainPassword : undefined };
+}
+
+export async function adminResetPassword(userId: string) {
+  await requireAdmin();
+
+  const target = await db.user.findUnique({ where: { id: userId } });
+  if (!target) throw new Error("Benutzer nicht gefunden");
+
+  const plainPassword = generatePassword();
+  const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+  await db.user.update({
+    where: { id: userId },
+    data: { password: hashedPassword, mustChangePassword: true },
+  });
+
+  revalidatePath("/admin/users");
+  return { generatedPassword: plainPassword };
+}
+
+export async function adminSendPasswordEmail(userId: string, password: string) {
+  await requireAdmin();
+
+  const target = await db.user.findUnique({ where: { id: userId } });
+  if (!target) throw new Error("Benutzer nicht gefunden");
+
+  const loginUrl = `${process.env.APP_URL || "http://localhost:3025"}/login`;
+  await sendPasswordResetEmail(target.email, target.name, password, loginUrl);
 }
 
 // ─── Admin Stats ─────────────────────────────────────────────────────────────

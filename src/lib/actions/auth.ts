@@ -52,6 +52,11 @@ export async function login(
   }
 
   await createSession(user.id);
+
+  if (user.mustChangePassword) {
+    redirect("/change-password");
+  }
+
   redirect("/dashboard");
 }
 
@@ -112,4 +117,20 @@ export async function register(
 export async function logout() {
   await deleteSession();
   redirect("/login");
+}
+
+export async function forceChangePassword(newPassword: string) {
+  const { getSession } = await import("@/lib/auth");
+  const session = await getSession();
+  if (!session) throw new Error("Nicht angemeldet");
+
+  if (newPassword.length < 8) {
+    throw new Error("Passwort muss mindestens 8 Zeichen haben");
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 12);
+  await db.user.update({
+    where: { id: session.user.id },
+    data: { password: hashed, mustChangePassword: false },
+  });
 }
