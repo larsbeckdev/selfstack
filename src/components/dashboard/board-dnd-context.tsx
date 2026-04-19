@@ -219,6 +219,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
           // Cross-group move — state already updated by onDragOver
           await moveTileToGroup(active.id as string, currentGroupId);
           await reorderTiles(currentGroupId, currentTiles);
+          router.refresh();
         } else {
           // Same-group reorder
           const parentId = active.data.current?.parentId as string;
@@ -241,6 +242,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
                 parentId,
                 newTiles.map((t) => t.id),
               );
+              router.refresh();
             }
             break;
           }
