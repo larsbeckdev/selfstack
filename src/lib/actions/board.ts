@@ -4,6 +4,7 @@ import { revalidatePath, refresh } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import type { BoardRole } from "@/types";
 
 async function revalidateBoard(boardId: string) {
   const board = await db.board.findUnique({
@@ -11,6 +12,51 @@ async function revalidateBoard(boardId: string) {
     select: { slug: true },
   });
   if (board) revalidatePath(`/board/${board.slug}`);
+}
+
+// ─── Board Access Helper ─────────────────────────────────────────────────────
+
+/** Returns the user's role on a board, or null if no access */
+async function getBoardRole(
+  boardId: string,
+  userId: string,
+): Promise<BoardRole | null> {
+  const board = await db.board.findUnique({
+    where: { id: boardId },
+    select: { userId: true },
+  });
+  if (!board) return null;
+  if (board.userId === userId) return "owner";
+
+  const member = await db.boardMember.findUnique({
+    where: { boardId_userId: { boardId, userId } },
+    select: { role: true },
+  });
+  if (!member) return null;
+  return member.role as BoardRole;
+}
+
+/** Ensures user has at least `minRole` on the board. Returns user + role. */
+async function requireBoardAccess(
+  boardId: string,
+  minRole: "viewer" | "editor" | "owner",
+) {
+  const { user } = await requireAuth();
+  const role = await getBoardRole(boardId, user.id);
+  if (!role) throw new Error("Board not found");
+
+  const hierarchy: BoardRole[] = ["viewer", "editor", "owner"];
+  if (hierarchy.indexOf(role) < hierarchy.indexOf(minRole)) {
+    throw new Error("Insufficient permissions");
+  }
+  return { user, role };
+}
+
+/** Find board where user is owner OR member */
+function boardAccessWhere(userId: string) {
+  return {
+    OR: [{ userId }, { members: { some: { userId } } }],
+  };
 }
 
 // ─── Board Actions ───────────────────────────────────────────────────────────
@@ -80,11 +126,9 @@ export async function updateBoard(
   boardId: string,
   data: Partial<z.infer<typeof boardSchema>>,
 ) {
-  const { user } = await requireAuth();
+  await requireBoardAccess(boardId, "owner");
 
-  const board = await db.board.findFirst({
-    where: { id: boardId, userId: user.id },
-  });
+  const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
 
   // If slug is being changed, check uniqueness
@@ -112,11 +156,9 @@ export async function updateBoard(
 }
 
 export async function deleteBoard(boardId: string) {
-  const { user } = await requireAuth();
+  await requireBoardAccess(boardId, "owner");
 
-  const board = await db.board.findFirst({
-    where: { id: boardId, userId: user.id },
-  });
+  const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
 
   await db.board.delete({ where: { id: boardId } });
@@ -127,7 +169,7 @@ export async function deleteBoard(boardId: string) {
 export async function getBoards() {
   const { user } = await requireAuth();
   return db.board.findMany({
-    where: { userId: user.id },
+    where: boardAccessWhere(user.id),
     orderBy: { order: "asc" },
   });
 }
@@ -135,7 +177,7 @@ export async function getBoards() {
 export async function getBoardWithContents(boardId: string) {
   const { user } = await requireAuth();
   return db.board.findFirst({
-    where: { id: boardId, userId: user.id },
+    where: { id: boardId, ...boardAccessWhere(user.id) },
     include: {
       categories: {
         orderBy: { order: "asc" },

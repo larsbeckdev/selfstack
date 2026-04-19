@@ -1,4 +1,4 @@
-import type { Board, Category, Group, Tile } from "@/generated/prisma/client";
+import type { Board, Category, Group, Tile, BoardMember } from "@/generated/prisma/client";
 
 export type SessionUser = {
   id: string;
@@ -8,8 +8,14 @@ export type SessionUser = {
   role: string;
 };
 
+export type BoardRole = "owner" | "editor" | "viewer";
+
 export type BoardWithContents = Board & {
   categories: CategoryWithGroups[];
+};
+
+export type BoardMemberWithUser = BoardMember & {
+  user: { id: string; name: string; email: string; image: string | null };
 };
 
 export type CategoryWithGroups = Category & {
