@@ -36,6 +36,7 @@ export function BoardView({ board }: { board: BoardWithContents }) {
   const handleDuplicateBoard = async () => {
     try {
       const copy = await duplicateBoard(board.id);
+      router.refresh();
       toast.success("Board dupliziert");
       router.push(`/board/${copy.slug}`);
     } catch {
@@ -49,27 +50,31 @@ export function BoardView({ board }: { board: BoardWithContents }) {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{board.name}</h1>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-7"
-              onClick={() => setEditBoardOpen(true)}>
-              <Pencil className="size-3.5" />
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  onClick={handleDuplicateBoard}>
-                  <Copy className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Board duplizieren</p>
-              </TooltipContent>
-            </Tooltip>
+            {isEditing && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-7"
+                onClick={() => setEditBoardOpen(true)}>
+                <Pencil className="size-3.5" />
+              </Button>
+            )}
+            {isEditing && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={handleDuplicateBoard}>
+                    <Copy className="size-3.5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Board duplizieren</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
           <p className="text-sm text-muted-foreground">
             {board.categories.length} Kategorien
