@@ -234,9 +234,36 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
       setActiveType(null);
 
       if (!over || active.id === over.id) {
-        // Revert cross-group moves on cancel
-        if (type === "tile" && preDragCategoriesRef.current) {
-          setCategories(preDragCategoriesRef.current);
+        // For tiles: if state was updated across groups in handleDragOver,
+        // keep the new state instead of reverting.
+        if (type === "tile") {
+          let currentGroupId: string | null = null;
+          for (const cat of categories) {
+            for (const g of cat.groups) {
+              if (g.tiles.some((tile) => tile.id === active.id)) {
+                currentGroupId = g.id;
+                break;
+              }
+            }
+            if (currentGroupId) break;
+          }
+          const original = dragStartGroupRef.current;
+          if (
+            currentGroupId &&
+            original &&
+            currentGroupId !== original &&
+            preDragCategoriesRef.current
+          ) {
+            // Cross-group move succeeded — accept it
+            isDirtyRef.current = true;
+            dragStartGroupRef.current = null;
+            preDragCategoriesRef.current = null;
+            return;
+          }
+          // Otherwise revert (true no-op drop)
+          if (preDragCategoriesRef.current) {
+            setCategories(preDragCategoriesRef.current);
+          }
         }
         dragStartGroupRef.current = null;
         preDragCategoriesRef.current = null;
