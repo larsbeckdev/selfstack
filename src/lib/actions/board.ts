@@ -567,16 +567,12 @@ export async function moveGroupToCategory(
 // ─── Duplicate Actions ───────────────────────────────────────────────────────
 
 export async function duplicateTile(tileId: string) {
-  const { user } = await requireAuth();
-
-  const tile = await db.tile.findFirst({
-    where: {
-      id: tileId,
-      group: { category: { board: { userId: user.id } } },
-    },
+  const tile = await db.tile.findUnique({
+    where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
   if (!tile) throw new Error("Tile not found");
+  await requireBoardAccess(tile.group.category.boardId, "editor");
 
   const maxOrder = await db.tile.aggregate({
     where: { groupId: tile.groupId },
@@ -605,13 +601,12 @@ export async function duplicateTile(tileId: string) {
 }
 
 export async function duplicateGroup(groupId: string) {
-  const { user } = await requireAuth();
-
-  const group = await db.group.findFirst({
-    where: { id: groupId, category: { board: { userId: user.id } } },
+  const group = await db.group.findUnique({
+    where: { id: groupId },
     include: { category: true, tiles: { orderBy: { order: "asc" } } },
   });
   if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
 
   const maxOrder = await db.group.aggregate({
     where: { categoryId: group.categoryId },
@@ -649,10 +644,8 @@ export async function duplicateGroup(groupId: string) {
 }
 
 export async function duplicateCategory(categoryId: string) {
-  const { user } = await requireAuth();
-
-  const category = await db.category.findFirst({
-    where: { id: categoryId, board: { userId: user.id } },
+  const category = await db.category.findUnique({
+    where: { id: categoryId },
     include: {
       groups: {
         orderBy: { order: "asc" },
@@ -661,6 +654,7 @@ export async function duplicateCategory(categoryId: string) {
     },
   });
   if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
 
   const maxOrder = await db.category.aggregate({
     where: { boardId: category.boardId },
@@ -708,9 +702,10 @@ export async function duplicateCategory(categoryId: string) {
 
 export async function duplicateBoard(boardId: string) {
   const { user } = await requireAuth();
+  await requireBoardAccess(boardId, "editor");
 
-  const board = await db.board.findFirst({
-    where: { id: boardId, userId: user.id },
+  const board = await db.board.findUnique({
+    where: { id: boardId },
     include: {
       categories: {
         orderBy: { order: "asc" },
