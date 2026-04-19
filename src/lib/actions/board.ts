@@ -781,3 +781,94 @@ export async function duplicateBoard(boardId: string) {
   refresh();
   return copy;
 }
+
+// ─── Board Member Actions ────────────────────────────────────────────────────
+
+export async function getUserBoardRole(boardId: string): Promise<BoardRole | null> {
+  const { user } = await requireAuth();
+  return getBoardRole(boardId, user.id);
+}
+
+export async function getBoardMembers(boardId: string) {
+  await requireBoardAccess(boardId, "owner");
+
+  const board = await db.board.findUnique({
+    where: { id: boardId },
+    select: {
+      userId: true,
+      user: { select: { id: true, name: true, email: true, image: true } },
+      members: {
+        include: {
+          user: { select: { id: true, name: true, email: true, image: true } },
+        },
+        orderBy: { role: "asc" },
+      },
+    },
+  });
+  if (!board) throw new Error("Board not found");
+  return { owner: board.user, members: board.members };
+}
+
+export async function addBoardMember(
+  boardId: string,
+  email: string,
+  role: "viewer" | "editor",
+) {
+  await requireBoardAccess(boardId, "owner");
+
+  const targetUser = await db.user.findUnique({ where: { email } });
+  if (!targetUser) throw new Error("Benutzer nicht gefunden");
+
+  const board = await db.board.findUnique({ where: { id: boardId } });
+  if (!board) throw new Error("Board not found");
+  if (board.userId === targetUser.id) {
+    throw new Error("Der Besitzer kann nicht als Mitglied hinzugefügt werden");
+  }
+
+  const existing = await db.boardMember.findUnique({
+    where: { boardId_userId: { boardId, userId: targetUser.id } },
+  });
+  if (existing) throw new Error("Benutzer ist bereits Mitglied");
+
+  const member = await db.boardMember.create({
+    data: { boardId, userId: targetUser.id, role },
+    include: {
+      user: { select: { id: true, name: true, email: true, image: true } },
+    },
+  });
+
+  await revalidateBoard(boardId);
+  refresh();
+  return member;
+}
+
+export async function updateBoardMemberRole(
+  memberId: string,
+  role: "viewer" | "editor",
+) {
+  const member = await db.boardMember.findUnique({ where: { id: memberId } });
+  if (!member) throw new Error("Mitglied nicht gefunden");
+  await requireBoardAccess(member.boardId, "owner");
+
+  const updated = await db.boardMember.update({
+    where: { id: memberId },
+    data: { role },
+    include: {
+      user: { select: { id: true, name: true, email: true, image: true } },
+    },
+  });
+
+  await revalidateBoard(member.boardId);
+  refresh();
+  return updated;
+}
+
+export async function removeBoardMember(memberId: string) {
+  const member = await db.boardMember.findUnique({ where: { id: memberId } });
+  if (!member) throw new Error("Mitglied nicht gefunden");
+  await requireBoardAccess(member.boardId, "owner");
+
+  await db.boardMember.delete({ where: { id: memberId } });
+  await revalidateBoard(member.boardId);
+  refresh();
+}
