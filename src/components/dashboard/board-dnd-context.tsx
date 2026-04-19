@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, useCallback, useRef } from "react";
+import { useId, useState, useCallback, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -30,12 +30,15 @@ import { SortableCategory } from "@/components/dashboard/sortable-category";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { TileCard } from "@/components/dashboard/tile-card";
 import { useTranslation } from "@/components/locale-provider";
+import { useEditMode } from "@/components/dashboard/edit-mode-context";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function BoardDndContext({ board }: { board: BoardWithContents }) {
   const dndId = useId();
   const { t } = useTranslation();
   const router = useRouter();
+  const isEditing = useEditMode();
   const [categories, setCategories] = useState(board.categories);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<
@@ -44,6 +47,87 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
 
   const dragStartGroupRef = useRef<string | null>(null);
   const preDragCategoriesRef = useRef<typeof categories | null>(null);
+
+  // Track last-saved snapshot for batch sync on edit-mode exit
+  const savedCategoriesRef = useRef(board.categories);
+  const isDirtyRef = useRef(false);
+  const prevIsEditingRef = useRef(isEditing);
+
+  // If server data changes while we have no pending changes, adopt it.
+  // While dirty, ignore server snapshot until we sync.
+  useEffect(() => {
+    if (!isDirtyRef.current) {
+      setCategories(board.categories);
+      savedCategoriesRef.current = board.categories;
+    }
+  }, [board.categories]);
+
+  // Batch-save when edit mode turns OFF
+  useEffect(() => {
+    const wasEditing = prevIsEditingRef.current;
+    prevIsEditingRef.current = isEditing;
+    if (!wasEditing || isEditing) return;
+    if (!isDirtyRef.current) return;
+
+    const current = categories;
+    const snapshot = savedCategoriesRef.current;
+
+    (async () => {
+      try {
+        // Build initial tile -> group map from last saved snapshot
+        const initialTileGroup = new Map<string, string>();
+        for (const cat of snapshot) {
+          for (const g of cat.groups) {
+            for (const tile of g.tiles) {
+              initialTileGroup.set(tile.id, g.id);
+            }
+          }
+        }
+
+        // Move tiles that changed groups
+        for (const cat of current) {
+          for (const g of cat.groups) {
+            for (const tile of g.tiles) {
+              const orig = initialTileGroup.get(tile.id);
+              if (orig && orig !== g.id) {
+                await moveTileToGroup(tile.id, g.id);
+              }
+            }
+          }
+        }
+
+        // Reorder categories
+        await reorderCategories(
+          board.id,
+          current.map((c) => c.id),
+        );
+
+        // Reorder groups per category
+        for (const cat of current) {
+          await reorderGroups(
+            cat.id,
+            cat.groups.map((g) => g.id),
+          );
+        }
+
+        // Reorder tiles per group
+        for (const cat of current) {
+          for (const g of cat.groups) {
+            await reorderTiles(
+              g.id,
+              g.tiles.map((tile) => tile.id),
+            );
+          }
+        }
+
+        isDirtyRef.current = false;
+        savedCategoriesRef.current = current;
+        router.refresh();
+      } catch {
+        toast.error(t("error.updateFailed"));
+      }
+    })();
+  }, [isEditing, categories, board.id, router, t]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -165,11 +249,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
         if (oldIndex !== -1 && newIndex !== -1) {
           const newOrder = arrayMove(categories, oldIndex, newIndex);
           setCategories(newOrder);
-          await reorderCategories(
-            board.id,
-            newOrder.map((c) => c.id),
-          );
-          router.refresh();
+          isDirtyRef.current = true;
         }
       }
 
@@ -186,11 +266,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
               c.id === parentId ? { ...c, groups: newGroups } : c,
             ),
           );
-          await reorderGroups(
-            parentId,
-            newGroups.map((g) => g.id),
-          );
-          router.refresh();
+          isDirtyRef.current = true;
         }
       }
 
@@ -201,12 +277,10 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
 
         // Find current group from state
         let currentGroupId: string | null = null;
-        let currentTiles: string[] = [];
         for (const cat of categories) {
           for (const g of cat.groups) {
-            if (g.tiles.some((t) => t.id === active.id)) {
+            if (g.tiles.some((tile) => tile.id === active.id)) {
               currentGroupId = g.id;
-              currentTiles = g.tiles.map((t) => t.id);
               break;
             }
           }
@@ -217,17 +291,19 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
 
         if (currentGroupId !== originalGroupId) {
           // Cross-group move — state already updated by onDragOver
-          await moveTileToGroup(active.id as string, currentGroupId);
-          await reorderTiles(currentGroupId, currentTiles);
-          router.refresh();
+          isDirtyRef.current = true;
         } else {
           // Same-group reorder
           const parentId = active.data.current?.parentId as string;
           for (const cat of categories) {
             const group = cat.groups.find((g) => g.id === parentId);
             if (!group) continue;
-            const oldIndex = group.tiles.findIndex((t) => t.id === active.id);
-            const newIndex = group.tiles.findIndex((t) => t.id === over.id);
+            const oldIndex = group.tiles.findIndex(
+              (tile) => tile.id === active.id,
+            );
+            const newIndex = group.tiles.findIndex(
+              (tile) => tile.id === over.id,
+            );
             if (oldIndex !== -1 && newIndex !== -1) {
               const newTiles = arrayMove(group.tiles, oldIndex, newIndex);
               setCategories(
@@ -238,18 +314,14 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
                   ),
                 })),
               );
-              await reorderTiles(
-                parentId,
-                newTiles.map((t) => t.id),
-              );
-              router.refresh();
+              isDirtyRef.current = true;
             }
             break;
           }
         }
       }
     },
-    [categories, board.id, router],
+    [categories],
   );
 
   const activeTile =
