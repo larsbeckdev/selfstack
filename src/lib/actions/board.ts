@@ -784,7 +784,9 @@ export async function duplicateBoard(boardId: string) {
 
 // ─── Board Member Actions ────────────────────────────────────────────────────
 
-export async function getUserBoardRole(boardId: string): Promise<BoardRole | null> {
+export async function getUserBoardRole(
+  boardId: string,
+): Promise<BoardRole | null> {
   const { user } = await requireAuth();
   return getBoardRole(boardId, user.id);
 }
