@@ -50,6 +50,7 @@ model Board {
   icon      String   @default("layout-dashboard")
   iconUrl   String?
   isPublic  Boolean  @default(false)
+  columns   Int      @default(1)
   order     Int      @default(0)
   userId    String
   createdAt DateTime @default(now())
