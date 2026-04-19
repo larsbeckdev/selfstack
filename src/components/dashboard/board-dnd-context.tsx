@@ -35,6 +35,7 @@ import { useRouter } from "next/navigation";
 export function BoardDndContext({ board }: { board: BoardWithContents }) {
   const dndId = useId();
   const { t } = useTranslation();
+  const router = useRouter();
   const [categories, setCategories] = useState(board.categories);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<
