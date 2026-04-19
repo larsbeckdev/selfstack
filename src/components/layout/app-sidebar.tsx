@@ -107,11 +107,11 @@ export function AppSidebar({
                   </SidebarMenuButton>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction>
+                      <SidebarMenuAction showOnHover>
                         <MoreHorizontal className="size-4" />
                       </SidebarMenuAction>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="start">
+                    <DropdownMenuContent side="right" align="start" className="min-w-48">
                       <DropdownMenuItem
                         onClick={() => router.push(`/board/${board.slug}`)}>
                         <ExternalLink className="mr-2 size-4" />
