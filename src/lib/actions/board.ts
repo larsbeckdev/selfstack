@@ -25,6 +25,12 @@ const iconUrlSchema = z
 
 const boardSchema = z.object({
   name: z.string().min(1).max(100),
+  slug: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche")
+    .optional(),
   icon: z.string().default("layout-dashboard"),
   iconUrl: iconUrlSchema,
   isPublic: z.boolean().default(false),
@@ -78,6 +84,16 @@ export async function updateBoard(
   });
   if (!board) throw new Error("Board not found");
 
+  // If slug is being changed, check uniqueness
+  if (data.slug && data.slug !== board.slug) {
+    const existing = await db.board.findUnique({
+      where: { slug: data.slug },
+    });
+    if (existing && existing.id !== boardId) {
+      throw new Error("Slug already in use");
+    }
+  }
+
   const updated = await db.board.update({
     where: { id: boardId },
     data,
@@ -85,6 +101,9 @@ export async function updateBoard(
 
   revalidatePath("/dashboard");
   revalidatePath(`/board/${board.slug}`);
+  if (updated.slug !== board.slug) {
+    revalidatePath(`/board/${updated.slug}`);
+  }
   refresh();
   return updated;
 }
