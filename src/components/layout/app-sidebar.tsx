@@ -105,6 +105,36 @@ export function AppSidebar({
                       <span>{board.name}</span>
                     </Link>
                   </SidebarMenuButton>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <SidebarMenuAction>
+                        <MoreHorizontal className="size-4" />
+                      </SidebarMenuAction>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent side="right" align="start">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(`/board/${board.slug}`)
+                        }>
+                        <ExternalLink className="mr-2 size-4" />
+                        Öffnen
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => copyBoardLink(board.slug)}>
+                        <Copy className="mr-2 size-4" />
+                        Link kopieren
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() =>
+                          router.push(
+                            `/board/${board.slug}?settings=true`,
+                          )
+                        }>
+                        <Settings2 className="mr-2 size-4" />
+                        Einstellungen
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </SidebarMenuItem>
               ))}
               {boards.length === 0 && (

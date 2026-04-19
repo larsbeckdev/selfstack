@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Lock, Unlock, Copy, Settings } from "lucide-react";
 import type { BoardRole, BoardWithContents } from "@/types";
-import { duplicateBoard } from "@/lib/actions/board";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -23,7 +22,7 @@ import { AddGroupDialog } from "@/components/dashboard/add-group-dialog";
 import { AddTileDialog } from "@/components/dashboard/add-tile-dialog";
 import { BoardSettingsDialog } from "@/components/dashboard/board-settings-dialog";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export function BoardView({
   board,
@@ -38,18 +37,22 @@ export function BoardView({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Auto-open settings when ?settings=true is in the URL
+  useEffect(() => {
+    if (searchParams.get("settings") === "true") {
+      setSettingsOpen(true);
+      router.replace(`/board/${board.slug}`, { scroll: false });
+    }
+  }, [searchParams, board.slug, router]);
 
   const canEdit = boardRole === "owner" || boardRole === "editor";
 
-  const handleDuplicateBoard = async () => {
-    try {
-      const copy = await duplicateBoard(board.id);
-      router.refresh();
-      toast.success("Board dupliziert");
-      router.push(`/board/${copy.slug}`);
-    } catch {
-      toast.error("Fehler beim Duplizieren");
-    }
+  const copyBoardLink = () => {
+    const url = `${window.location.origin}/board/${board.slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link kopiert");
   };
 
   return (
@@ -58,19 +61,19 @@ export function BoardView({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{board.name}</h1>
-            {isEditing && canEdit && (
+            {isEditing && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     className="size-7"
-                    onClick={handleDuplicateBoard}>
+                    onClick={copyBoardLink}>
                     <Copy className="size-3.5" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Board duplizieren</p>
+                  <p>Link kopieren</p>
                 </TooltipContent>
               </Tooltip>
             )}

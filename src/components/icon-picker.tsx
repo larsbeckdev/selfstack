@@ -159,8 +159,7 @@ export function IconPicker({
                 e.stopPropagation();
                 const file = e.dataTransfer.files[0];
                 if (file) handleFileUpload(file);
-              }}
-            >
+              }}>
               <Upload className="size-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground text-center">
                 {uploading
@@ -191,8 +190,7 @@ export function IconPicker({
                     setUploadPreview(null);
                     setUploadName(null);
                     onIconUrlChange?.(null);
-                  }}
-                >
+                  }}>
                   Entfernen
                 </Button>
               </div>
