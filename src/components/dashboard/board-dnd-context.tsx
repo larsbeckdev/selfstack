@@ -190,6 +190,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
             parentId,
             newGroups.map((g) => g.id),
           );
+          router.refresh();
         }
       }
 
