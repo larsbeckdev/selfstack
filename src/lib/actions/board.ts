@@ -813,12 +813,12 @@ export async function getBoardMembers(boardId: string) {
 
 export async function addBoardMember(
   boardId: string,
-  email: string,
+  userId: string,
   role: "viewer" | "editor",
 ) {
   await requireBoardAccess(boardId, "owner");
 
-  const targetUser = await db.user.findUnique({ where: { email } });
+  const targetUser = await db.user.findUnique({ where: { id: userId } });
   if (!targetUser) throw new Error("Benutzer nicht gefunden");
 
   const board = await db.board.findUnique({ where: { id: boardId } });
@@ -873,4 +873,26 @@ export async function removeBoardMember(memberId: string) {
   await db.boardMember.delete({ where: { id: memberId } });
   await revalidateBoard(member.boardId);
   refresh();
+}
+
+/** Returns users that can be added to a board (not owner, not already member) */
+export async function getAvailableUsersForBoard(boardId: string) {
+  await requireBoardAccess(boardId, "owner");
+
+  const board = await db.board.findUnique({
+    where: { id: boardId },
+    select: {
+      userId: true,
+      members: { select: { userId: true } },
+    },
+  });
+  if (!board) throw new Error("Board not found");
+
+  const excludeIds = [board.userId, ...board.members.map((m) => m.userId)];
+
+  return db.user.findMany({
+    where: { id: { notIn: excludeIds } },
+    select: { id: true, name: true, email: true, image: true },
+    orderBy: { name: "asc" },
+  });
 }

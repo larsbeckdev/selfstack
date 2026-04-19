@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Pencil, Lock, Unlock, Copy } from "lucide-react";
-import type { BoardWithContents } from "@/types";
+import { Plus, Lock, Unlock, Copy, Settings } from "lucide-react";
+import type { BoardRole, BoardWithContents } from "@/types";
 import { duplicateBoard } from "@/lib/actions/board";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,17 +21,25 @@ import { EditModeProvider } from "@/components/dashboard/edit-mode-context";
 import { AddCategoryDialog } from "@/components/dashboard/add-category-dialog";
 import { AddGroupDialog } from "@/components/dashboard/add-group-dialog";
 import { AddTileDialog } from "@/components/dashboard/add-tile-dialog";
-import { EditBoardDialog } from "@/components/dashboard/edit-board-dialog";
+import { BoardSettingsDialog } from "@/components/dashboard/board-settings-dialog";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export function BoardView({ board }: { board: BoardWithContents }) {
+export function BoardView({
+  board,
+  boardRole = "owner",
+}: {
+  board: BoardWithContents;
+  boardRole?: BoardRole;
+}) {
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [addTileOpen, setAddTileOpen] = useState(false);
-  const [editBoardOpen, setEditBoardOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
+
+  const canEdit = boardRole === "owner" || boardRole === "editor";
 
   const handleDuplicateBoard = async () => {
     try {
@@ -50,16 +58,7 @@ export function BoardView({ board }: { board: BoardWithContents }) {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{board.name}</h1>
-            {isEditing && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={() => setEditBoardOpen(true)}>
-                <Pencil className="size-3.5" />
-              </Button>
-            )}
-            {isEditing && (
+            {isEditing && canEdit && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -82,32 +81,49 @@ export function BoardView({ board }: { board: BoardWithContents }) {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Board Settings (gear icon) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={isEditing ? "default" : "outline"}
+                variant="ghost"
                 size="sm"
-                onClick={() => setIsEditing(!isEditing)}>
-                {isEditing ? (
-                  <Unlock className="sm:mr-2 size-3.5" />
-                ) : (
-                  <Lock className="sm:mr-2 size-3.5" />
-                )}
-                <span className="hidden sm:inline">
-                  {isEditing ? "Bearbeiten" : "Gesperrt"}
-                </span>
+                onClick={() => setSettingsOpen(true)}>
+                <Settings className="size-3.5" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>
-                {isEditing
-                  ? "Bearbeitungsmodus aktiv – Klicke zum Sperren"
-                  : "Gesperrt – Klicke zum Bearbeiten"}
-              </p>
+              <p>Board-Einstellungen</p>
             </TooltipContent>
           </Tooltip>
 
-          {isEditing && (
+          {canEdit && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={isEditing ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsEditing(!isEditing)}>
+                  {isEditing ? (
+                    <Unlock className="sm:mr-2 size-3.5" />
+                  ) : (
+                    <Lock className="sm:mr-2 size-3.5" />
+                  )}
+                  <span className="hidden sm:inline">
+                    {isEditing ? "Bearbeiten" : "Gesperrt"}
+                  </span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  {isEditing
+                    ? "Bearbeitungsmodus aktiv – Klicke zum Sperren"
+                    : "Gesperrt – Klicke zum Bearbeiten"}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+
+          {isEditing && canEdit && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size="sm">
@@ -156,10 +172,11 @@ export function BoardView({ board }: { board: BoardWithContents }) {
         open={addTileOpen}
         onOpenChange={setAddTileOpen}
       />
-      <EditBoardDialog
+      <BoardSettingsDialog
         board={board}
-        open={editBoardOpen}
-        onOpenChange={setEditBoardOpen}
+        boardRole={boardRole}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
       />
     </div>
   );

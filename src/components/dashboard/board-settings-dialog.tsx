@@ -21,6 +21,7 @@ import {
   addBoardMember,
   updateBoardMemberRole,
   removeBoardMember,
+  getAvailableUsersForBoard,
 } from "@/lib/actions/board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +54,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IconPicker } from "@/components/icon-picker";
 import { toast } from "sonner";
 
 export function BoardSettingsDialog({
@@ -107,6 +109,13 @@ export function BoardSettingsDialog({
 
 // ─── General Tab ─────────────────────────────────────────────────────────────
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
+}
+
 function GeneralTab({
   board,
   isOwner,
@@ -118,8 +127,41 @@ function GeneralTab({
   router: ReturnType<typeof useRouter>;
   onClose: () => void;
 }) {
+  const [name, setName] = useState(board.name);
+  const [slug, setSlug] = useState(board.slug);
+  const [icon, setIcon] = useState(board.icon);
+  const [iconUrl, setIconUrl] = useState<string | null>(board.iconUrl ?? null);
   const [isPublic, setIsPublic] = useState(board.isPublic);
+  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+
+  const handleSave = async () => {
+    if (!name.trim() || !slugValid) return;
+    setSaving(true);
+    try {
+      const updated = await updateBoard(board.id, {
+        name,
+        slug,
+        icon,
+        iconUrl,
+      });
+      toast.success("Board aktualisiert");
+      router.refresh();
+      if (updated.slug !== board.slug) {
+        router.replace(`/board/${updated.slug}`);
+      }
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message === "Slug already in use"
+          ? "Dieser Link wird bereits verwendet"
+          : "Fehler beim Aktualisieren";
+      toast.error(msg);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const toggleVisibility = async (checked: boolean) => {
     setLoading(true);
@@ -137,8 +179,8 @@ function GeneralTab({
     }
   };
 
-  const copyPublicLink = () => {
-    const url = `${window.location.origin}/b/${board.slug}`;
+  const copyLink = () => {
+    const url = `${window.location.origin}/board/${board.slug}`;
     navigator.clipboard.writeText(url);
     toast.success("Link kopiert");
   };
@@ -155,8 +197,64 @@ function GeneralTab({
     }
   };
 
+  const hasChanges =
+    name !== board.name ||
+    slug !== board.slug ||
+    icon !== board.icon ||
+    iconUrl !== (board.iconUrl ?? null);
+
   return (
     <div className="space-y-6">
+      {/* Name, Slug, Icon (owner only) */}
+      {isOwner && (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="settings-board-name">Name</Label>
+            <Input
+              id="settings-board-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="settings-board-slug">Link / URL</Label>
+            <div className="flex items-center gap-0">
+              <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
+                /board/
+              </span>
+              <Input
+                id="settings-board-slug"
+                value={slug}
+                onChange={(e) => setSlug(slugify(e.target.value))}
+                className="rounded-l-none"
+              />
+            </div>
+            {slug && !slugValid && (
+              <p className="text-xs text-destructive">
+                Nur Kleinbuchstaben, Zahlen und Bindestriche
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label>Icon</Label>
+            <IconPicker
+              value={icon}
+              onChange={setIcon}
+              iconUrl={iconUrl}
+              onIconUrlChange={setIconUrl}
+            />
+          </div>
+          {hasChanges && (
+            <Button
+              onClick={handleSave}
+              disabled={saving || !name.trim() || !slugValid}
+              className="w-full">
+              {saving ? "Speichern..." : "Speichern"}
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Visibility */}
       {isOwner && (
         <div className="flex items-center justify-between rounded-lg border p-4">
@@ -183,20 +281,18 @@ function GeneralTab({
         </div>
       )}
 
-      {/* Public Link */}
-      {isPublic && (
-        <div className="flex items-center gap-2 rounded-lg border p-4">
-          <Input
-            readOnly
-            value={`${typeof window !== "undefined" ? window.location.origin : ""}/b/${board.slug}`}
-            className="text-xs"
-          />
-          <Button variant="outline" size="sm" onClick={copyPublicLink}>
-            <Copy className="mr-2 size-3.5" />
-            Kopieren
-          </Button>
-        </div>
-      )}
+      {/* Board Link (always visible) */}
+      <div className="flex items-center gap-2 rounded-lg border p-4">
+        <Input
+          readOnly
+          value={`${typeof window !== "undefined" ? window.location.origin : ""}/board/${board.slug}`}
+          className="text-xs"
+        />
+        <Button variant="outline" size="sm" onClick={copyLink}>
+          <Copy className="mr-2 size-3.5" />
+          Kopieren
+        </Button>
+      </div>
 
       {/* Delete */}
       {isOwner && (
@@ -251,16 +347,23 @@ function MembersTab({ boardId }: { boardId: string }) {
     image: string | null;
   } | null>(null);
   const [members, setMembers] = useState<BoardMemberWithUser[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<
+    { id: string; name: string; email: string; image: string | null }[]
+  >([]);
   const [loading, setLoading] = useState(true);
-  const [email, setEmail] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [role, setRole] = useState<"viewer" | "editor">("viewer");
   const [adding, setAdding] = useState(false);
 
-  const loadMembers = async () => {
+  const loadData = async () => {
     try {
-      const data = await getBoardMembers(boardId);
-      setOwner(data.owner);
-      setMembers(data.members);
+      const [memberData, users] = await Promise.all([
+        getBoardMembers(boardId),
+        getAvailableUsersForBoard(boardId),
+      ]);
+      setOwner(memberData.owner);
+      setMembers(memberData.members);
+      setAvailableUsers(users);
     } catch {
       toast.error("Fehler beim Laden der Mitglieder");
     } finally {
@@ -269,18 +372,18 @@ function MembersTab({ boardId }: { boardId: string }) {
   };
 
   useEffect(() => {
-    if (boardId) loadMembers();
+    if (boardId) loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boardId]);
 
-  const handleAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email.trim()) return;
+  const handleAdd = async () => {
+    if (!selectedUserId) return;
     setAdding(true);
     try {
-      const member = await addBoardMember(boardId, email, role);
+      const member = await addBoardMember(boardId, selectedUserId, role);
       setMembers((prev) => [...prev, member]);
-      setEmail("");
+      setAvailableUsers((prev) => prev.filter((u) => u.id !== selectedUserId));
+      setSelectedUserId("");
       toast.success("Mitglied hinzugefügt");
     } catch (err) {
       toast.error(
@@ -297,9 +400,7 @@ function MembersTab({ boardId }: { boardId: string }) {
   ) => {
     try {
       const updated = await updateBoardMemberRole(memberId, newRole);
-      setMembers((prev) =>
-        prev.map((m) => (m.id === memberId ? updated : m)),
-      );
+      setMembers((prev) => prev.map((m) => (m.id === memberId ? updated : m)));
       toast.success("Rolle geändert");
     } catch {
       toast.error("Fehler beim Ändern der Rolle");
@@ -308,8 +409,14 @@ function MembersTab({ boardId }: { boardId: string }) {
 
   const handleRemove = async (memberId: string) => {
     try {
+      const removed = members.find((m) => m.id === memberId);
       await removeBoardMember(memberId);
       setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      if (removed) {
+        setAvailableUsers((prev) =>
+          [...prev, removed.user].sort((a, b) => a.name.localeCompare(b.name)),
+        );
+      }
       toast.success("Mitglied entfernt");
     } catch {
       toast.error("Fehler beim Entfernen");
@@ -326,19 +433,31 @@ function MembersTab({ boardId }: { boardId: string }) {
 
   return (
     <div className="space-y-4">
-      {/* Add member form */}
-      <form onSubmit={handleAdd} className="flex items-end gap-2">
+      {/* Add member */}
+      <div className="flex items-end gap-2">
         <div className="flex-1 space-y-1.5">
-          <Label htmlFor="member-email" className="text-xs">
-            E-Mail-Adresse
-          </Label>
-          <Input
-            id="member-email"
-            type="email"
-            placeholder="benutzer@beispiel.de"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          <Label className="text-xs">Benutzer</Label>
+          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Benutzer auswählen…" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableUsers.length === 0 ? (
+                <div className="py-2 text-center text-xs text-muted-foreground">
+                  Keine verfügbaren Benutzer
+                </div>
+              ) : (
+                availableUsers.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    <span className="flex items-center gap-2">
+                      <span>{u.name}</span>
+                      <span className="text-muted-foreground">({u.email})</span>
+                    </span>
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
         <Select
           value={role}
@@ -351,11 +470,14 @@ function MembersTab({ boardId }: { boardId: string }) {
             <SelectItem value="editor">Redakteur</SelectItem>
           </SelectContent>
         </Select>
-        <Button type="submit" size="sm" disabled={adding || !email.trim()}>
+        <Button
+          size="sm"
+          disabled={adding || !selectedUserId}
+          onClick={handleAdd}>
           <UserPlus className="mr-2 size-3.5" />
           Hinzufügen
         </Button>
-      </form>
+      </div>
 
       {/* Members list */}
       <div className="space-y-2">
@@ -391,9 +513,7 @@ function MembersTab({ boardId }: { boardId: string }) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium">
-                {member.user.name}
-              </p>
+              <p className="truncate text-sm font-medium">{member.user.name}</p>
               <p className="truncate text-xs text-muted-foreground">
                 {member.user.email}
               </p>
