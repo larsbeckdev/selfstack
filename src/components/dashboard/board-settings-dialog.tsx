@@ -73,7 +73,7 @@ export function BoardSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg overflow-hidden">
         <DialogHeader>
           <DialogTitle>Board-Einstellungen</DialogTitle>
         </DialogHeader>
@@ -434,57 +434,57 @@ function MembersTab({ boardId }: { boardId: string }) {
   return (
     <div className="space-y-4">
       {/* Add member */}
-      <div className="flex items-end gap-2">
-        <div className="flex-1 space-y-1.5">
-          <Label className="text-xs">Benutzer</Label>
-          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Benutzer auswählen…" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableUsers.length === 0 ? (
-                <div className="py-2 text-center text-xs text-muted-foreground">
-                  Keine verfügbaren Benutzer
-                </div>
-              ) : (
-                availableUsers.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    <span className="flex items-center gap-2">
-                      <span>{u.name}</span>
-                      <span className="text-muted-foreground">({u.email})</span>
-                    </span>
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-        <Select
-          value={role}
-          onValueChange={(v) => setRole(v as "viewer" | "editor")}>
-          <SelectTrigger className="w-[130px]">
-            <SelectValue />
+      <div className="space-y-2">
+        <Label className="text-xs">Benutzer</Label>
+        <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Benutzer auswählen…" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="viewer">Betrachter</SelectItem>
-            <SelectItem value="editor">Redakteur</SelectItem>
+            {availableUsers.length === 0 ? (
+              <div className="py-2 text-center text-xs text-muted-foreground">
+                Keine verfügbaren Benutzer
+              </div>
+            ) : (
+              availableUsers.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  <span className="flex items-center gap-2">
+                    <span>{u.name}</span>
+                    <span className="text-muted-foreground">({u.email})</span>
+                  </span>
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
-        <Button
-          size="sm"
-          disabled={adding || !selectedUserId}
-          onClick={handleAdd}>
-          <UserPlus className="mr-2 size-3.5" />
-          Hinzufügen
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select
+            value={role}
+            onValueChange={(v) => setRole(v as "viewer" | "editor")}>
+            <SelectTrigger className="w-[130px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="viewer">Betrachter</SelectItem>
+              <SelectItem value="editor">Redakteur</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            size="sm"
+            disabled={adding || !selectedUserId}
+            onClick={handleAdd}>
+            <UserPlus className="mr-2 size-3.5" />
+            Hinzufügen
+          </Button>
+        </div>
       </div>
 
       {/* Members list */}
       <div className="space-y-2">
         {/* Owner */}
         {owner && (
-          <div className="flex items-center gap-3 rounded-lg border p-3">
-            <Avatar className="size-8">
+          <div className="flex items-center gap-2 rounded-lg border p-3">
+            <Avatar className="size-8 shrink-0">
               <AvatarFallback className="text-xs">
                 {owner.name.charAt(0).toUpperCase()}
               </AvatarFallback>
@@ -495,7 +495,7 @@ function MembersTab({ boardId }: { boardId: string }) {
                 {owner.email}
               </p>
             </div>
-            <Badge variant="outline" className="gap-1">
+            <Badge variant="outline" className="gap-1 shrink-0">
               <Crown className="size-3" />
               Besitzer
             </Badge>
@@ -506,48 +506,54 @@ function MembersTab({ boardId }: { boardId: string }) {
         {members.map((member) => (
           <div
             key={member.id}
-            className="flex items-center gap-3 rounded-lg border p-3">
-            <Avatar className="size-8">
-              <AvatarFallback className="text-xs">
-                {member.user.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="truncate text-sm font-medium">{member.user.name}</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {member.user.email}
-              </p>
-            </div>
-            <Select
-              value={member.role}
-              onValueChange={(v) =>
-                handleRoleChange(member.id, v as "viewer" | "editor")
-              }>
-              <SelectTrigger className="w-[130px] h-8 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="viewer">
-                  <span className="flex items-center gap-1.5">
-                    <Eye className="size-3" />
-                    Betrachter
-                  </span>
-                </SelectItem>
-                <SelectItem value="editor">
-                  <span className="flex items-center gap-1.5">
-                    <Pencil className="size-3" />
-                    Redakteur
-                  </span>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            className="relative rounded-lg border p-3 space-y-2">
             <Button
               variant="ghost"
               size="icon"
-              className="size-8 text-destructive"
+              className="absolute top-2 right-2 size-7 text-destructive"
               onClick={() => handleRemove(member.id)}>
               <Trash2 className="size-3.5" />
             </Button>
+            <div className="flex items-center gap-2 pr-8">
+              <Avatar className="size-8 shrink-0">
+                <AvatarFallback className="text-xs">
+                  {member.user.name.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">
+                  {member.user.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {member.user.email}
+                </p>
+              </div>
+            </div>
+            <div className="ml-10">
+              <Select
+                value={member.role}
+                onValueChange={(v) =>
+                  handleRoleChange(member.id, v as "viewer" | "editor")
+                }>
+                <SelectTrigger className="h-8 text-xs w-[130px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="viewer">
+                    <span className="flex items-center gap-1.5">
+                      <Eye className="size-3" />
+                      Betrachter
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="editor">
+                    <span className="flex items-center gap-1.5">
+                      <Pencil className="size-3" />
+                      Redakteur
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         ))}
 

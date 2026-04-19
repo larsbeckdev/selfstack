@@ -14,6 +14,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
 import { toast } from "sonner";
 
@@ -29,6 +36,7 @@ export function EditGroupDialog({
   const [name, setName] = useState(group.name);
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
+  const [columns, setColumns] = useState(group.columns ?? 0);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -36,7 +44,7 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl });
+      await updateGroup(group.id, { name, icon, iconUrl, columns });
       toast.success("Gruppe aktualisiert");
       router.refresh();
       onOpenChange(false);
@@ -71,6 +79,24 @@ export function EditGroupDialog({
               iconUrl={iconUrl}
               onIconUrlChange={setIconUrl}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Spalten</Label>
+            <Select
+              value={String(columns)}
+              onValueChange={(v) => setColumns(Number(v))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Auto</SelectItem>
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

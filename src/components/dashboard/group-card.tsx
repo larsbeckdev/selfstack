@@ -6,7 +6,9 @@ import {
   SortableContext,
   horizontalListSortingStrategy,
   verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useDroppable } from "@dnd-kit/core";
 import {
   GripVertical,
   MoreHorizontal,
@@ -67,6 +69,13 @@ export function GroupCard({
     (group.viewMode as TileViewMode) || "grid",
   );
   const isListView = currentViewMode === "list";
+  const hasColumns = group.columns > 0;
+
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: `group-droppable-${group.id}`,
+    data: { type: "group-droppable", groupId: group.id },
+    disabled: !isEditing,
+  });
 
   const handleDelete = async () => {
     try {
@@ -170,15 +179,27 @@ export function GroupCard({
         <SortableContext
           items={group.tiles.map((t) => t.id)}
           strategy={
-            isListView
-              ? verticalListSortingStrategy
-              : horizontalListSortingStrategy
+            hasColumns
+              ? rectSortingStrategy
+              : isListView
+                ? verticalListSortingStrategy
+                : horizontalListSortingStrategy
           }>
           <div
+            ref={setDroppableRef}
             className={
-              isListView
-                ? "flex flex-col gap-1 px-3 pb-3"
-                : "flex flex-wrap gap-2 px-3 pb-3"
+              hasColumns
+                ? `grid gap-2 px-3 pb-3${isEditing && group.tiles.length === 0 ? " min-h-[48px]" : ""}`
+                : isListView
+                  ? `flex flex-col gap-1 px-3 pb-3${isEditing && group.tiles.length === 0 ? " min-h-[48px]" : ""}`
+                  : `flex flex-wrap gap-2 px-3 pb-3${isEditing && group.tiles.length === 0 ? " min-h-[48px]" : ""}`
+            }
+            style={
+              hasColumns
+                ? {
+                    gridTemplateColumns: `repeat(${group.columns}, minmax(0, 1fr))`,
+                  }
+                : undefined
             }>
             {group.tiles.map((tile) => (
               <SortableTile

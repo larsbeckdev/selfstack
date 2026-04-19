@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   SortableContext,
   verticalListSortingStrategy,
+  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
   GripVertical,
@@ -140,8 +141,24 @@ export function CategoryCard({
             />
             <SortableContext
               items={category.groups.map((g) => g.id)}
-              strategy={verticalListSortingStrategy}>
-              <div className="space-y-4 px-4 pb-4">
+              strategy={
+                category.columns > 1
+                  ? rectSortingStrategy
+                  : verticalListSortingStrategy
+              }>
+              <div
+                className={
+                  category.columns > 1
+                    ? "grid gap-4 px-4 pb-4"
+                    : "space-y-4 px-4 pb-4"
+                }
+                style={
+                  category.columns > 1
+                    ? {
+                        gridTemplateColumns: `repeat(${category.columns}, minmax(0, 1fr))`,
+                      }
+                    : undefined
+                }>
                 {category.groups.map((group) => (
                   <SortableGroup
                     key={group.id}

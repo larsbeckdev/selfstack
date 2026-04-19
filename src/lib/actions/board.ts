@@ -225,6 +225,7 @@ const categorySchema = z.object({
   icon: z.string().default("folder"),
   iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1"),
+  columns: z.number().int().min(1).max(12).default(1),
   boardId: z.string(),
 });
 
@@ -294,6 +295,7 @@ const groupSchema = z.object({
     .enum(["grid", "grid-sm", "grid-lg", "list"])
     .default("grid")
     .optional(),
+  columns: z.number().int().min(0).max(12).default(0),
   categoryId: z.string(),
 });
 

@@ -78,6 +78,7 @@ model Category {
   icon    String  @default("folder")
   iconUrl String?
   color   String  @default("#6366f1")
+  columns Int     @default(1)
   order   Int     @default(0)
   boardId String
 
@@ -91,6 +92,7 @@ model Group {
   icon       String  @default("grid-3x3")
   iconUrl    String?
   viewMode   String  @default("grid")
+  columns    Int     @default(0)
   order      Int     @default(0)
   categoryId String
 

@@ -14,6 +14,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
 import { toast } from "sonner";
 
@@ -32,6 +39,7 @@ export function EditCategoryDialog({
     category.iconUrl ?? null,
   );
   const [color, setColor] = useState(category.color);
+  const [columns, setColumns] = useState(category.columns ?? 1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -39,7 +47,7 @@ export function EditCategoryDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateCategory(category.id, { name, icon, iconUrl, color });
+      await updateCategory(category.id, { name, icon, iconUrl, color, columns });
       toast.success("Kategorie aktualisiert");
       router.refresh();
       onOpenChange(false);
@@ -91,6 +99,23 @@ export function EditCategoryDialog({
                 className="flex-1"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Spalten</Label>
+            <Select
+              value={String(columns)}
+              onValueChange={(v) => setColumns(Number(v))}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
