@@ -47,7 +47,13 @@ export function EditCategoryDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateCategory(category.id, { name, icon, iconUrl, color, columns });
+      await updateCategory(category.id, {
+        name,
+        icon,
+        iconUrl,
+        color,
+        columns,
+      });
       toast.success("Kategorie aktualisiert");
       router.refresh();
       onOpenChange(false);

@@ -100,7 +100,11 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
         if (activeGroupId) break;
       }
 
-      if (!activeGroupId || activeTileIdx === -1 || activeGroupId === overGroupId) {
+      if (
+        !activeGroupId ||
+        activeTileIdx === -1 ||
+        activeGroupId === overGroupId
+      ) {
         return prev;
       }
 
@@ -117,7 +121,11 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
             const newTiles = [...g.tiles];
             if (overData?.type === "tile") {
               const overIndex = newTiles.findIndex((t) => t.id === over.id);
-              newTiles.splice(overIndex >= 0 ? overIndex : newTiles.length, 0, activeTile);
+              newTiles.splice(
+                overIndex >= 0 ? overIndex : newTiles.length,
+                0,
+                activeTile,
+              );
             } else {
               newTiles.push(activeTile);
             }
