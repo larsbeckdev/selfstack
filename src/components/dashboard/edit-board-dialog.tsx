@@ -48,7 +48,12 @@ export function EditBoardDialog({
 
     setLoading(true);
     try {
-      const updated = await updateBoard(board.id, { name, slug, icon, iconUrl });
+      const updated = await updateBoard(board.id, {
+        name,
+        slug,
+        icon,
+        iconUrl,
+      });
       toast.success("Board aktualisiert");
       onOpenChange(false);
       if (updated.slug !== board.slug) {

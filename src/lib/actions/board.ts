@@ -29,7 +29,10 @@ const boardSchema = z.object({
     .string()
     .min(1)
     .max(100)
-    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche")
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+    )
     .optional(),
   icon: z.string().default("layout-dashboard"),
   iconUrl: iconUrlSchema,
