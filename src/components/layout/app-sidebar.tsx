@@ -113,9 +113,7 @@ export function AppSidebar({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent side="right" align="start">
                       <DropdownMenuItem
-                        onClick={() =>
-                          router.push(`/board/${board.slug}`)
-                        }>
+                        onClick={() => router.push(`/board/${board.slug}`)}>
                         <ExternalLink className="mr-2 size-4" />
                         Öffnen
                       </DropdownMenuItem>
@@ -126,9 +124,7 @@ export function AppSidebar({
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
-                          router.push(
-                            `/board/${board.slug}?settings=true`,
-                          )
+                          router.push(`/board/${board.slug}?settings=true`)
                         }>
                         <Settings2 className="mr-2 size-4" />
                         Einstellungen
