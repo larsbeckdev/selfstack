@@ -30,6 +30,7 @@ import { SortableCategory } from "@/components/dashboard/sortable-category";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { TileCard } from "@/components/dashboard/tile-card";
 import { useTranslation } from "@/components/locale-provider";
+import { useRouter } from "next/navigation";
 
 export function BoardDndContext({ board }: { board: BoardWithContents }) {
   const dndId = useId();
