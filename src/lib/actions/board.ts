@@ -83,6 +83,7 @@ const boardSchema = z.object({
   icon: z.string().default("layout-dashboard"),
   iconUrl: iconUrlSchema,
   isPublic: z.boolean().default(false),
+  columns: z.number().int().min(1).max(6).default(1).optional(),
 });
 
 export async function createBoard(data: z.infer<typeof boardSchema>) {
