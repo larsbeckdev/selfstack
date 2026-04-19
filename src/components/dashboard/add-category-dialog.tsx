@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createCategory } from "@/lib/actions/board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +29,7 @@ export function AddCategoryDialog({
   const [icon, setIcon] = useState("folder");
   const [color, setColor] = useState("#6366f1");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +39,7 @@ export function AddCategoryDialog({
     try {
       await createCategory({ name, icon, color, boardId });
       toast.success("Kategorie erstellt");
+      router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("folder");

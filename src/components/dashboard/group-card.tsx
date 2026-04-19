@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   SortableContext,
   horizontalListSortingStrategy,
@@ -61,6 +62,7 @@ export function GroupCard({
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
+  const router = useRouter();
   const [currentViewMode, setCurrentViewMode] = useState<TileViewMode>(
     (group.viewMode as TileViewMode) || "grid",
   );
@@ -69,6 +71,7 @@ export function GroupCard({
   const handleDelete = async () => {
     try {
       await deleteGroup(group.id);
+      router.refresh();
       toast.success("Gruppe gelöscht");
     } catch {
       toast.error("Fehler beim Löschen");
@@ -144,6 +147,7 @@ export function GroupCard({
                   onClick={async () => {
                     try {
                       await duplicateGroup(group.id);
+                      router.refresh();
                       toast.success("Gruppe dupliziert");
                     } catch {
                       toast.error("Fehler beim Duplizieren");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateCategory } from "@/lib/actions/board";
 import type { Category } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ export function EditCategoryDialog({
   );
   const [color, setColor] = useState(category.color);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +41,7 @@ export function EditCategoryDialog({
     try {
       await updateCategory(category.id, { name, icon, iconUrl, color });
       toast.success("Kategorie aktualisiert");
+      router.refresh();
       onOpenChange(false);
     } catch {
       toast.error("Fehler beim Aktualisieren");

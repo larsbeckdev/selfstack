@@ -55,6 +55,7 @@ export function EditBoardDialog({
         iconUrl,
       });
       toast.success("Board aktualisiert");
+      router.refresh();
       onOpenChange(false);
       if (updated.slug !== board.slug) {
         router.replace(`/board/${updated.slug}`);

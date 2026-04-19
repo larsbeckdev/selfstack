@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createGroup } from "@/lib/actions/board";
 import type { CategoryWithGroups } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ export function AddGroupDialog({
   const [icon, setIcon] = useState("grid-3x3");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +47,7 @@ export function AddGroupDialog({
     try {
       await createGroup({ name, icon, categoryId });
       toast.success("Gruppe erstellt");
+      router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("grid-3x3");

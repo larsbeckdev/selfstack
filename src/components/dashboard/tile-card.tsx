@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   MoreHorizontal,
   Pencil,
@@ -37,6 +38,7 @@ export function TileCard({
 }) {
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
+  const router = useRouter();
 
   const iconColor = tile.color;
   const bg = tile.bgColor || undefined;
@@ -47,6 +49,7 @@ export function TileCard({
   const handleDelete = async () => {
     try {
       await deleteTile(tile.id);
+      router.refresh();
       toast.success("Kachel gelöscht");
     } catch {
       toast.error("Fehler beim Löschen");
@@ -77,6 +80,7 @@ export function TileCard({
           onClick={async () => {
             try {
               await duplicateTile(tile.id);
+              router.refresh();
               toast.success("Kachel dupliziert");
             } catch {
               toast.error("Fehler beim Duplizieren");

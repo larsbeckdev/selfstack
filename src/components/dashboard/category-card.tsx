@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -46,10 +47,12 @@ export function CategoryCard({
   const [open, setOpen] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
+  const router = useRouter();
 
   const handleDelete = async () => {
     try {
       await deleteCategory(category.id);
+      router.refresh();
       toast.success("Kategorie gelöscht");
     } catch {
       toast.error("Fehler beim Löschen");
@@ -110,6 +113,7 @@ export function CategoryCard({
                     onClick={async () => {
                       try {
                         await duplicateCategory(category.id);
+                        router.refresh();
                         toast.success("Kategorie dupliziert");
                       } catch {
                         toast.error("Fehler beim Duplizieren");

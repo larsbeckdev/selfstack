@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { createTile } from "@/lib/actions/board";
 import type { CategoryWithGroups } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ export function AddTileDialog({
   const [description, setDescription] = useState("");
   const [groupId, setGroupId] = useState(allGroups[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,6 +110,7 @@ export function AddTileDialog({
         groupId,
       });
       toast.success("Kachel erstellt");
+      router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("square");

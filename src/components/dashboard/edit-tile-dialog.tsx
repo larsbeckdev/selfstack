@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateTile } from "@/lib/actions/board";
 import type { Tile } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
@@ -75,6 +76,7 @@ export function EditTileDialog({
   const [url, setUrl] = useState(tile.url ?? "");
   const [description, setDescription] = useState(tile.description ?? "");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +96,7 @@ export function EditTileDialog({
         description: description || undefined,
       });
       toast.success("Kachel aktualisiert");
+      router.refresh();
       onOpenChange(false);
     } catch {
       toast.error("Fehler beim Aktualisieren");

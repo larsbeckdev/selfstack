@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { updateGroup } from "@/lib/actions/board";
 import type { Group } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ export function EditGroupDialog({
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +38,7 @@ export function EditGroupDialog({
     try {
       await updateGroup(group.id, { name, icon, iconUrl });
       toast.success("Gruppe aktualisiert");
+      router.refresh();
       onOpenChange(false);
     } catch {
       toast.error("Fehler beim Aktualisieren");

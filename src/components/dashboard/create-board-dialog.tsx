@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { createBoard } from "@/lib/actions/board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ export function CreateBoardDialog({ children }: { children: ReactNode }) {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("layout-dashboard");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +32,7 @@ export function CreateBoardDialog({ children }: { children: ReactNode }) {
     try {
       await createBoard({ name, icon, isPublic: false });
       toast.success("Board erstellt");
+      router.refresh();
       setOpen(false);
       setName("");
       setIcon("layout-dashboard");
