@@ -14,10 +14,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function ChangePasswordForm() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,23 +28,23 @@ export function ChangePasswordForm() {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      toast.error("Passwörter stimmen nicht überein");
+      toast.error(t("auth.passwordMismatch"));
       return;
     }
 
     if (newPassword.length < 8) {
-      toast.error("Passwort muss mindestens 8 Zeichen haben");
+      toast.error(t("auth.passwordMinLength"));
       return;
     }
 
     setLoading(true);
     try {
       await forceChangePassword(newPassword);
-      toast.success("Passwort geändert");
+      toast.success(t("settings.passwordChanged"));
       router.push("/dashboard");
     } catch (err) {
       toast.error(
-        err instanceof Error ? err.message : "Fehler beim Ändern des Passworts",
+        err instanceof Error ? err.message : t("auth.passwordChangeFailed"),
       );
     } finally {
       setLoading(false);
@@ -55,40 +57,40 @@ export function ChangePasswordForm() {
         <div className="mx-auto mb-2 flex size-12 items-center justify-center rounded-full bg-primary/10">
           <KeyRound className="size-6 text-primary" />
         </div>
-        <CardTitle>Passwort ändern</CardTitle>
-        <CardDescription>
-          Du musst dein Passwort ändern, bevor du fortfahren kannst.
-        </CardDescription>
+        <CardTitle>{t("auth.changePasswordTitle")}</CardTitle>
+        <CardDescription>{t("auth.changePasswordRequired")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="new-password">Neues Passwort</Label>
+            <Label htmlFor="new-password">{t("settings.newPassword")}</Label>
             <Input
               id="new-password"
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Mindestens 8 Zeichen"
+              placeholder={t("auth.passwordPlaceholder")}
               required
               minLength={8}
               autoFocus
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="confirm-password">Passwort bestätigen</Label>
+            <Label htmlFor="confirm-password">
+              {t("auth.confirmPassword")}
+            </Label>
             <Input
               id="confirm-password"
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Passwort wiederholen"
+              placeholder={t("auth.confirmPasswordPlaceholder")}
               required
               minLength={8}
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Speichern..." : "Passwort speichern"}
+            {loading ? t("common.saving") : t("auth.savePassword")}
           </Button>
         </form>
       </CardContent>

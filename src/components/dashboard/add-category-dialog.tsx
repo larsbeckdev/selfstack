@@ -14,6 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function AddCategoryDialog({
@@ -30,6 +31,7 @@ export function AddCategoryDialog({
   const [color, setColor] = useState("#6366f1");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,14 +40,14 @@ export function AddCategoryDialog({
     setLoading(true);
     try {
       await createCategory({ name, icon, color, boardId });
-      toast.success("Kategorie erstellt");
+      toast.success(t("category.created"));
       router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("folder");
       setColor("#6366f1");
     } catch {
-      toast.error("Fehler beim Erstellen");
+      toast.error(t("error.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -55,25 +57,25 @@ export function AddCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Neue Kategorie</DialogTitle>
+          <DialogTitle>{t("category.create")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="cat-name">Name</Label>
+            <Label htmlFor="cat-name">{t("common.name")}</Label>
             <Input
               id="cat-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="z.B. Entwicklung"
+              placeholder={t("category.namePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cat-color">Farbe</Label>
+            <Label htmlFor="cat-color">{t("common.color")}</Label>
             <div className="flex items-center gap-2">
               <input
                 id="cat-color"
@@ -91,7 +93,7 @@ export function AddCategoryDialog({
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Erstellen..." : "Erstellen"}
+              {loading ? t("common.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

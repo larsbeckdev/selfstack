@@ -11,10 +11,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getTranslator } from "@/lib/i18n/server";
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+  const t = await getTranslator();
 
   const boards = await db.board.findMany({
     where: { userId: session.user.id },
@@ -29,9 +31,11 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t("dashboard.title")}
+        </h1>
         <p className="text-muted-foreground">
-          Willkommen zurück, {session.user.name}
+          {t("dashboard.welcomeBack")}, {session.user.name}
         </p>
       </div>
 
@@ -48,7 +52,7 @@ export default async function DashboardPage() {
                     <div>
                       <CardTitle className="text-base">{board.name}</CardTitle>
                       <CardDescription>
-                        {board._count.categories} Kategorien
+                        {board._count.categories} {t("public.categories")}
                       </CardDescription>
                     </div>
                   </div>
@@ -58,7 +62,7 @@ export default async function DashboardPage() {
                     ) : (
                       <Lock className="mr-1 size-3" />
                     )}
-                    {board.isPublic ? "Öffentlich" : "Privat"}
+                    {board.isPublic ? t("common.public") : t("common.private")}
                   </Badge>
                 </div>
               </CardHeader>
@@ -69,10 +73,8 @@ export default async function DashboardPage() {
         {boards.length === 0 && (
           <Card className="col-span-full">
             <CardHeader className="text-center">
-              <CardTitle>Keine Boards vorhanden</CardTitle>
-              <CardDescription>
-                Erstelle dein erstes Board über die Sidebar oder den + Button
-              </CardDescription>
+              <CardTitle>{t("dashboard.noBoardsTitle")}</CardTitle>
+              <CardDescription>{t("dashboard.noBoardsDesc")}</CardDescription>
             </CardHeader>
           </Card>
         )}

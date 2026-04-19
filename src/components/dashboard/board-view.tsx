@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Lock, Unlock, Copy, Settings } from "lucide-react";
+import { Plus, Lock, Unlock, Settings } from "lucide-react";
 import type { BoardRole, BoardWithContents } from "@/types";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +21,7 @@ import { AddCategoryDialog } from "@/components/dashboard/add-category-dialog";
 import { AddGroupDialog } from "@/components/dashboard/add-group-dialog";
 import { AddTileDialog } from "@/components/dashboard/add-tile-dialog";
 import { BoardSettingsDialog } from "@/components/dashboard/board-settings-dialog";
-import { toast } from "sonner";
+import { useTranslation } from "@/components/locale-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 
 export function BoardView({
@@ -38,6 +38,7 @@ export function BoardView({
   const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useTranslation();
 
   // Auto-open settings when ?settings=true is in the URL
   useEffect(() => {
@@ -49,37 +50,15 @@ export function BoardView({
 
   const canEdit = boardRole === "owner" || boardRole === "editor";
 
-  const copyBoardLink = () => {
-    const url = `${window.location.origin}/board/${board.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Link kopiert");
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight">{board.name}</h1>
-            {isEditing && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-7"
-                    onClick={copyBoardLink}>
-                    <Copy className="size-3.5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Link kopieren</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
           </div>
           <p className="text-sm text-muted-foreground">
-            {board.categories.length} Kategorien
+            {board.categories.length} {t("public.categories")}
           </p>
         </div>
 
@@ -95,7 +74,7 @@ export function BoardView({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Board-Einstellungen</p>
+              <p>{t("board.settings")}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -112,15 +91,15 @@ export function BoardView({
                     <Lock className="sm:mr-2 size-3.5" />
                   )}
                   <span className="hidden sm:inline">
-                    {isEditing ? "Bearbeiten" : "Gesperrt"}
+                    {isEditing ? t("common.edit") : t("common.locked")}
                   </span>
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>
                   {isEditing
-                    ? "Bearbeitungsmodus aktiv – Klicke zum Sperren"
-                    : "Gesperrt – Klicke zum Bearbeiten"}
+                    ? t("board.editModeActive")
+                    : t("board.editModeLocked")}
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -131,24 +110,24 @@ export function BoardView({
               <DropdownMenuTrigger asChild>
                 <Button size="sm">
                   <Plus className="sm:mr-2 size-4" />
-                  <span className="hidden sm:inline">Hinzufügen</span>
+                  <span className="hidden sm:inline">{t("common.add")}</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setAddCategoryOpen(true)}>
-                  Kategorie
+                  {t("board.addCategory")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setAddGroupOpen(true)}
                   disabled={board.categories.length === 0}>
-                  Gruppe
+                  {t("board.addGroup")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => setAddTileOpen(true)}
                   disabled={
                     board.categories.flatMap((c) => c.groups).length === 0
                   }>
-                  Kachel
+                  {t("board.addTile")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

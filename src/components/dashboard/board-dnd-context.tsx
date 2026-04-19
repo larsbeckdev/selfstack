@@ -29,9 +29,11 @@ import {
 import { SortableCategory } from "@/components/dashboard/sortable-category";
 import { CategoryCard } from "@/components/dashboard/category-card";
 import { TileCard } from "@/components/dashboard/tile-card";
+import { useTranslation } from "@/components/locale-provider";
 
 export function BoardDndContext({ board }: { board: BoardWithContents }) {
   const dndId = useId();
+  const { t } = useTranslation();
   const [categories, setCategories] = useState(board.categories);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeType, setActiveType] = useState<
@@ -269,10 +271,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
           ))}
           {categories.length === 0 && (
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center">
-              <p className="text-muted-foreground">
-                Dieses Board ist noch leer. Füge eine Kategorie hinzu, um zu
-                starten.
-              </p>
+              <p className="text-muted-foreground">{t("board.empty")}</p>
             </div>
           )}
         </div>

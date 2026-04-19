@@ -22,7 +22,17 @@ const de = {
   "common.description": "Beschreibung",
   "common.optional": "optional",
   "common.public": "Öffentlich",
+  "common.private": "Privat",
   "common.reset": "Zurücksetzen",
+  "common.add": "Hinzufügen",
+  "common.copy": "Kopieren",
+  "common.link": "Link",
+  "common.linkCopied": "Link kopiert",
+  "common.color": "Farbe",
+  "common.columns": "Spalten",
+  "common.columnsAuto": "Auto",
+  "common.locked": "Gesperrt",
+  "common.actions": "Aktionen",
 
   // Auth
   "auth.login": "Anmelden",
@@ -46,6 +56,12 @@ const de = {
   "auth.invalidCredentials": "Ungültige Anmeldedaten",
   "auth.emailInUse": "E-Mail-Adresse wird bereits verwendet",
   "auth.registrationDisabled": "Registrierung ist derzeit deaktiviert",
+  "auth.passwordMinLength": "Passwort muss mindestens 8 Zeichen haben",
+  "auth.passwordChangeFailed": "Fehler beim Ändern des Passworts",
+  "auth.changePasswordTitle": "Passwort ändern",
+  "auth.changePasswordRequired":
+    "Du musst dein Passwort ändern, bevor du fortfahren kannst.",
+  "auth.savePassword": "Passwort speichern",
 
   // Navigation
   "nav.dashboard": "Übersicht",
@@ -59,7 +75,11 @@ const de = {
   // Dashboard
   "dashboard.title": "Dashboard",
   "dashboard.welcome": "Willkommen",
+  "dashboard.welcomeBack": "Willkommen zurück",
   "dashboard.noBoards": "Noch keine Boards erstellt",
+  "dashboard.noBoardsTitle": "Keine Boards vorhanden",
+  "dashboard.noBoardsDesc":
+    "Erstelle dein erstes Board über die Sidebar oder den + Button",
   "dashboard.createFirst": "Erstelle dein erstes Board",
 
   // Board
@@ -73,6 +93,30 @@ const de = {
   "board.addCategory": "Kategorie",
   "board.addGroup": "Gruppe",
   "board.addTile": "Kachel",
+  "board.created": "Board erstellt",
+  "board.deleted": "Board gelöscht",
+  "board.settings": "Board-Einstellungen",
+  "board.members": "Mitglieder",
+  "board.newTitle": "Neues Board",
+  "board.namePlaceholder": "z.B. Arbeit, Privat, Projekte...",
+  "board.editModeActive": "Bearbeitungsmodus aktiv – Klicke zum Sperren",
+  "board.editModeLocked": "Gesperrt – Klicke zum Bearbeiten",
+  "board.linkSlug": "Link / URL",
+  "board.slugInvalid": "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+  "board.slugInUse": "Dieser Link wird bereits verwendet",
+  "board.visibility": "Sichtbarkeit",
+  "board.visibilityPublic": "Jeder mit dem Link kann dieses Board sehen",
+  "board.visibilityPrivate": "Nur du und Mitglieder können dieses Board sehen",
+  "board.publicEnabled": "Board ist jetzt öffentlich",
+  "board.publicDisabled": "Board ist jetzt privat",
+  "board.deleteSection": "Board löschen",
+  "board.deleteSectionDesc":
+    "Alle Kategorien, Gruppen und Kacheln werden gelöscht.",
+  "board.deleteConfirmTitle": "Board löschen?",
+  "board.deleteConfirmDesc":
+    "Alle Kategorien, Gruppen und Kacheln in diesem Board werden ebenfalls gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+  "board.empty":
+    "Dieses Board ist noch leer. Füge eine Kategorie hinzu, um zu starten.",
 
   // Category
   "category.create": "Neue Kategorie",
@@ -83,6 +127,7 @@ const de = {
   "category.duplicated": "Kategorie dupliziert",
   "category.groups": "Gruppen",
   "category.noGroups": "Noch keine Gruppen in dieser Kategorie",
+  "category.namePlaceholder": "z.B. Entwicklung",
 
   // Group
   "group.create": "Neue Gruppe",
@@ -95,6 +140,11 @@ const de = {
   "group.viewMedium": "Mittel",
   "group.viewLarge": "Groß",
   "group.viewList": "Liste",
+  "group.tileCount": "Kacheln",
+  "group.noTiles": "Keine Kacheln",
+  "group.changeViewFailed": "Fehler beim Ändern der Ansicht",
+  "group.namePlaceholder": "z.B. Frontend",
+  "group.selectCategory": "Kategorie wählen",
 
   // Tile
   "tile.create": "Neue Kachel",
@@ -112,6 +162,28 @@ const de = {
   "tile.borderMatchesBg": "Rahmen = Hintergrund",
   "tile.group": "Gruppe",
   "tile.groupSelect": "Gruppe wählen",
+  "tile.namePlaceholder": "z.B. GitHub",
+  "tile.urlOptional": "URL (optional)",
+  "tile.descriptionOptional": "Beschreibung (optional)",
+  "tile.descriptionPlaceholder": "Kurze Beschreibung...",
+
+  // Members
+  "members.title": "Mitglieder",
+  "members.owner": "Besitzer",
+  "members.viewer": "Betrachter",
+  "members.editor": "Redakteur",
+  "members.user": "Benutzer",
+  "members.selectUser": "Benutzer auswählen…",
+  "members.noAvailable": "Keine verfügbaren Benutzer",
+  "members.added": "Mitglied hinzugefügt",
+  "members.removed": "Mitglied entfernt",
+  "members.loadFailed": "Fehler beim Laden der Mitglieder",
+  "members.addFailed": "Fehler beim Hinzufügen",
+  "members.removeFailed": "Fehler beim Entfernen",
+  "members.roleChanged": "Rolle geändert",
+  "members.roleChangeFailed": "Fehler beim Ändern der Rolle",
+  "members.loading": "Lade Mitglieder...",
+  "members.empty": "Noch keine Mitglieder hinzugefügt",
 
   // Settings
   "settings.title": "Einstellungen",
@@ -119,6 +191,7 @@ const de = {
   "settings.appearance": "Darstellung",
   "settings.account": "Konto",
   "settings.boards": "Boards",
+  "settings.boardsDesc": "Verwalte die Sichtbarkeit deiner Boards",
   "settings.profile": "Profil",
   "settings.profileDesc": "Ändere deinen Namen und deine E-Mail-Adresse",
   "settings.profileUpdated": "Profil aktualisiert",
@@ -163,6 +236,45 @@ const de = {
   "admin.registrationEnabledDesc":
     "Neue Benutzer können sich selbst registrieren",
   "admin.registrationSaved": "Einstellung gespeichert",
+  "admin.userManagement": "Benutzerverwaltung",
+  "admin.usersRegistered": "Benutzer registriert",
+  "admin.createUser": "Benutzer erstellen",
+  "admin.createUserTitle": "Neuen Benutzer erstellen",
+  "admin.createUserDesc":
+    "Erstelle ein Konto mit Einmalpasswort oder eigenem Passwort.",
+  "admin.generatePassword":
+    "Einmalpasswort generieren (Benutzer muss Passwort beim ersten Login ändern)",
+  "admin.sendCredentials": "Zugangsdaten per E-Mail versenden",
+  "admin.role": "Rolle",
+  "admin.roleUser": "Benutzer",
+  "admin.roleAdmin": "Administrator",
+  "admin.roleAdminShort": "Admin",
+  "admin.colName": "Name",
+  "admin.colEmail": "E-Mail",
+  "admin.colRole": "Rolle",
+  "admin.colBoards": "Boards",
+  "admin.colCreated": "Erstellt",
+  "admin.makeAdmin": "Zum Admin machen",
+  "admin.makeUser": "Zum Benutzer machen",
+  "admin.resetPassword": "Passwort zurücksetzen",
+  "admin.sendPasswordEmail": "Neues Passwort per E-Mail",
+  "admin.deleteUserTitle": "Benutzer löschen?",
+  "admin.deleteUserDesc":
+    "{name} und alle zugehörigen Daten werden unwiderruflich gelöscht.",
+  "admin.oneTimePasswordFor": "Einmalpasswort für",
+  "admin.oneTimePasswordDesc":
+    "Dieses Passwort wird nur einmal angezeigt. Der Benutzer muss es beim ersten Login ändern.",
+  "admin.sendByEmail": "Per E-Mail versenden",
+  "admin.userCreated": "Benutzer erstellt",
+  "admin.userCreatedEmailed":
+    "Benutzer erstellt – Zugangsdaten per E-Mail versendet",
+  "admin.userDeleted": "Benutzer gelöscht",
+  "admin.roleUpdated": "Rolle aktualisiert",
+  "admin.passwordEmailed": "Neues Passwort per E-Mail versendet",
+  "admin.passwordEmailed2": "Passwort per E-Mail versendet",
+  "admin.copiedToClipboard": "In Zwischenablage kopiert",
+  "admin.resetFailed": "Fehler beim Zurücksetzen",
+  "admin.sendFailed": "Fehler beim Versenden",
 
   // Public
   "public.boards": "Öffentliche Boards",
@@ -180,6 +292,37 @@ const de = {
   "error.createFailed": "Fehler beim Erstellen",
   "error.deleteFailed": "Fehler beim Löschen",
   "error.duplicateFailed": "Fehler beim Duplizieren",
+  "error.changeFailed": "Fehler beim Ändern",
+
+  // Media
+  "media.loadFailed": "Fehler beim Laden der Medien",
+  "media.search": "Medien durchsuchen...",
+  "media.type": "Typ",
+  "media.all": "Alle",
+  "media.sort": "Sortierung",
+  "media.sortDateDesc": "Neueste zuerst",
+  "media.sortDateAsc": "Älteste zuerst",
+  "media.sortNameAsc": "Name A–Z",
+  "media.sortNameDesc": "Name Z–A",
+  "media.sortSizeDesc": "Größte zuerst",
+  "media.sortSizeAsc": "Kleinste zuerst",
+  "media.upload": "Hochladen",
+  "media.uploading": "Wird hochgeladen...",
+  "media.uploadFailed": "Upload fehlgeschlagen",
+  "media.uploadedOne": "1 Datei hochgeladen",
+  "media.uploadedMany": "{count} Dateien hochgeladen",
+  "media.none": "Noch keine Medien hochgeladen",
+  "media.notFound": "Keine Medien gefunden",
+  "media.uploadFirst": "Erstes Icon hochladen",
+  "media.name": "Name",
+  "media.size": "Größe",
+  "media.date": "Datum",
+  "media.countOf": "von",
+  "media.files": "Dateien",
+  "media.deleted": "Datei gelöscht",
+  "media.deleteTitle": "Datei löschen?",
+  "media.deleteDesc":
+    '"{name}" wird unwiderruflich gelöscht. Icons, die diese Datei verwenden, werden danach nicht mehr angezeigt.',
 } as const;
 
 export type TranslationKey = keyof typeof de;

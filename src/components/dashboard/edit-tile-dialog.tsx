@@ -17,6 +17,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 function ColorInput({
@@ -77,6 +78,7 @@ export function EditTileDialog({
   const [description, setDescription] = useState(tile.description ?? "");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,11 +97,11 @@ export function EditTileDialog({
         url: url || undefined,
         description: description || undefined,
       });
-      toast.success("Kachel aktualisiert");
+      toast.success(t("tile.updated"));
       router.refresh();
       onOpenChange(false);
     } catch {
-      toast.error("Fehler beim Aktualisieren");
+      toast.error(t("error.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -109,11 +111,11 @@ export function EditTileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Kachel bearbeiten</DialogTitle>
+          <DialogTitle>{t("tile.edit")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-tile-name">Name</Label>
+            <Label htmlFor="edit-tile-name">{t("common.name")}</Label>
             <Input
               id="edit-tile-name"
               value={name}
@@ -122,7 +124,7 @@ export function EditTileDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker
               value={icon}
               onChange={setIcon}
@@ -133,17 +135,17 @@ export function EditTileDialog({
 
           {/* Colors */}
           <div className="space-y-3">
-            <Label>Farben</Label>
+            <Label>{t("tile.colors")}</Label>
             <div className="grid grid-cols-2 gap-3">
               <ColorInput
                 id="edit-tile-color"
-                label="Icon"
+                label={t("tile.colorIcon")}
                 value={color}
                 onChange={setColor}
               />
               <ColorInput
                 id="edit-tile-bg"
-                label="Hintergrund"
+                label={t("tile.colorBg")}
                 value={bgColor || color + "18"}
                 onChange={(v) => setBgColor(v)}
               />
@@ -158,12 +160,12 @@ export function EditTileDialog({
                 }}
               />
               <Label htmlFor="edit-border-match" className="text-xs">
-                Rahmen = Hintergrund
+                {t("tile.borderMatchesBg")}
               </Label>
             </div>
             <ColorInput
               id="edit-tile-border"
-              label="Rahmen"
+              label={t("tile.colorBorder")}
               value={
                 borderMatchesBg
                   ? bgColor || color + "40"
@@ -175,7 +177,7 @@ export function EditTileDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="edit-tile-url">URL (optional)</Label>
+            <Label htmlFor="edit-tile-url">{t("tile.urlOptional")}</Label>
             <Input
               id="edit-tile-url"
               value={url}
@@ -185,7 +187,9 @@ export function EditTileDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-tile-desc">Beschreibung (optional)</Label>
+            <Label htmlFor="edit-tile-desc">
+              {t("tile.descriptionOptional")}
+            </Label>
             <Textarea
               id="edit-tile-desc"
               value={description}
@@ -195,7 +199,7 @@ export function EditTileDialog({
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Speichern..." : "Speichern"}
+              {loading ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

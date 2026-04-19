@@ -43,7 +43,7 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
         <CardDescription>{t("settings.profileDesc")}</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pb-6">
           <div className="space-y-2">
             <Label htmlFor="settings-name">{t("common.name")}</Label>
             <Input

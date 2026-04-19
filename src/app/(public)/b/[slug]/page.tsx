@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Globe, Layers, LogIn } from "lucide-react";
+import { getTranslator } from "@/lib/i18n/server";
 
 export default async function PublicBoardPage({
   params,
@@ -13,6 +14,7 @@ export default async function PublicBoardPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const t = await getTranslator();
 
   const board = await db.board.findFirst({
     where: { slug, isPublic: true },
@@ -47,7 +49,7 @@ export default async function PublicBoardPage({
             <Button variant="ghost" size="sm" asChild>
               <Link href="/login">
                 <LogIn className="mr-2 size-4" />
-                Login
+                {t("auth.login")}
               </Link>
             </Button>
           </div>
@@ -62,12 +64,12 @@ export default async function PublicBoardPage({
           <div>
             <h1 className="text-2xl font-bold">{board.name}</h1>
             <p className="text-sm text-muted-foreground">
-              von {board.user.name}
+              {t("public.by")} {board.user.name}
             </p>
           </div>
           <Badge variant="secondary" className="ml-auto">
             <Globe className="mr-1 size-3" />
-            Öffentlich
+            {t("common.public")}
           </Badge>
         </div>
 

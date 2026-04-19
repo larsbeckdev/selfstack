@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function BoardSettingsDialog({
@@ -70,21 +71,22 @@ export function BoardSettingsDialog({
 }) {
   const router = useRouter();
   const isOwner = boardRole === "owner";
+  const { t } = useTranslation();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg overflow-hidden">
         <DialogHeader>
-          <DialogTitle>Board-Einstellungen</DialogTitle>
+          <DialogTitle>{t("board.settings")}</DialogTitle>
         </DialogHeader>
         <Tabs defaultValue="general">
           <TabsList className="w-full">
             <TabsTrigger value="general" className="flex-1">
-              Allgemein
+              {t("settings.general")}
             </TabsTrigger>
             {isOwner && (
               <TabsTrigger value="members" className="flex-1">
-                Mitglieder
+                {t("members.title")}
               </TabsTrigger>
             )}
           </TabsList>
@@ -134,6 +136,7 @@ function GeneralTab({
   const [isPublic, setIsPublic] = useState(board.isPublic);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 
@@ -147,7 +150,7 @@ function GeneralTab({
         icon,
         iconUrl,
       });
-      toast.success("Board aktualisiert");
+      toast.success(t("board.updated"));
       router.refresh();
       if (updated.slug !== board.slug) {
         router.replace(`/board/${updated.slug}`);
@@ -155,8 +158,8 @@ function GeneralTab({
     } catch (err) {
       const msg =
         err instanceof Error && err.message === "Slug already in use"
-          ? "Dieser Link wird bereits verwendet"
-          : "Fehler beim Aktualisieren";
+          ? t("board.slugInUse")
+          : t("error.updateFailed");
       toast.error(msg);
     } finally {
       setSaving(false);
@@ -170,10 +173,10 @@ function GeneralTab({
       setIsPublic(checked);
       router.refresh();
       toast.success(
-        checked ? "Board ist jetzt öffentlich" : "Board ist jetzt privat",
+        checked ? t("board.publicEnabled") : t("board.publicDisabled"),
       );
     } catch {
-      toast.error("Fehler beim Ändern");
+      toast.error(t("error.changeFailed"));
     } finally {
       setLoading(false);
     }
@@ -182,18 +185,18 @@ function GeneralTab({
   const copyLink = () => {
     const url = `${window.location.origin}/board/${board.slug}`;
     navigator.clipboard.writeText(url);
-    toast.success("Link kopiert");
+    toast.success(t("common.linkCopied"));
   };
 
   const handleDelete = async () => {
     try {
       await deleteBoard(board.id);
       router.refresh();
-      toast.success("Board gelöscht");
+      toast.success(t("board.deleted"));
       onClose();
       router.push("/dashboard");
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("error.deleteFailed"));
     }
   };
 
@@ -209,7 +212,7 @@ function GeneralTab({
       {isOwner && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="settings-board-name">Name</Label>
+            <Label htmlFor="settings-board-name">{t("common.name")}</Label>
             <Input
               id="settings-board-name"
               value={name}
@@ -217,7 +220,7 @@ function GeneralTab({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="settings-board-slug">Link / URL</Label>
+            <Label htmlFor="settings-board-slug">{t("board.linkSlug")}</Label>
             <div className="flex items-center gap-0">
               <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
                 /board/
@@ -231,12 +234,12 @@ function GeneralTab({
             </div>
             {slug && !slugValid && (
               <p className="text-xs text-destructive">
-                Nur Kleinbuchstaben, Zahlen und Bindestriche
+                {t("board.slugInvalid")}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker
               value={icon}
               onChange={setIcon}
@@ -249,7 +252,7 @@ function GeneralTab({
               onClick={handleSave}
               disabled={saving || !name.trim() || !slugValid}
               className="w-full">
-              {saving ? "Speichern..." : "Speichern"}
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           )}
         </div>
@@ -265,11 +268,11 @@ function GeneralTab({
               <Lock className="size-5 text-muted-foreground" />
             )}
             <div>
-              <p className="text-sm font-medium">Sichtbarkeit</p>
+              <p className="text-sm font-medium">{t("board.visibility")}</p>
               <p className="text-xs text-muted-foreground">
                 {isPublic
-                  ? "Jeder mit dem Link kann dieses Board sehen"
-                  : "Nur du und Mitglieder können dieses Board sehen"}
+                  ? t("board.visibilityPublic")
+                  : t("board.visibilityPrivate")}
               </p>
             </div>
           </div>
@@ -290,7 +293,7 @@ function GeneralTab({
         />
         <Button variant="outline" size="sm" onClick={copyLink}>
           <Copy className="mr-2 size-3.5" />
-          Kopieren
+          {t("common.copy")}
         </Button>
       </div>
 
@@ -300,32 +303,32 @@ function GeneralTab({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-destructive">
-                Board löschen
+                {t("board.deleteSection")}
               </p>
               <p className="text-xs text-muted-foreground">
-                Alle Kategorien, Gruppen und Kacheln werden gelöscht.
+                {t("board.deleteSectionDesc")}
               </p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
                   <Trash2 className="mr-2 size-3.5" />
-                  Löschen
+                  {t("common.delete")}
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Board löschen?</AlertDialogTitle>
+                  <AlertDialogTitle>
+                    {t("board.deleteConfirmTitle")}
+                  </AlertDialogTitle>
                   <AlertDialogDescription>
-                    Alle Kategorien, Gruppen und Kacheln in diesem Board werden
-                    ebenfalls gelöscht. Diese Aktion kann nicht rückgängig
-                    gemacht werden.
+                    {t("board.deleteConfirmDesc")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDelete}>
-                    Löschen
+                    {t("common.delete")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -354,6 +357,7 @@ function MembersTab({ boardId }: { boardId: string }) {
   const [selectedUserId, setSelectedUserId] = useState("");
   const [role, setRole] = useState<"viewer" | "editor">("viewer");
   const [adding, setAdding] = useState(false);
+  const { t } = useTranslation();
 
   const loadData = async () => {
     try {
@@ -365,7 +369,7 @@ function MembersTab({ boardId }: { boardId: string }) {
       setMembers(memberData.members);
       setAvailableUsers(users);
     } catch {
-      toast.error("Fehler beim Laden der Mitglieder");
+      toast.error(t("members.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -384,11 +388,9 @@ function MembersTab({ boardId }: { boardId: string }) {
       setMembers((prev) => [...prev, member]);
       setAvailableUsers((prev) => prev.filter((u) => u.id !== selectedUserId));
       setSelectedUserId("");
-      toast.success("Mitglied hinzugefügt");
+      toast.success(t("members.added"));
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Fehler beim Hinzufügen",
-      );
+      toast.error(err instanceof Error ? err.message : t("members.addFailed"));
     } finally {
       setAdding(false);
     }
@@ -401,9 +403,9 @@ function MembersTab({ boardId }: { boardId: string }) {
     try {
       const updated = await updateBoardMemberRole(memberId, newRole);
       setMembers((prev) => prev.map((m) => (m.id === memberId ? updated : m)));
-      toast.success("Rolle geändert");
+      toast.success(t("members.roleChanged"));
     } catch {
-      toast.error("Fehler beim Ändern der Rolle");
+      toast.error(t("members.roleChangeFailed"));
     }
   };
 
@@ -417,16 +419,16 @@ function MembersTab({ boardId }: { boardId: string }) {
           [...prev, removed.user].sort((a, b) => a.name.localeCompare(b.name)),
         );
       }
-      toast.success("Mitglied entfernt");
+      toast.success(t("members.removed"));
     } catch {
-      toast.error("Fehler beim Entfernen");
+      toast.error(t("members.removeFailed"));
     }
   };
 
   if (loading) {
     return (
       <div className="py-8 text-center text-sm text-muted-foreground">
-        Lade Mitglieder...
+        {t("members.loading")}
       </div>
     );
   }
@@ -435,15 +437,15 @@ function MembersTab({ boardId }: { boardId: string }) {
     <div className="space-y-4">
       {/* Add member */}
       <div className="space-y-2">
-        <Label className="text-xs">Benutzer</Label>
+        <Label className="text-xs">{t("members.user")}</Label>
         <Select value={selectedUserId} onValueChange={setSelectedUserId}>
           <SelectTrigger>
-            <SelectValue placeholder="Benutzer auswählen…" />
+            <SelectValue placeholder={t("members.selectUser")} />
           </SelectTrigger>
           <SelectContent>
             {availableUsers.length === 0 ? (
               <div className="py-2 text-center text-xs text-muted-foreground">
-                Keine verfügbaren Benutzer
+                {t("members.noAvailable")}
               </div>
             ) : (
               availableUsers.map((u) => (
@@ -465,8 +467,8 @@ function MembersTab({ boardId }: { boardId: string }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="viewer">Betrachter</SelectItem>
-              <SelectItem value="editor">Redakteur</SelectItem>
+              <SelectItem value="viewer">{t("members.viewer")}</SelectItem>
+              <SelectItem value="editor">{t("members.editor")}</SelectItem>
             </SelectContent>
           </Select>
           <Button
@@ -474,7 +476,7 @@ function MembersTab({ boardId }: { boardId: string }) {
             disabled={adding || !selectedUserId}
             onClick={handleAdd}>
             <UserPlus className="mr-2 size-3.5" />
-            Hinzufügen
+            {t("common.add")}
           </Button>
         </div>
       </div>
@@ -497,7 +499,7 @@ function MembersTab({ boardId }: { boardId: string }) {
             </div>
             <Badge variant="outline" className="gap-1 shrink-0">
               <Crown className="size-3" />
-              Besitzer
+              {t("members.owner")}
             </Badge>
           </div>
         )}
@@ -542,13 +544,13 @@ function MembersTab({ boardId }: { boardId: string }) {
                   <SelectItem value="viewer">
                     <span className="flex items-center gap-1.5">
                       <Eye className="size-3" />
-                      Betrachter
+                      {t("members.viewer")}
                     </span>
                   </SelectItem>
                   <SelectItem value="editor">
                     <span className="flex items-center gap-1.5">
                       <Pencil className="size-3" />
-                      Redakteur
+                      {t("members.editor")}
                     </span>
                   </SelectItem>
                 </SelectContent>
@@ -559,7 +561,7 @@ function MembersTab({ boardId }: { boardId: string }) {
 
         {members.length === 0 && (
           <p className="py-4 text-center text-sm text-muted-foreground">
-            Noch keine Mitglieder hinzugefügt
+            {t("members.empty")}
           </p>
         )}
       </div>

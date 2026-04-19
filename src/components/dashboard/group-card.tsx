@@ -38,22 +38,8 @@ import {
 import { SortableTile } from "./sortable-tile";
 import { EditGroupDialog } from "./edit-group-dialog";
 import { useEditMode } from "./edit-mode-context";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
-
-const viewModeOptions: {
-  value: TileViewMode;
-  label: string;
-  icon: React.ReactNode;
-}[] = [
-  { value: "grid-sm", label: "Klein", icon: <Grid3x3 className="size-3.5" /> },
-  { value: "grid", label: "Mittel", icon: <Grid2x2 className="size-3.5" /> },
-  {
-    value: "grid-lg",
-    label: "Groß",
-    icon: <LayoutGrid className="size-3.5" />,
-  },
-  { value: "list", label: "Liste", icon: <List className="size-3.5" /> },
-];
 
 export function GroupCard({
   group,
@@ -65,11 +51,39 @@ export function GroupCard({
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
   const router = useRouter();
+  const { t } = useTranslation();
   const [currentViewMode, setCurrentViewMode] = useState<TileViewMode>(
     (group.viewMode as TileViewMode) || "grid",
   );
   const isListView = currentViewMode === "list";
   const hasColumns = group.columns > 0;
+
+  const viewModeOptions: {
+    value: TileViewMode;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      value: "grid-sm",
+      label: t("group.viewSmall"),
+      icon: <Grid3x3 className="size-3.5" />,
+    },
+    {
+      value: "grid",
+      label: t("group.viewMedium"),
+      icon: <Grid2x2 className="size-3.5" />,
+    },
+    {
+      value: "grid-lg",
+      label: t("group.viewLarge"),
+      icon: <LayoutGrid className="size-3.5" />,
+    },
+    {
+      value: "list",
+      label: t("group.viewList"),
+      icon: <List className="size-3.5" />,
+    },
+  ];
 
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: `group-droppable-${group.id}`,
@@ -81,9 +95,9 @@ export function GroupCard({
     try {
       await deleteGroup(group.id);
       router.refresh();
-      toast.success("Gruppe gelöscht");
+      toast.success(t("group.deleted"));
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("error.deleteFailed"));
     }
   };
 
@@ -93,7 +107,7 @@ export function GroupCard({
       await updateGroup(group.id, { viewMode: mode });
     } catch {
       setCurrentViewMode((group.viewMode as TileViewMode) || "grid");
-      toast.error("Fehler beim Ändern der Ansicht");
+      toast.error(t("group.changeViewFailed"));
     }
   };
 
@@ -115,7 +129,7 @@ export function GroupCard({
           />
           <h3 className="flex-1 text-xs font-medium">{group.name}</h3>
           <span className="text-[10px] text-muted-foreground">
-            {group.tiles.length} Kacheln
+            {group.tiles.length} {t("group.tileCount")}
           </span>
 
           <div className="flex items-center">
@@ -150,26 +164,26 @@ export function GroupCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setEditOpen(true)}>
                   <Pencil className="mr-2 size-3.5" />
-                  Bearbeiten
+                  {t("common.edit")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={async () => {
                     try {
                       await duplicateGroup(group.id);
                       router.refresh();
-                      toast.success("Gruppe dupliziert");
+                      toast.success(t("group.duplicated"));
                     } catch {
-                      toast.error("Fehler beim Duplizieren");
+                      toast.error(t("error.duplicateFailed"));
                     }
                   }}>
                   <Copy className="mr-2 size-3.5" />
-                  Duplizieren
+                  {t("common.duplicate")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleDelete}
                   className="text-destructive">
                   <Trash2 className="mr-2 size-3.5" />
-                  Löschen
+                  {t("common.delete")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -211,7 +225,7 @@ export function GroupCard({
             ))}
             {group.tiles.length === 0 && (
               <p className="w-full py-2 text-center text-xs text-muted-foreground">
-                Keine Kacheln
+                {t("group.noTiles")}
               </p>
             )}
           </div>

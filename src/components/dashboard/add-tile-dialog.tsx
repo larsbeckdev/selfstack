@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 function ColorInput({
@@ -88,6 +89,7 @@ export function AddTileDialog({
   const [groupId, setGroupId] = useState(allGroups[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +111,7 @@ export function AddTileDialog({
         description: description || undefined,
         groupId,
       });
-      toast.success("Kachel erstellt");
+      toast.success(t("tile.created"));
       router.refresh();
       onOpenChange(false);
       setName("");
@@ -122,7 +124,7 @@ export function AddTileDialog({
       setUrl("");
       setDescription("");
     } catch {
-      toast.error("Fehler beim Erstellen");
+      toast.error(t("error.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -132,24 +134,24 @@ export function AddTileDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Neue Kachel</DialogTitle>
+          <DialogTitle>{t("tile.create")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="tile-name">Name</Label>
+            <Label htmlFor="tile-name">{t("common.name")}</Label>
             <Input
               id="tile-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="z.B. GitHub"
+              placeholder={t("tile.namePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label>Gruppe</Label>
+            <Label>{t("tile.group")}</Label>
             <Select value={groupId} onValueChange={setGroupId}>
               <SelectTrigger>
-                <SelectValue placeholder="Gruppe wählen" />
+                <SelectValue placeholder={t("tile.groupSelect")} />
               </SelectTrigger>
               <SelectContent>
                 {allGroups.map((g) => (
@@ -161,7 +163,7 @@ export function AddTileDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker
               value={icon}
               onChange={setIcon}
@@ -172,17 +174,17 @@ export function AddTileDialog({
 
           {/* Colors */}
           <div className="space-y-3">
-            <Label>Farben</Label>
+            <Label>{t("tile.colors")}</Label>
             <div className="grid grid-cols-2 gap-3">
               <ColorInput
                 id="tile-color"
-                label="Icon"
+                label={t("tile.colorIcon")}
                 value={color}
                 onChange={setColor}
               />
               <ColorInput
                 id="tile-bg"
-                label="Hintergrund"
+                label={t("tile.colorBg")}
                 value={bgColor || color + "18"}
                 onChange={(v) => setBgColor(v)}
               />
@@ -197,12 +199,12 @@ export function AddTileDialog({
                 }}
               />
               <Label htmlFor="border-match" className="text-xs">
-                Rahmen = Hintergrund
+                {t("tile.borderMatchesBg")}
               </Label>
             </div>
             <ColorInput
               id="tile-border"
-              label="Rahmen"
+              label={t("tile.colorBorder")}
               value={
                 borderMatchesBg
                   ? bgColor || color + "40"
@@ -214,7 +216,7 @@ export function AddTileDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tile-url">URL (optional)</Label>
+            <Label htmlFor="tile-url">{t("tile.urlOptional")}</Label>
             <Input
               id="tile-url"
               value={url}
@@ -224,18 +226,18 @@ export function AddTileDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="tile-desc">Beschreibung (optional)</Label>
+            <Label htmlFor="tile-desc">{t("tile.descriptionOptional")}</Label>
             <Textarea
               id="tile-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Kurze Beschreibung..."
+              placeholder={t("tile.descriptionPlaceholder")}
               rows={2}
             />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Erstellen..." : "Erstellen"}
+              {loading ? t("common.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

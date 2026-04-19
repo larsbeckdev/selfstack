@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function EditGroupDialog({
@@ -39,17 +40,18 @@ export function EditGroupDialog({
   const [columns, setColumns] = useState(group.columns ?? 0);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await updateGroup(group.id, { name, icon, iconUrl, columns });
-      toast.success("Gruppe aktualisiert");
+      toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
     } catch {
-      toast.error("Fehler beim Aktualisieren");
+      toast.error(t("error.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -59,11 +61,11 @@ export function EditGroupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Gruppe bearbeiten</DialogTitle>
+          <DialogTitle>{t("group.edit")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-grp-name">Name</Label>
+            <Label htmlFor="edit-grp-name">{t("common.name")}</Label>
             <Input
               id="edit-grp-name"
               value={name}
@@ -72,7 +74,7 @@ export function EditGroupDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker
               value={icon}
               onChange={setIcon}
@@ -81,7 +83,7 @@ export function EditGroupDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Spalten</Label>
+            <Label>{t("common.columns")}</Label>
             <Select
               value={String(columns)}
               onValueChange={(v) => setColumns(Number(v))}>
@@ -89,7 +91,7 @@ export function EditGroupDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">Auto</SelectItem>
+                <SelectItem value="0">{t("common.columnsAuto")}</SelectItem>
                 {[1, 2, 3, 4, 5, 6].map((n) => (
                   <SelectItem key={n} value={String(n)}>
                     {n}
@@ -100,7 +102,7 @@ export function EditGroupDialog({
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Speichern..." : "Speichern"}
+              {loading ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

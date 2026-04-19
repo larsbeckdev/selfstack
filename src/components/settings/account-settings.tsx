@@ -69,7 +69,7 @@ export function AccountSettings({ user }: { user: SessionUser }) {
           <CardDescription>{t("settings.changePasswordDesc")}</CardDescription>
         </CardHeader>
         <form onSubmit={handlePasswordChange}>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pb-6">
             <div className="space-y-2">
               <Label htmlFor="current-password">
                 {t("settings.currentPassword")}

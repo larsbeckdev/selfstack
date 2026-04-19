@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/tooltip";
 import { EditTileDialog } from "./edit-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function TileCard({
@@ -39,6 +40,7 @@ export function TileCard({
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const iconColor = tile.color;
   const bg = tile.bgColor || undefined;
@@ -50,9 +52,9 @@ export function TileCard({
     try {
       await deleteTile(tile.id);
       router.refresh();
-      toast.success("Kachel gelöscht");
+      toast.success(t("tile.deleted"));
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("error.deleteFailed"));
     }
   };
 
@@ -68,30 +70,30 @@ export function TileCard({
           <DropdownMenuItem asChild>
             <a href={tile.url} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="mr-2 size-3.5" />
-              Öffnen
+              {t("common.open")}
             </a>
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={() => setEditOpen(true)}>
           <Pencil className="mr-2 size-3.5" />
-          Bearbeiten
+          {t("common.edit")}
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={async () => {
             try {
               await duplicateTile(tile.id);
               router.refresh();
-              toast.success("Kachel dupliziert");
+              toast.success(t("tile.duplicated"));
             } catch {
-              toast.error("Fehler beim Duplizieren");
+              toast.error(t("error.duplicateFailed"));
             }
           }}>
           <Copy className="mr-2 size-3.5" />
-          Duplizieren
+          {t("common.duplicate")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleDelete} className="text-destructive">
           <Trash2 className="mr-2 size-3.5" />
-          Löschen
+          {t("common.delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

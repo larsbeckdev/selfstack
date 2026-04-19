@@ -72,6 +72,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 type UserRow = {
@@ -84,6 +85,7 @@ type UserRow = {
 };
 
 export function UserTable({ users }: { users: UserRow[] }) {
+  const { t, locale } = useTranslation();
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
@@ -127,14 +129,12 @@ export function UserTable({ users }: { users: UserRow[] }) {
         setPasswordDialogOpen(true);
       } else {
         toast.success(
-          sendEmail
-            ? "Benutzer erstellt – Zugangsdaten per E-Mail versendet"
-            : "Benutzer erstellt",
+          sendEmail ? t("admin.userCreatedEmailed") : t("admin.userCreated"),
         );
       }
       resetForm();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler beim Erstellen");
+      toast.error(err instanceof Error ? err.message : t("error.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -143,18 +143,18 @@ export function UserTable({ users }: { users: UserRow[] }) {
   const handleRoleChange = async (userId: string, role: string) => {
     try {
       await updateUserRole(userId, role);
-      toast.success("Rolle aktualisiert");
+      toast.success(t("admin.roleUpdated"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t("common.error"));
     }
   };
 
   const handleDelete = async (userId: string) => {
     try {
       await deleteUser(userId);
-      toast.success("Benutzer gelöscht");
+      toast.success(t("admin.userDeleted"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler");
+      toast.error(err instanceof Error ? err.message : t("common.error"));
     }
   };
 
@@ -165,9 +165,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
       setShownUserName(user.name);
       setPasswordDialogOpen(true);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Fehler beim Zurücksetzen",
-      );
+      toast.error(err instanceof Error ? err.message : t("admin.resetFailed"));
     }
   };
 
@@ -175,15 +173,15 @@ export function UserTable({ users }: { users: UserRow[] }) {
     try {
       const result = await adminResetPassword(user.id);
       await adminSendPasswordEmail(user.id, result.generatedPassword);
-      toast.success("Neues Passwort per E-Mail versendet");
+      toast.success(t("admin.passwordEmailed"));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Fehler beim Versenden");
+      toast.error(err instanceof Error ? err.message : t("admin.sendFailed"));
     }
   };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("In Zwischenablage kopiert");
+    toast.success(t("admin.copiedToClipboard"));
   };
 
   return (
@@ -191,9 +189,9 @@ export function UserTable({ users }: { users: UserRow[] }) {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Benutzerverwaltung</CardTitle>
+            <CardTitle>{t("admin.userManagement")}</CardTitle>
             <CardDescription>
-              {users.length} Benutzer registriert
+              {users.length} {t("admin.usersRegistered")}
             </CardDescription>
           </div>
           <Dialog
@@ -205,19 +203,19 @@ export function UserTable({ users }: { users: UserRow[] }) {
             <DialogTrigger asChild>
               <Button size="sm">
                 <UserPlus className="mr-2 size-4" />
-                Benutzer erstellen
+                {t("admin.createUser")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Neuen Benutzer erstellen</DialogTitle>
+                <DialogTitle>{t("admin.createUserTitle")}</DialogTitle>
                 <DialogDescription>
-                  Erstelle ein Konto mit Einmalpasswort oder eigenem Passwort.
+                  {t("admin.createUserDesc")}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="new-user-name">Name</Label>
+                  <Label htmlFor="new-user-name">{t("common.name")}</Label>
                   <Input
                     id="new-user-name"
                     value={newName}
@@ -226,7 +224,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="new-user-email">E-Mail</Label>
+                  <Label htmlFor="new-user-email">{t("common.email")}</Label>
                   <Input
                     id="new-user-email"
                     type="email"
@@ -245,14 +243,15 @@ export function UserTable({ users }: { users: UserRow[] }) {
                     }
                   />
                   <Label htmlFor="generate-pw" className="font-normal">
-                    Einmalpasswort generieren (Benutzer muss Passwort beim
-                    ersten Login ändern)
+                    {t("admin.generatePassword")}
                   </Label>
                 </div>
 
                 {!generatePw && (
                   <div className="space-y-2">
-                    <Label htmlFor="new-user-password">Passwort</Label>
+                    <Label htmlFor="new-user-password">
+                      {t("common.password")}
+                    </Label>
                     <Input
                       id="new-user-password"
                       type="password"
@@ -265,14 +264,18 @@ export function UserTable({ users }: { users: UserRow[] }) {
                 )}
 
                 <div className="space-y-2">
-                  <Label>Rolle</Label>
+                  <Label>{t("admin.role")}</Label>
                   <Select value={newRole} onValueChange={setNewRole}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">Benutzer</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value="user">
+                        {t("admin.roleUser")}
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        {t("admin.roleAdmin")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -286,13 +289,13 @@ export function UserTable({ users }: { users: UserRow[] }) {
                     }
                   />
                   <Label htmlFor="send-email" className="font-normal">
-                    Zugangsdaten per E-Mail versenden
+                    {t("admin.sendCredentials")}
                   </Label>
                 </div>
 
                 <DialogFooter>
                   <Button type="submit" disabled={loading}>
-                    {loading ? "Erstellen..." : "Erstellen"}
+                    {loading ? t("common.creating") : t("common.create")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -303,11 +306,11 @@ export function UserTable({ users }: { users: UserRow[] }) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>E-Mail</TableHead>
-                <TableHead>Rolle</TableHead>
-                <TableHead>Boards</TableHead>
-                <TableHead>Erstellt</TableHead>
+                <TableHead>{t("admin.colName")}</TableHead>
+                <TableHead>{t("admin.colEmail")}</TableHead>
+                <TableHead>{t("admin.colRole")}</TableHead>
+                <TableHead>{t("admin.colBoards")}</TableHead>
+                <TableHead>{t("admin.colCreated")}</TableHead>
                 <TableHead className="w-12" />
               </TableRow>
             </TableHeader>
@@ -324,12 +327,16 @@ export function UserTable({ users }: { users: UserRow[] }) {
                       ) : (
                         <UserIcon className="mr-1 size-3" />
                       )}
-                      {user.role === "admin" ? "Admin" : "Benutzer"}
+                      {user.role === "admin"
+                        ? t("admin.roleAdminShort")
+                        : t("admin.roleUser")}
                     </Badge>
                   </TableCell>
                   <TableCell>{user._count.boards}</TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(user.createdAt).toLocaleDateString("de-DE")}
+                    {new Date(user.createdAt).toLocaleDateString(
+                      locale === "en" ? "en-US" : "de-DE",
+                    )}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -343,25 +350,25 @@ export function UserTable({ users }: { users: UserRow[] }) {
                           <DropdownMenuItem
                             onClick={() => handleRoleChange(user.id, "admin")}>
                             <Shield className="mr-2 size-3.5" />
-                            Zum Admin machen
+                            {t("admin.makeAdmin")}
                           </DropdownMenuItem>
                         ) : (
                           <DropdownMenuItem
                             onClick={() => handleRoleChange(user.id, "user")}>
                             <UserIcon className="mr-2 size-3.5" />
-                            Zum Benutzer machen
+                            {t("admin.makeUser")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => handleResetPassword(user)}>
                           <KeyRound className="mr-2 size-3.5" />
-                          Passwort zurücksetzen
+                          {t("admin.resetPassword")}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => handleSendResetEmail(user)}>
                           <Mail className="mr-2 size-3.5" />
-                          Neues Passwort per E-Mail
+                          {t("admin.sendPasswordEmail")}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <AlertDialog>
@@ -370,24 +377,28 @@ export function UserTable({ users }: { users: UserRow[] }) {
                               className="text-destructive"
                               onSelect={(e) => e.preventDefault()}>
                               <Trash2 className="mr-2 size-3.5" />
-                              Löschen
+                              {t("common.delete")}
                             </DropdownMenuItem>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
                               <AlertDialogTitle>
-                                Benutzer löschen?
+                                {t("admin.deleteUserTitle")}
                               </AlertDialogTitle>
                               <AlertDialogDescription>
-                                {user.name} und alle zugehörigen Daten werden
-                                unwiderruflich gelöscht.
+                                {t("admin.deleteUserDesc").replace(
+                                  "{name}",
+                                  user.name,
+                                )}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                              <AlertDialogCancel>
+                                {t("common.cancel")}
+                              </AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={() => handleDelete(user.id)}>
-                                Löschen
+                                {t("common.delete")}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -406,10 +417,11 @@ export function UserTable({ users }: { users: UserRow[] }) {
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Einmalpasswort für {shownUserName}</DialogTitle>
+            <DialogTitle>
+              {t("admin.oneTimePasswordFor")} {shownUserName}
+            </DialogTitle>
             <DialogDescription>
-              Dieses Passwort wird nur einmal angezeigt. Der Benutzer muss es
-              beim ersten Login ändern.
+              {t("admin.oneTimePasswordDesc")}
             </DialogDescription>
           </DialogHeader>
           <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
@@ -431,17 +443,17 @@ export function UserTable({ users }: { users: UserRow[] }) {
                 if (user) {
                   try {
                     await adminSendPasswordEmail(user.id, shownPassword);
-                    toast.success("Passwort per E-Mail versendet");
+                    toast.success(t("admin.passwordEmailed2"));
                   } catch {
-                    toast.error("Fehler beim Versenden");
+                    toast.error(t("admin.sendFailed"));
                   }
                 }
               }}>
               <Mail className="mr-2 size-4" />
-              Per E-Mail versenden
+              {t("admin.sendByEmail")}
             </Button>
             <Button onClick={() => setPasswordDialogOpen(false)}>
-              Schließen
+              {t("common.close")}
             </Button>
           </DialogFooter>
         </DialogContent>

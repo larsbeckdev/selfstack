@@ -54,7 +54,7 @@ export function AppSidebar({
   const copyBoardLink = (slug: string) => {
     const url = `${window.location.origin}/board/${slug}`;
     navigator.clipboard.writeText(url);
-    toast.success("Link kopiert");
+    toast.success(t("common.linkCopied"));
   };
 
   return (
@@ -118,19 +118,19 @@ export function AppSidebar({
                       <DropdownMenuItem
                         onClick={() => router.push(`/board/${board.slug}`)}>
                         <ExternalLink className="mr-2 size-4" />
-                        Öffnen
+                        {t("common.open")}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => copyBoardLink(board.slug)}>
                         <Copy className="mr-2 size-4" />
-                        Link kopieren
+                        {t("common.copy")} {t("common.link").toLowerCase()}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() =>
                           router.push(`/board/${board.slug}?settings=true`)
                         }>
                         <Settings2 className="mr-2 size-4" />
-                        Einstellungen
+                        {t("nav.settings")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

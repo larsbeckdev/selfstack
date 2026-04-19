@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 function slugify(text: string): string {
@@ -39,6 +40,7 @@ export function EditBoardDialog({
   const [icon, setIcon] = useState(board.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(board.iconUrl ?? null);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 
@@ -54,7 +56,7 @@ export function EditBoardDialog({
         icon,
         iconUrl,
       });
-      toast.success("Board aktualisiert");
+      toast.success(t("board.updated"));
       router.refresh();
       onOpenChange(false);
       if (updated.slug !== board.slug) {
@@ -63,8 +65,8 @@ export function EditBoardDialog({
     } catch (err) {
       const msg =
         err instanceof Error && err.message === "Slug already in use"
-          ? "Dieser Link wird bereits verwendet"
-          : "Fehler beim Aktualisieren";
+          ? t("board.slugInUse")
+          : t("error.updateFailed");
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -75,11 +77,11 @@ export function EditBoardDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Board bearbeiten</DialogTitle>
+          <DialogTitle>{t("board.edit")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-board-name">Name</Label>
+            <Label htmlFor="edit-board-name">{t("common.name")}</Label>
             <Input
               id="edit-board-name"
               value={name}
@@ -88,7 +90,7 @@ export function EditBoardDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-board-slug">Link / URL</Label>
+            <Label htmlFor="edit-board-slug">{t("board.linkSlug")}</Label>
             <div className="flex items-center gap-0">
               <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
                 /board/
@@ -103,12 +105,12 @@ export function EditBoardDialog({
             </div>
             {slug && !slugValid && (
               <p className="text-xs text-destructive">
-                Nur Kleinbuchstaben, Zahlen und Bindestriche
+                {t("board.slugInvalid")}
               </p>
             )}
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker
               value={icon}
               onChange={setIcon}
@@ -118,7 +120,7 @@ export function EditBoardDialog({
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading || !slugValid}>
-              {loading ? "Speichern..." : "Speichern"}
+              {loading ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function EditCategoryDialog({
@@ -42,6 +43,7 @@ export function EditCategoryDialog({
   const [columns, setColumns] = useState(category.columns ?? 1);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,11 +56,11 @@ export function EditCategoryDialog({
         color,
         columns,
       });
-      toast.success("Kategorie aktualisiert");
+      toast.success(t("category.updated"));
       router.refresh();
       onOpenChange(false);
     } catch {
-      toast.error("Fehler beim Aktualisieren");
+      toast.error(t("error.updateFailed"));
     } finally {
       setLoading(false);
     }
@@ -68,11 +70,11 @@ export function EditCategoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Kategorie bearbeiten</DialogTitle>
+          <DialogTitle>{t("category.edit")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-cat-name">Name</Label>
+            <Label htmlFor="edit-cat-name">{t("common.name")}</Label>
             <Input
               id="edit-cat-name"
               value={name}
@@ -81,7 +83,7 @@ export function EditCategoryDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker
               value={icon}
               onChange={setIcon}
@@ -90,7 +92,7 @@ export function EditCategoryDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-cat-color">Farbe</Label>
+            <Label htmlFor="edit-cat-color">{t("common.color")}</Label>
             <div className="flex items-center gap-2">
               <input
                 id="edit-cat-color"
@@ -107,7 +109,7 @@ export function EditCategoryDialog({
             </div>
           </div>
           <div className="space-y-2">
-            <Label>Spalten</Label>
+            <Label>{t("common.columns")}</Label>
             <Select
               value={String(columns)}
               onValueChange={(v) => setColumns(Number(v))}>
@@ -125,7 +127,7 @@ export function EditCategoryDialog({
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Speichern..." : "Speichern"}
+              {loading ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

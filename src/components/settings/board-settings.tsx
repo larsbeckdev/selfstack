@@ -27,22 +27,22 @@ import {
 } from "@/components/ui/alert-dialog";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { EditBoardDialog } from "@/components/dashboard/edit-board-dialog";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function BoardSettings({ boards }: { boards: Board[] }) {
+  const { t } = useTranslation();
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Board-Einstellungen</CardTitle>
-          <CardDescription>
-            Verwalte die Sichtbarkeit deiner Boards
-          </CardDescription>
+          <CardTitle>{t("board.settings")}</CardTitle>
+          <CardDescription>{t("settings.boardsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           {boards.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Keine Boards vorhanden
+              {t("dashboard.noBoardsTitle")}
             </p>
           ) : (
             <div className="space-y-4">
@@ -61,6 +61,7 @@ function BoardSettingsRow({ board }: { board: Board }) {
   const [isPublic, setIsPublic] = useState(board.isPublic);
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const { t } = useTranslation();
 
   const toggleVisibility = async (checked: boolean) => {
     setLoading(true);
@@ -68,10 +69,10 @@ function BoardSettingsRow({ board }: { board: Board }) {
       await updateBoard(board.id, { isPublic: checked });
       setIsPublic(checked);
       toast.success(
-        checked ? "Board ist jetzt öffentlich" : "Board ist jetzt privat",
+        checked ? t("board.publicEnabled") : t("board.publicDisabled"),
       );
     } catch {
-      toast.error("Fehler beim Ändern");
+      toast.error(t("error.changeFailed"));
     } finally {
       setLoading(false);
     }
@@ -80,15 +81,15 @@ function BoardSettingsRow({ board }: { board: Board }) {
   const copyPublicLink = () => {
     const url = `${window.location.origin}/b/${board.slug}`;
     navigator.clipboard.writeText(url);
-    toast.success("Link kopiert");
+    toast.success(t("common.linkCopied"));
   };
 
   const handleDelete = async () => {
     try {
       await deleteBoard(board.id);
-      toast.success("Board gelöscht");
+      toast.success(t("board.deleted"));
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("error.deleteFailed"));
     }
   };
 
@@ -105,7 +106,7 @@ function BoardSettingsRow({ board }: { board: Board }) {
         <div>
           <p className="text-sm font-medium">{board.name}</p>
           <p className="text-xs text-muted-foreground">
-            {isPublic ? "Öffentlich" : "Privat"}
+            {isPublic ? t("common.public") : t("common.private")}
           </p>
         </div>
       </div>
@@ -123,7 +124,7 @@ function BoardSettingsRow({ board }: { board: Board }) {
 
         <div className="flex items-center gap-2">
           <Label htmlFor={`public-${board.id}`} className="sr-only">
-            Öffentlich
+            {t("common.public")}
           </Label>
           {isPublic ? (
             <Globe className="size-4 text-primary" />
@@ -146,16 +147,17 @@ function BoardSettingsRow({ board }: { board: Board }) {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Board löschen?</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t("board.deleteConfirmTitle")}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Alle Kategorien, Gruppen und Kacheln in diesem Board werden
-                ebenfalls gelöscht.
+                {t("board.deleteSectionDesc")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete}>
-                Löschen
+                {t("common.delete")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

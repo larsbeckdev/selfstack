@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function AddGroupDialog({
@@ -38,6 +39,7 @@ export function AddGroupDialog({
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +48,13 @@ export function AddGroupDialog({
     setLoading(true);
     try {
       await createGroup({ name, icon, categoryId });
-      toast.success("Gruppe erstellt");
+      toast.success(t("group.created"));
       router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("grid-3x3");
     } catch {
-      toast.error("Fehler beim Erstellen");
+      toast.error(t("error.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -62,24 +64,24 @@ export function AddGroupDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Neue Gruppe</DialogTitle>
+          <DialogTitle>{t("group.create")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="grp-name">Name</Label>
+            <Label htmlFor="grp-name">{t("common.name")}</Label>
             <Input
               id="grp-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="z.B. Frontend"
+              placeholder={t("group.namePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label>Kategorie</Label>
+            <Label>{t("board.addCategory")}</Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
               <SelectTrigger>
-                <SelectValue placeholder="Kategorie wählen" />
+                <SelectValue placeholder={t("group.selectCategory")} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -91,12 +93,12 @@ export function AddGroupDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Erstellen..." : "Erstellen"}
+              {loading ? t("common.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

@@ -34,6 +34,7 @@ import {
 import { SortableGroup } from "./sortable-group";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { useEditMode } from "./edit-mode-context";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function CategoryCard({
@@ -49,14 +50,15 @@ export function CategoryCard({
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleDelete = async () => {
     try {
       await deleteCategory(category.id);
       router.refresh();
-      toast.success("Kategorie gelöscht");
+      toast.success(t("category.deleted"));
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("error.deleteFailed"));
     }
   };
 
@@ -95,7 +97,7 @@ export function CategoryCard({
             </div>
             <h2 className="flex-1 text-sm font-semibold">{category.name}</h2>
             <span className="text-xs text-muted-foreground">
-              {category.groups.length} Gruppen
+              {category.groups.length} {t("category.groups")}
             </span>
 
             {!isDragOverlay && isEditing && (
@@ -108,26 +110,26 @@ export function CategoryCard({
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setEditOpen(true)}>
                     <Pencil className="mr-2 size-3.5" />
-                    Bearbeiten
+                    {t("common.edit")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={async () => {
                       try {
                         await duplicateCategory(category.id);
                         router.refresh();
-                        toast.success("Kategorie dupliziert");
+                        toast.success(t("category.duplicated"));
                       } catch {
-                        toast.error("Fehler beim Duplizieren");
+                        toast.error(t("error.duplicateFailed"));
                       }
                     }}>
                     <Copy className="mr-2 size-3.5" />
-                    Duplizieren
+                    {t("common.duplicate")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={handleDelete}
                     className="text-destructive">
                     <Trash2 className="mr-2 size-3.5" />
-                    Löschen
+                    {t("common.delete")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -168,7 +170,7 @@ export function CategoryCard({
                 ))}
                 {category.groups.length === 0 && (
                   <p className="py-4 text-center text-xs text-muted-foreground">
-                    Noch keine Gruppen in dieser Kategorie
+                    {t("category.noGroups")}
                   </p>
                 )}
               </div>

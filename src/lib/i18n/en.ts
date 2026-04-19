@@ -24,7 +24,17 @@ const en: Record<TranslationKey, string> = {
   "common.description": "Description",
   "common.optional": "optional",
   "common.public": "Public",
+  "common.private": "Private",
   "common.reset": "Reset",
+  "common.add": "Add",
+  "common.copy": "Copy",
+  "common.link": "Link",
+  "common.linkCopied": "Link copied",
+  "common.color": "Color",
+  "common.columns": "Columns",
+  "common.columnsAuto": "Auto",
+  "common.locked": "Locked",
+  "common.actions": "Actions",
 
   // Auth
   "auth.login": "Sign in",
@@ -47,6 +57,12 @@ const en: Record<TranslationKey, string> = {
   "auth.invalidCredentials": "Invalid credentials",
   "auth.emailInUse": "Email address is already in use",
   "auth.registrationDisabled": "Registration is currently disabled",
+  "auth.passwordMinLength": "Password must be at least 8 characters",
+  "auth.passwordChangeFailed": "Failed to change password",
+  "auth.changePasswordTitle": "Change password",
+  "auth.changePasswordRequired":
+    "You must change your password before continuing.",
+  "auth.savePassword": "Save password",
 
   // Navigation
   "nav.dashboard": "Overview",
@@ -60,7 +76,11 @@ const en: Record<TranslationKey, string> = {
   // Dashboard
   "dashboard.title": "Dashboard",
   "dashboard.welcome": "Welcome",
+  "dashboard.welcomeBack": "Welcome back",
   "dashboard.noBoards": "No boards created yet",
+  "dashboard.noBoardsTitle": "No boards yet",
+  "dashboard.noBoardsDesc":
+    "Create your first board via the sidebar or the + button",
   "dashboard.createFirst": "Create your first board",
 
   // Board
@@ -74,6 +94,29 @@ const en: Record<TranslationKey, string> = {
   "board.addCategory": "Category",
   "board.addGroup": "Group",
   "board.addTile": "Tile",
+  "board.created": "Board created",
+  "board.deleted": "Board deleted",
+  "board.settings": "Board settings",
+  "board.members": "Members",
+  "board.newTitle": "New Board",
+  "board.namePlaceholder": "e.g. Work, Personal, Projects...",
+  "board.editModeActive": "Edit mode active – click to lock",
+  "board.editModeLocked": "Locked – click to edit",
+  "board.linkSlug": "Link / URL",
+  "board.slugInvalid": "Only lowercase letters, numbers and hyphens",
+  "board.slugInUse": "This link is already in use",
+  "board.visibility": "Visibility",
+  "board.visibilityPublic": "Anyone with the link can view this board",
+  "board.visibilityPrivate": "Only you and members can view this board",
+  "board.publicEnabled": "Board is now public",
+  "board.publicDisabled": "Board is now private",
+  "board.deleteSection": "Delete board",
+  "board.deleteSectionDesc":
+    "All categories, groups and tiles will be deleted.",
+  "board.deleteConfirmTitle": "Delete board?",
+  "board.deleteConfirmDesc":
+    "All categories, groups and tiles in this board will also be deleted. This action cannot be undone.",
+  "board.empty": "This board is empty. Add a category to get started.",
 
   // Category
   "category.create": "New Category",
@@ -84,6 +127,7 @@ const en: Record<TranslationKey, string> = {
   "category.duplicated": "Category duplicated",
   "category.groups": "Groups",
   "category.noGroups": "No groups in this category yet",
+  "category.namePlaceholder": "e.g. Development",
 
   // Group
   "group.create": "New Group",
@@ -96,6 +140,11 @@ const en: Record<TranslationKey, string> = {
   "group.viewMedium": "Medium",
   "group.viewLarge": "Large",
   "group.viewList": "List",
+  "group.tileCount": "Tiles",
+  "group.noTiles": "No tiles",
+  "group.changeViewFailed": "Failed to change view",
+  "group.namePlaceholder": "e.g. Frontend",
+  "group.selectCategory": "Select category",
 
   // Tile
   "tile.create": "New Tile",
@@ -113,6 +162,28 @@ const en: Record<TranslationKey, string> = {
   "tile.borderMatchesBg": "Border = Background",
   "tile.group": "Group",
   "tile.groupSelect": "Select group",
+  "tile.namePlaceholder": "e.g. GitHub",
+  "tile.urlOptional": "URL (optional)",
+  "tile.descriptionOptional": "Description (optional)",
+  "tile.descriptionPlaceholder": "Short description...",
+
+  // Members
+  "members.title": "Members",
+  "members.owner": "Owner",
+  "members.viewer": "Viewer",
+  "members.editor": "Editor",
+  "members.user": "User",
+  "members.selectUser": "Select user…",
+  "members.noAvailable": "No available users",
+  "members.added": "Member added",
+  "members.removed": "Member removed",
+  "members.loadFailed": "Failed to load members",
+  "members.addFailed": "Failed to add",
+  "members.removeFailed": "Failed to remove",
+  "members.roleChanged": "Role changed",
+  "members.roleChangeFailed": "Failed to change role",
+  "members.loading": "Loading members...",
+  "members.empty": "No members added yet",
 
   // Settings
   "settings.title": "Settings",
@@ -120,6 +191,7 @@ const en: Record<TranslationKey, string> = {
   "settings.appearance": "Appearance",
   "settings.account": "Account",
   "settings.boards": "Boards",
+  "settings.boardsDesc": "Manage the visibility of your boards",
   "settings.profile": "Profile",
   "settings.profileDesc": "Change your name and email address",
   "settings.profileUpdated": "Profile updated",
@@ -163,6 +235,44 @@ const en: Record<TranslationKey, string> = {
   "admin.registrationEnabled": "Registration allowed",
   "admin.registrationEnabledDesc": "New users can register themselves",
   "admin.registrationSaved": "Setting saved",
+  "admin.userManagement": "User Management",
+  "admin.usersRegistered": "users registered",
+  "admin.createUser": "Create user",
+  "admin.createUserTitle": "Create new user",
+  "admin.createUserDesc":
+    "Create an account with a one-time password or custom password.",
+  "admin.generatePassword":
+    "Generate one-time password (user must change password on first login)",
+  "admin.sendCredentials": "Send credentials by email",
+  "admin.role": "Role",
+  "admin.roleUser": "User",
+  "admin.roleAdmin": "Administrator",
+  "admin.roleAdminShort": "Admin",
+  "admin.colName": "Name",
+  "admin.colEmail": "Email",
+  "admin.colRole": "Role",
+  "admin.colBoards": "Boards",
+  "admin.colCreated": "Created",
+  "admin.makeAdmin": "Make admin",
+  "admin.makeUser": "Make user",
+  "admin.resetPassword": "Reset password",
+  "admin.sendPasswordEmail": "Send new password by email",
+  "admin.deleteUserTitle": "Delete user?",
+  "admin.deleteUserDesc":
+    "{name} and all related data will be permanently deleted.",
+  "admin.oneTimePasswordFor": "One-time password for",
+  "admin.oneTimePasswordDesc":
+    "This password is shown only once. The user must change it on first login.",
+  "admin.sendByEmail": "Send by email",
+  "admin.userCreated": "User created",
+  "admin.userCreatedEmailed": "User created – credentials sent by email",
+  "admin.userDeleted": "User deleted",
+  "admin.roleUpdated": "Role updated",
+  "admin.passwordEmailed": "New password sent by email",
+  "admin.passwordEmailed2": "Password sent by email",
+  "admin.copiedToClipboard": "Copied to clipboard",
+  "admin.resetFailed": "Reset failed",
+  "admin.sendFailed": "Send failed",
 
   // Public
   "public.boards": "Public Boards",
@@ -180,6 +290,37 @@ const en: Record<TranslationKey, string> = {
   "error.createFailed": "Creation failed",
   "error.deleteFailed": "Deletion failed",
   "error.duplicateFailed": "Duplication failed",
+  "error.changeFailed": "Change failed",
+
+  // Media
+  "media.loadFailed": "Failed to load media",
+  "media.search": "Search media...",
+  "media.type": "Type",
+  "media.all": "All",
+  "media.sort": "Sort",
+  "media.sortDateDesc": "Newest first",
+  "media.sortDateAsc": "Oldest first",
+  "media.sortNameAsc": "Name A–Z",
+  "media.sortNameDesc": "Name Z–A",
+  "media.sortSizeDesc": "Largest first",
+  "media.sortSizeAsc": "Smallest first",
+  "media.upload": "Upload",
+  "media.uploading": "Uploading...",
+  "media.uploadFailed": "Upload failed",
+  "media.uploadedOne": "1 file uploaded",
+  "media.uploadedMany": "{count} files uploaded",
+  "media.none": "No media uploaded yet",
+  "media.notFound": "No media found",
+  "media.uploadFirst": "Upload your first icon",
+  "media.name": "Name",
+  "media.size": "Size",
+  "media.date": "Date",
+  "media.countOf": "of",
+  "media.files": "files",
+  "media.deleted": "File deleted",
+  "media.deleteTitle": "Delete file?",
+  "media.deleteDesc":
+    '"{name}" will be permanently deleted. Icons using this file will no longer display.',
 };
 
 export default en;

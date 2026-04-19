@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function CreateBoardDialog({ children }: { children: ReactNode }) {
@@ -23,6 +24,7 @@ export function CreateBoardDialog({ children }: { children: ReactNode }) {
   const [icon, setIcon] = useState("layout-dashboard");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,13 +33,13 @@ export function CreateBoardDialog({ children }: { children: ReactNode }) {
     setLoading(true);
     try {
       await createBoard({ name, icon, isPublic: false });
-      toast.success("Board erstellt");
+      toast.success(t("board.created"));
       router.refresh();
       setOpen(false);
       setName("");
       setIcon("layout-dashboard");
     } catch {
-      toast.error("Fehler beim Erstellen");
+      toast.error(t("error.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -48,26 +50,26 @@ export function CreateBoardDialog({ children }: { children: ReactNode }) {
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Neues Board</DialogTitle>
+          <DialogTitle>{t("board.newTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="board-name">Name</Label>
+            <Label htmlFor="board-name">{t("common.name")}</Label>
             <Input
               id="board-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="z.B. Arbeit, Privat, Projekte..."
+              placeholder={t("board.namePlaceholder")}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label>Icon</Label>
+            <Label>{t("tile.icon")}</Label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
-              {loading ? "Erstellen..." : "Erstellen"}
+              {loading ? t("common.creating") : t("common.create")}
             </Button>
           </DialogFooter>
         </form>

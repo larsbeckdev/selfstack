@@ -36,6 +36,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 type MediaFile = {
@@ -62,14 +63,17 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function formatDate(dateStr: string, locale: string): string {
+  return new Date(dateStr).toLocaleDateString(
+    locale === "en" ? "en-US" : "de-DE",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    },
+  );
 }
 
 function getExtension(name: string): string {
@@ -77,6 +81,7 @@ function getExtension(name: string): string {
 }
 
 export function MediaLibrary() {
+  const { t, locale } = useTranslation();
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -94,7 +99,7 @@ export function MediaLibrary() {
       const data = await res.json();
       setFiles(data.files || []);
     } catch {
-      toast.error("Fehler beim Laden der Medien");
+      toast.error(t("media.loadFailed"));
     } finally {
       setLoading(false);
     }
@@ -125,14 +130,14 @@ export function MediaLibrary() {
           uploaded++;
         }
       } catch {
-        toast.error(`${file.name}: Upload fehlgeschlagen`);
+        toast.error(`${file.name}: ${t("media.uploadFailed")}`);
       }
     }
     if (uploaded > 0) {
       toast.success(
         uploaded === 1
-          ? "1 Datei hochgeladen"
-          : `${uploaded} Dateien hochgeladen`,
+          ? t("media.uploadedOne")
+          : t("media.uploadedMany").replace("{count}", String(uploaded)),
       );
       fetchFiles();
     }
@@ -147,13 +152,13 @@ export function MediaLibrary() {
         body: JSON.stringify({ name: file.name }),
       });
       if (!res.ok) {
-        toast.error("Fehler beim Löschen");
+        toast.error(t("error.deleteFailed"));
         return;
       }
-      toast.success("Datei gelöscht");
+      toast.success(t("media.deleted"));
       setFiles((prev) => prev.filter((f) => f.name !== file.name));
     } catch {
-      toast.error("Fehler beim Löschen");
+      toast.error(t("error.deleteFailed"));
     }
     setDeleteTarget(null);
   };
@@ -210,7 +215,7 @@ export function MediaLibrary() {
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
           <Input
-            placeholder="Medien durchsuchen..."
+            placeholder={t("media.search")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9"
@@ -220,10 +225,10 @@ export function MediaLibrary() {
           value={filterType}
           onValueChange={(v) => setFilterType(v as FilterType)}>
           <SelectTrigger className="w-[120px]">
-            <SelectValue placeholder="Typ" />
+            <SelectValue placeholder={t("media.type")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Alle</SelectItem>
+            <SelectItem value="all">{t("media.all")}</SelectItem>
             <SelectItem value="png">PNG</SelectItem>
             <SelectItem value="jpg">JPG</SelectItem>
             <SelectItem value="svg">SVG</SelectItem>
@@ -234,15 +239,15 @@ export function MediaLibrary() {
         <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortBy)}>
           <SelectTrigger className="w-[160px]">
             <ArrowUpDown className="mr-2 size-3.5" />
-            <SelectValue placeholder="Sortierung" />
+            <SelectValue placeholder={t("media.sort")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="date-desc">Neueste zuerst</SelectItem>
-            <SelectItem value="date-asc">Älteste zuerst</SelectItem>
-            <SelectItem value="name-asc">Name A–Z</SelectItem>
-            <SelectItem value="name-desc">Name Z–A</SelectItem>
-            <SelectItem value="size-desc">Größte zuerst</SelectItem>
-            <SelectItem value="size-asc">Kleinste zuerst</SelectItem>
+            <SelectItem value="date-desc">{t("media.sortDateDesc")}</SelectItem>
+            <SelectItem value="date-asc">{t("media.sortDateAsc")}</SelectItem>
+            <SelectItem value="name-asc">{t("media.sortNameAsc")}</SelectItem>
+            <SelectItem value="name-desc">{t("media.sortNameDesc")}</SelectItem>
+            <SelectItem value="size-desc">{t("media.sortSizeDesc")}</SelectItem>
+            <SelectItem value="size-asc">{t("media.sortSizeAsc")}</SelectItem>
           </SelectContent>
         </Select>
         <div className="flex items-center rounded-md border">
@@ -276,29 +281,27 @@ export function MediaLibrary() {
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}>
           <Upload className="mr-2 size-4" />
-          {uploading ? "Wird hochgeladen..." : "Hochladen"}
+          {uploading ? t("media.uploading") : t("media.upload")}
         </Button>
       </div>
 
       {/* Content */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <p className="text-muted-foreground">Laden...</p>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <ImageIcon className="size-12 text-muted-foreground/50" />
           <p className="text-muted-foreground">
-            {files.length === 0
-              ? "Noch keine Medien hochgeladen"
-              : "Keine Medien gefunden"}
+            {files.length === 0 ? t("media.none") : t("media.notFound")}
           </p>
           {files.length === 0 && (
             <Button
               variant="outline"
               onClick={() => fileInputRef.current?.click()}>
               <Upload className="mr-2 size-4" />
-              Erstes Icon hochladen
+              {t("media.uploadFirst")}
             </Button>
           )}
         </div>
@@ -350,9 +353,9 @@ export function MediaLibrary() {
         <div className="rounded-md border">
           <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-2 text-xs font-medium text-muted-foreground">
             <span className="w-8" />
-            <span>Name</span>
-            <span className="w-20 text-right">Größe</span>
-            <span className="w-32 text-right">Datum</span>
+            <span>{t("media.name")}</span>
+            <span className="w-20 text-right">{t("media.size")}</span>
+            <span className="w-32 text-right">{t("media.date")}</span>
             <span className="w-20" />
           </div>
           {filtered.map((file) => (
@@ -377,7 +380,7 @@ export function MediaLibrary() {
                 {formatBytes(file.size)}
               </span>
               <span className="w-32 text-right text-xs text-muted-foreground">
-                {formatDate(file.createdAt)}
+                {formatDate(file.createdAt, locale)}
               </span>
               <div className="flex w-20 justify-end gap-1">
                 <Button
@@ -403,7 +406,8 @@ export function MediaLibrary() {
       {/* File count */}
       {!loading && files.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          {filtered.length} von {files.length} Dateien
+          {filtered.length} {t("media.countOf")} {files.length}{" "}
+          {t("media.files")}
         </p>
       )}
 
@@ -413,19 +417,20 @@ export function MediaLibrary() {
         onOpenChange={() => setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Datei löschen?</AlertDialogTitle>
+            <AlertDialogTitle>{t("media.deleteTitle")}</AlertDialogTitle>
             <AlertDialogDescription>
-              &quot;{deleteTarget?.name}&quot; wird unwiderruflich gelöscht.
-              Icons, die diese Datei verwenden, werden danach nicht mehr
-              angezeigt.
+              {t("media.deleteDesc").replace(
+                "{name}",
+                deleteTarget?.name ?? "",
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => deleteTarget && handleDelete(deleteTarget)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Löschen
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
