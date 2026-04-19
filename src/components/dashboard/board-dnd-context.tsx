@@ -249,7 +249,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
         }
       }
     },
-    [categories, board.id],
+    [categories, board.id, router],
   );
 
   const activeTile =
