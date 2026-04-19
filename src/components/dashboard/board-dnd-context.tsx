@@ -169,6 +169,7 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
             board.id,
             newOrder.map((c) => c.id),
           );
+          router.refresh();
         }
       }
 
