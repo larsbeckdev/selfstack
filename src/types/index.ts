@@ -1,4 +1,10 @@
-import type { Board, Category, Group, Tile, BoardMember } from "@/generated/prisma/client";
+import type {
+  Board,
+  Category,
+  Group,
+  Tile,
+  BoardMember,
+} from "@/generated/prisma/client";
 
 export type SessionUser = {
   id: string;

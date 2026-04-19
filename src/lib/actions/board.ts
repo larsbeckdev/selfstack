@@ -229,11 +229,9 @@ const categorySchema = z.object({
 });
 
 export async function createCategory(data: z.infer<typeof categorySchema>) {
-  const { user } = await requireAuth();
+  await requireBoardAccess(data.boardId, "editor");
 
-  const board = await db.board.findFirst({
-    where: { id: data.boardId, userId: user.id },
-  });
+  const board = await db.board.findUnique({ where: { id: data.boardId } });
   if (!board) throw new Error("Board not found");
 
   const maxOrder = await db.category.aggregate({
@@ -258,12 +256,11 @@ export async function updateCategory(
   categoryId: string,
   data: Partial<Omit<z.infer<typeof categorySchema>, "boardId">>,
 ) {
-  const { user } = await requireAuth();
-
-  const category = await db.category.findFirst({
-    where: { id: categoryId, board: { userId: user.id } },
+  const category = await db.category.findUnique({
+    where: { id: categoryId },
   });
   if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
 
   const updated = await db.category.update({
     where: { id: categoryId },
@@ -276,12 +273,11 @@ export async function updateCategory(
 }
 
 export async function deleteCategory(categoryId: string) {
-  const { user } = await requireAuth();
-
-  const category = await db.category.findFirst({
-    where: { id: categoryId, board: { userId: user.id } },
+  const category = await db.category.findUnique({
+    where: { id: categoryId },
   });
   if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
 
   await db.category.delete({ where: { id: categoryId } });
   await revalidateBoard(category.boardId);
@@ -302,13 +298,12 @@ const groupSchema = z.object({
 });
 
 export async function createGroup(data: z.infer<typeof groupSchema>) {
-  const { user } = await requireAuth();
-
-  const category = await db.category.findFirst({
-    where: { id: data.categoryId, board: { userId: user.id } },
+  const category = await db.category.findUnique({
+    where: { id: data.categoryId },
     include: { board: true },
   });
   if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
 
   const maxOrder = await db.group.aggregate({
     where: { categoryId: data.categoryId },
@@ -332,13 +327,12 @@ export async function updateGroup(
   groupId: string,
   data: Partial<Omit<z.infer<typeof groupSchema>, "categoryId">>,
 ) {
-  const { user } = await requireAuth();
-
-  const group = await db.group.findFirst({
-    where: { id: groupId, category: { board: { userId: user.id } } },
+  const group = await db.group.findUnique({
+    where: { id: groupId },
     include: { category: true },
   });
   if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
 
   const updated = await db.group.update({
     where: { id: groupId },
@@ -351,13 +345,12 @@ export async function updateGroup(
 }
 
 export async function deleteGroup(groupId: string) {
-  const { user } = await requireAuth();
-
-  const group = await db.group.findFirst({
-    where: { id: groupId, category: { board: { userId: user.id } } },
+  const group = await db.group.findUnique({
+    where: { id: groupId },
     include: { category: true },
   });
   if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
 
   await db.group.delete({ where: { id: groupId } });
   await revalidateBoard(group.category.boardId);
@@ -380,13 +373,12 @@ const tileSchema = z.object({
 });
 
 export async function createTile(data: z.infer<typeof tileSchema>) {
-  const { user } = await requireAuth();
-
-  const group = await db.group.findFirst({
-    where: { id: data.groupId, category: { board: { userId: user.id } } },
+  const group = await db.group.findUnique({
+    where: { id: data.groupId },
     include: { category: true },
   });
   if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
 
   const maxOrder = await db.tile.aggregate({
     where: { groupId: data.groupId },
@@ -414,16 +406,12 @@ export async function updateTile(
   tileId: string,
   data: Partial<Omit<z.infer<typeof tileSchema>, "groupId">>,
 ) {
-  const { user } = await requireAuth();
-
-  const tile = await db.tile.findFirst({
-    where: {
-      id: tileId,
-      group: { category: { board: { userId: user.id } } },
-    },
+  const tile = await db.tile.findUnique({
+    where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
   if (!tile) throw new Error("Tile not found");
+  await requireBoardAccess(tile.group.category.boardId, "editor");
 
   const updated = await db.tile.update({
     where: { id: tileId },
@@ -443,16 +431,12 @@ export async function updateTile(
 }
 
 export async function deleteTile(tileId: string) {
-  const { user } = await requireAuth();
-
-  const tile = await db.tile.findFirst({
-    where: {
-      id: tileId,
-      group: { category: { board: { userId: user.id } } },
-    },
+  const tile = await db.tile.findUnique({
+    where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
   if (!tile) throw new Error("Tile not found");
+  await requireBoardAccess(tile.group.category.boardId, "editor");
 
   await db.tile.delete({ where: { id: tileId } });
   await revalidateBoard(tile.group.category.boardId);
@@ -465,11 +449,9 @@ export async function reorderCategories(
   boardId: string,
   categoryIds: string[],
 ) {
-  const { user } = await requireAuth();
+  await requireBoardAccess(boardId, "editor");
 
-  const board = await db.board.findFirst({
-    where: { id: boardId, userId: user.id },
-  });
+  const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
 
   await Promise.all(
@@ -483,13 +465,12 @@ export async function reorderCategories(
 }
 
 export async function reorderGroups(categoryId: string, groupIds: string[]) {
-  const { user } = await requireAuth();
-
-  const category = await db.category.findFirst({
-    where: { id: categoryId, board: { userId: user.id } },
+  const category = await db.category.findUnique({
+    where: { id: categoryId },
     include: { board: true },
   });
   if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
 
   await Promise.all(
     groupIds.map((id, index) =>
@@ -502,13 +483,12 @@ export async function reorderGroups(categoryId: string, groupIds: string[]) {
 }
 
 export async function reorderTiles(groupId: string, tileIds: string[]) {
-  const { user } = await requireAuth();
-
-  const group = await db.group.findFirst({
-    where: { id: groupId, category: { board: { userId: user.id } } },
+  const group = await db.group.findUnique({
+    where: { id: groupId },
     include: { category: true },
   });
   if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
 
   await Promise.all(
     tileIds.map((id, index) =>
@@ -521,18 +501,15 @@ export async function reorderTiles(groupId: string, tileIds: string[]) {
 }
 
 export async function moveTileToGroup(tileId: string, newGroupId: string) {
-  const { user } = await requireAuth();
-
-  const tile = await db.tile.findFirst({
-    where: {
-      id: tileId,
-      group: { category: { board: { userId: user.id } } },
-    },
+  const tile = await db.tile.findUnique({
+    where: { id: tileId },
+    include: { group: { include: { category: true } } },
   });
   if (!tile) throw new Error("Tile not found");
+  await requireBoardAccess(tile.group.category.boardId, "editor");
 
-  const newGroup = await db.group.findFirst({
-    where: { id: newGroupId, category: { board: { userId: user.id } } },
+  const newGroup = await db.group.findUnique({
+    where: { id: newGroupId },
     include: { category: true },
   });
   if (!newGroup) throw new Error("Target group not found");
@@ -558,15 +535,15 @@ export async function moveGroupToCategory(
   groupId: string,
   newCategoryId: string,
 ) {
-  const { user } = await requireAuth();
-
-  const group = await db.group.findFirst({
-    where: { id: groupId, category: { board: { userId: user.id } } },
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    include: { category: true },
   });
   if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
 
-  const newCategory = await db.category.findFirst({
-    where: { id: newCategoryId, board: { userId: user.id } },
+  const newCategory = await db.category.findUnique({
+    where: { id: newCategoryId },
   });
   if (!newCategory) throw new Error("Target category not found");
 
