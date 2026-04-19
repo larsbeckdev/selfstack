@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Settings,
@@ -9,6 +9,10 @@ import {
   Plus,
   Layers,
   Image as ImageIcon,
+  MoreHorizontal,
+  ExternalLink,
+  Copy,
+  Settings2,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { useTranslation } from "@/components/locale-provider";
@@ -22,11 +26,19 @@ import {
   SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { CreateBoardDialog } from "@/components/dashboard/create-board-dialog";
+import { toast } from "sonner";
 
 export function AppSidebar({
   user,
@@ -36,7 +48,14 @@ export function AppSidebar({
   boards: Board[];
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { t } = useTranslation();
+
+  const copyBoardLink = (slug: string) => {
+    const url = `${window.location.origin}/board/${slug}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Link kopiert");
+  };
 
   return (
     <Sidebar>

@@ -38,6 +38,7 @@ export function IconPicker({
   const [urlInput, setUrlInput] = useState(iconUrl ?? "");
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
+  const [uploadName, setUploadName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.svg,.ico";
@@ -57,6 +58,7 @@ export function IconPicker({
         return;
       }
       setUploadPreview(json.url);
+      setUploadName(json.originalName || file.name);
       onIconUrlChange?.(json.url);
       setOpen(false);
     } catch {
@@ -77,7 +79,9 @@ export function IconPicker({
       <PopoverTrigger asChild>
         <Button variant="outline" className="w-full justify-start gap-2">
           <DynamicIcon name={value} iconUrl={iconUrl} className="size-4" />
-          <span className="truncate">{iconUrl ? "Eigenes Icon" : value}</span>
+          <span className="truncate">
+            {iconUrl ? uploadName || "Eigenes Icon" : value}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-0" align="start">
@@ -178,13 +182,14 @@ export function IconPicker({
                   }}
                 />
                 <span className="text-xs text-muted-foreground truncate flex-1">
-                  Hochgeladenes Icon
+                  {uploadName || "Hochgeladenes Icon"}
                 </span>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     setUploadPreview(null);
+                    setUploadName(null);
                     onIconUrlChange?.(null);
                   }}
                 >

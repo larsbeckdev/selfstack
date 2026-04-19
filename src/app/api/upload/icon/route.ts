@@ -88,5 +88,5 @@ export async function POST(request: Request) {
 
   const url = `/uploads/icons/${uniqueName}`;
 
-  return Response.json({ url });
+  return Response.json({ url, originalName: file.name });
 }
