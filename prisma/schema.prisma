@@ -81,11 +81,6 @@ model Category {
   color   String  @default("#6366f1")
   columns Int     @default(1)
   order   Int     @default(0)
-  // Outer-grid layout (board level)
-  layoutX Int     @default(0)
-  layoutY Int     @default(0)
-  layoutW Int     @default(4)
-  layoutH Int     @default(4)
   boardId String
 
   board  Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
@@ -100,11 +95,6 @@ model Group {
   viewMode   String  @default("grid")
   columns    Int     @default(0)
   order      Int     @default(0)
-  // Inner-grid layout (category level) – full-width header band
-  layoutX    Int     @default(0)
-  layoutY    Int     @default(0)
-  layoutW    Int     @default(12)
-  layoutH    Int     @default(1)
   categoryId String
 
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
@@ -112,24 +102,19 @@ model Group {
 }
 
 model Tile {
-  id              String  @id @default(cuid())
-  name            String
-  icon            String  @default("square")
-  iconUrl         String?
-  color           String  @default("#6366f1")
-  bgColor         String?
-  borderColor     String?
+  id             String  @id @default(cuid())
+  name           String
+  icon           String  @default("square")
+  iconUrl        String?
+  color          String  @default("#6366f1")
+  bgColor        String?
+  borderColor    String?
   borderMatchesBg Boolean @default(false)
-  url             String?
-  description     String?
-  statusCheck     Boolean @default(false)
-  order           Int     @default(0)
-  // Inner-grid layout (category level)
-  layoutX         Int     @default(0)
-  layoutY         Int     @default(0)
-  layoutW         Int     @default(2)
-  layoutH         Int     @default(2)
-  groupId         String
+  url            String?
+  description    String?
+  statusCheck    Boolean @default(false)
+  order          Int     @default(0)
+  groupId        String
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
 }
