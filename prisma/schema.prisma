@@ -112,6 +112,7 @@ model Tile {
   borderMatchesBg Boolean @default(false)
   url            String?
   description    String?
+  statusCheck    Boolean @default(false)
   order          Int     @default(0)
   groupId        String
 
