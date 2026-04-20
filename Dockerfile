@@ -62,7 +62,8 @@ RUN mkdir -p /data /app/public/uploads \
     && chown -R nextjs:nodejs /data /app/public/uploads
 
 COPY --chown=nextjs:nodejs docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
+ && chmod +x /usr/local/bin/docker-entrypoint.sh
 
 USER nextjs
 
