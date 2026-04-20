@@ -48,6 +48,10 @@ export function TileCard({
   const border = tile.borderMatchesBg
     ? tile.bgColor || tile.color + "40"
     : tile.borderColor || tile.color + "40";
+  const showStatus = tile.statusCheck && !!tile.url;
+  const statusDot = showStatus ? (
+    <TileStatusIndicator tileId={tile.id} />
+  ) : null;
 
   const handleDelete = async () => {
     try {
@@ -114,6 +118,9 @@ export function TileCard({
           className="size-4"
           style={{ color: iconColor }}
         />
+        {statusDot && (
+          <div className="absolute -left-0.5 -top-0.5">{statusDot}</div>
+        )}
         {tileMenu && (
           <div className="absolute -right-1 -top-1 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
@@ -160,6 +167,9 @@ export function TileCard({
             {tile.description}
           </span>
         )}
+        {statusDot && (
+          <div className="absolute left-1 top-1">{statusDot}</div>
+        )}
         {tileMenu && (
           <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
@@ -187,6 +197,7 @@ export function TileCard({
           className="size-4 shrink-0"
           style={{ color: iconColor }}
         />
+        {statusDot}
         <span className="flex-1 truncate text-sm font-medium">{tile.name}</span>
         {tile.description && (
           <span className="hidden truncate text-xs text-muted-foreground sm:block sm:max-w-[200px]">
@@ -233,6 +244,9 @@ export function TileCard({
         <span className="max-w-full truncate text-[10px] font-medium leading-tight">
           {tile.name}
         </span>
+        {statusDot && (
+          <div className="absolute left-1 top-1">{statusDot}</div>
+        )}
         {tileMenu && (
           <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
