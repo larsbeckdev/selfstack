@@ -298,6 +298,7 @@ const groupSchema = z.object({
     .optional(),
   columns: z.number().int().min(0).max(12).default(0).optional(),
   w: z.number().int().min(1).max(12).default(2).optional(),
+  bgColor: z.string().nullable().optional(),
   categoryId: z.string(),
 });
 

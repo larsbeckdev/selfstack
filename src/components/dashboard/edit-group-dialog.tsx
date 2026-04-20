@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { ShadcnColorPicker } from "@/components/shadcn-color-picker";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -38,6 +39,9 @@ export function EditGroupDialog({
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
   const [w, setW] = useState((group as Group & { w?: number }).w ?? 2);
+  const [bgColor, setBgColor] = useState<string | null>(
+    (group as Group & { bgColor?: string | null }).bgColor ?? null,
+  );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -46,7 +50,7 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl, w });
+      await updateGroup(group.id, { name, icon, iconUrl, w, bgColor });
       toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
@@ -96,6 +100,10 @@ export function EditGroupDialog({
                 ))}
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>{t("group.bgColor")}</Label>
+            <ShadcnColorPicker value={bgColor} onChange={setBgColor} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>
