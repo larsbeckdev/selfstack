@@ -166,6 +166,7 @@ const de = {
   "tile.urlOptional": "URL (optional)",
   "tile.descriptionOptional": "Beschreibung (optional)",
   "tile.descriptionPlaceholder": "Kurze Beschreibung...",
+  "tile.statusCheck": "Status-Ping",
 
   // Members
   "members.title": "Mitglieder",

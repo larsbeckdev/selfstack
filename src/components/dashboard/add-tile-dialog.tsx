@@ -86,6 +86,7 @@ export function AddTileDialog({
   const [borderMatchesBg, setBorderMatchesBg] = useState(false);
   const [url, setUrl] = useState("");
   const [description, setDescription] = useState("");
+  const [statusCheck, setStatusCheck] = useState(false);
   const [groupId, setGroupId] = useState(allGroups[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -109,6 +110,7 @@ export function AddTileDialog({
         borderMatchesBg,
         url: url || undefined,
         description: description || undefined,
+        statusCheck,
         groupId,
       });
       toast.success(t("tile.created"));
@@ -123,6 +125,7 @@ export function AddTileDialog({
       setBorderMatchesBg(false);
       setUrl("");
       setDescription("");
+      setStatusCheck(false);
     } catch {
       toast.error(t("error.createFailed"));
     } finally {
@@ -224,6 +227,17 @@ export function AddTileDialog({
               placeholder="https://..."
               type="url"
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="tile-status"
+              checked={statusCheck}
+              onCheckedChange={setStatusCheck}
+              disabled={!url}
+            />
+            <Label htmlFor="tile-status" className="text-xs">
+              {t("tile.statusCheck")}
+            </Label>
           </div>
           <div className="space-y-2">
             <Label htmlFor="tile-desc">{t("tile.descriptionOptional")}</Label>

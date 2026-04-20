@@ -167,9 +167,7 @@ export function TileCard({
             {tile.description}
           </span>
         )}
-        {statusDot && (
-          <div className="absolute left-1 top-1">{statusDot}</div>
-        )}
+        {statusDot && <div className="absolute left-1 top-1">{statusDot}</div>}
         {tileMenu && (
           <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
@@ -244,9 +242,7 @@ export function TileCard({
         <span className="max-w-full truncate text-[10px] font-medium leading-tight">
           {tile.name}
         </span>
-        {statusDot && (
-          <div className="absolute left-1 top-1">{statusDot}</div>
-        )}
+        {statusDot && <div className="absolute left-1 top-1">{statusDot}</div>}
         {tileMenu && (
           <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}

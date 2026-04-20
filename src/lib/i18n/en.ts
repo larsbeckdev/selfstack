@@ -166,6 +166,7 @@ const en: Record<TranslationKey, string> = {
   "tile.urlOptional": "URL (optional)",
   "tile.descriptionOptional": "Description (optional)",
   "tile.descriptionPlaceholder": "Short description...",
+  "tile.statusCheck": "Status ping",
 
   // Members
   "members.title": "Members",

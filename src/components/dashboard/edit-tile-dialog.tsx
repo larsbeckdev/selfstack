@@ -76,6 +76,7 @@ export function EditTileDialog({
   const [borderMatchesBg, setBorderMatchesBg] = useState(tile.borderMatchesBg);
   const [url, setUrl] = useState(tile.url ?? "");
   const [description, setDescription] = useState(tile.description ?? "");
+  const [statusCheck, setStatusCheck] = useState(tile.statusCheck);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -96,6 +97,7 @@ export function EditTileDialog({
         borderMatchesBg,
         url: url || undefined,
         description: description || undefined,
+        statusCheck,
       });
       toast.success(t("tile.updated"));
       router.refresh();
@@ -185,6 +187,17 @@ export function EditTileDialog({
               type="url"
               placeholder="https://..."
             />
+          </div>
+          <div className="flex items-center gap-2">
+            <Switch
+              id="edit-tile-status"
+              checked={statusCheck}
+              onCheckedChange={setStatusCheck}
+              disabled={!url}
+            />
+            <Label htmlFor="edit-tile-status" className="text-xs">
+              {t("tile.statusCheck")}
+            </Label>
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-tile-desc">
