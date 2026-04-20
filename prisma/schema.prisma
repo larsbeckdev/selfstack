@@ -96,6 +96,8 @@ model Group {
   columns    Int     @default(0)
   /// Width of the group in board columns (1..boardColumns).
   w          Int     @default(2)
+  /// Optional background color (tailwind/shadcn named shade, e.g. "slate-100").
+  bgColor    String?
   order      Int     @default(0)
   categoryId String
 
