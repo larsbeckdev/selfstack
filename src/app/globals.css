@@ -128,3 +128,8 @@
     @apply font-sans;
   }
 }
+@utility bg-edit-grid {
+  background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+  background-size: 16px 16px;
+  background-position: 0 0;
+}

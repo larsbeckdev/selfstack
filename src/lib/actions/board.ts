@@ -297,6 +297,7 @@ const groupSchema = z.object({
     .default("grid")
     .optional(),
   columns: z.number().int().min(0).max(12).default(0).optional(),
+  w: z.number().int().min(1).max(12).default(2).optional(),
   categoryId: z.string(),
 });
 
@@ -373,6 +374,10 @@ const tileSchema = z.object({
   url: z.string().url().optional().or(z.literal("")),
   description: z.string().max(500).optional(),
   statusCheck: z.boolean().default(false),
+  size: z
+    .enum(["small", "default", "large", "list"])
+    .default("default")
+    .optional(),
   groupId: z.string(),
 });
 

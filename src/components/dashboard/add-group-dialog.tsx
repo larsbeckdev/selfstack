@@ -27,19 +27,29 @@ import { toast } from "sonner";
 
 export function AddGroupDialog({
   categories,
+  defaultCategoryId,
   open,
   onOpenChange,
 }: {
   categories: CategoryWithGroups[];
+  defaultCategoryId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("grid-3x3");
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState(
+    defaultCategoryId ?? categories[0]?.id ?? "",
+  );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+
+  const [prevDefault, setPrevDefault] = useState(defaultCategoryId);
+  if (defaultCategoryId !== prevDefault) {
+    setPrevDefault(defaultCategoryId);
+    if (defaultCategoryId) setCategoryId(defaultCategoryId);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +89,10 @@ export function AddGroupDialog({
           </div>
           <div className="space-y-2">
             <Label>{t("board.addCategory")}</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
+            <Select
+              value={categoryId}
+              onValueChange={setCategoryId}
+              disabled={!!defaultCategoryId}>
               <SelectTrigger>
                 <SelectValue placeholder={t("group.selectCategory")} />
               </SelectTrigger>

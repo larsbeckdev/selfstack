@@ -1,10 +1,9 @@
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   SortableContext,
-  horizontalListSortingStrategy,
   verticalListSortingStrategy,
   rectSortingStrategy,
 } from "@dnd-kit/sortable";
@@ -15,13 +14,11 @@ import {
   Pencil,
   Trash2,
   Copy,
-  LayoutGrid,
-  Grid2x2,
-  Grid3x3,
-  List,
+  Plus,
 } from "lucide-react";
-import type { GroupWithTiles, TileViewMode } from "@/types";
-import { deleteGroup, updateGroup, duplicateGroup } from "@/lib/actions/board";
+import type { CategoryWithGroups, GroupWithTiles } from "@/types";
+import { deleteGroup, duplicateGroup } from "@/lib/actions/board";
+import { getTileSize } from "@/lib/tile-size";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,60 +27,38 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { SortableTile } from "./sortable-tile";
 import { EditGroupDialog } from "./edit-group-dialog";
+import { AddTileDialog } from "./add-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 export function GroupCard({
   group,
+  categoryId,
   dragHandleProps,
 }: {
   group: GroupWithTiles;
+  categoryId?: string;
   dragHandleProps?: Record<string, unknown>;
 }) {
   const [editOpen, setEditOpen] = useState(false);
+  const [addTileOpen, setAddTileOpen] = useState(false);
   const isEditing = useEditMode();
   const router = useRouter();
   const { t } = useTranslation();
-  const [currentViewMode, setCurrentViewMode] = useState<TileViewMode>(
-    (group.viewMode as TileViewMode) || "grid",
-  );
-  const isListView = currentViewMode === "list";
-  const hasColumns = group.columns > 0;
 
-  const viewModeOptions: {
-    value: TileViewMode;
-    label: string;
-    icon: React.ReactNode;
-  }[] = [
-    {
-      value: "grid-sm",
-      label: t("group.viewSmall"),
-      icon: <Grid3x3 className="size-3.5" />,
-    },
-    {
-      value: "grid",
-      label: t("group.viewMedium"),
-      icon: <Grid2x2 className="size-3.5" />,
-    },
-    {
-      value: "grid-lg",
-      label: t("group.viewLarge"),
-      icon: <LayoutGrid className="size-3.5" />,
-    },
-    {
-      value: "list",
-      label: t("group.viewList"),
-      icon: <List className="size-3.5" />,
-    },
-  ];
+  // Sub-grid width: number of columns inside the group.
+  const groupCols = Math.max(
+    1,
+    (group as GroupWithTiles & { w?: number }).w ?? 2,
+  );
+
+  // Render as vertical list when there are tiles and ALL of them are sized "list".
+  const allList =
+    group.tiles.length > 0 &&
+    group.tiles.every((tile) => getTileSize(tile) === "list");
 
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: `group-droppable-${group.id}`,
@@ -101,19 +76,9 @@ export function GroupCard({
     }
   };
 
-  const handleViewModeChange = async (mode: TileViewMode) => {
-    setCurrentViewMode(mode);
-    try {
-      await updateGroup(group.id, { viewMode: mode });
-    } catch {
-      setCurrentViewMode((group.viewMode as TileViewMode) || "grid");
-      toast.error(t("group.changeViewFailed"));
-    }
-  };
-
   return (
     <>
-      <div className="rounded-md bg-muted/40">
+      <div className="rounded-lg bg-card shadow-sm">
         <div className="flex items-center gap-2 px-3 py-2">
           {isEditing && dragHandleProps && (
             <button
@@ -131,28 +96,6 @@ export function GroupCard({
           <span className="text-[10px] text-muted-foreground">
             {group.tiles.length} {t("group.tileCount")}
           </span>
-
-          <div className="flex items-center">
-            {viewModeOptions.map((opt) => (
-              <Tooltip key={opt.value}>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className={`flex size-6 items-center justify-center rounded text-muted-foreground transition-colors hover:text-foreground ${
-                      currentViewMode === opt.value
-                        ? "bg-background text-foreground shadow-sm"
-                        : ""
-                    }`}
-                    onClick={() => handleViewModeChange(opt.value)}>
-                    {opt.icon}
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{opt.label}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
 
           {isEditing && (
             <DropdownMenu>
@@ -193,25 +136,24 @@ export function GroupCard({
         <SortableContext
           items={group.tiles.map((t) => t.id)}
           strategy={
-            hasColumns
-              ? rectSortingStrategy
-              : isListView
-                ? verticalListSortingStrategy
-                : horizontalListSortingStrategy
+            allList ? verticalListSortingStrategy : rectSortingStrategy
           }>
           <div
             ref={setDroppableRef}
-            className={
-              hasColumns
-                ? `grid gap-2 px-3 pb-3${isEditing && group.tiles.length === 0 ? " min-h-[48px]" : ""}`
-                : isListView
-                  ? `flex flex-col gap-1 px-3 pb-3${isEditing && group.tiles.length === 0 ? " min-h-[48px]" : ""}`
-                  : `flex flex-wrap gap-2 px-3 pb-3${isEditing && group.tiles.length === 0 ? " min-h-[48px]" : ""}`
-            }
+            className={[
+              allList
+                ? "flex flex-col divide-y divide-border/30 px-3 pb-3"
+                : "grid gap-3 px-3 pb-3",
+              isEditing && group.tiles.length === 0 ? "min-h-[48px]" : "",
+              isEditing
+                ? "bg-edit-grid rounded-b-md border-t border-dashed border-border/40 pt-3"
+                : "",
+            ].join(" ")}
             style={
-              hasColumns
+              !allList
                 ? {
-                    gridTemplateColumns: `repeat(${group.columns}, minmax(0, 1fr))`,
+                    gridTemplateColumns: `repeat(${groupCols}, minmax(0, 1fr))`,
+                    gridAutoRows: "minmax(0, auto)",
                   }
                 : undefined
             }>
@@ -220,7 +162,7 @@ export function GroupCard({
                 key={tile.id}
                 tile={tile}
                 groupId={group.id}
-                viewMode={currentViewMode}
+                groupCols={groupCols}
               />
             ))}
             {group.tiles.length === 0 && (
@@ -230,12 +172,43 @@ export function GroupCard({
             )}
           </div>
         </SortableContext>
+
+        {isEditing && (
+          <div className="px-3 pb-3">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-xs"
+              onClick={() => setAddTileOpen(true)}>
+              <Plus className="mr-1 size-3.5" />
+              {t("tile.addTile")}
+            </Button>
+          </div>
+        )}
       </div>
 
       <EditGroupDialog
         group={group}
         open={editOpen}
         onOpenChange={setEditOpen}
+      />
+      <AddTileDialog
+        categories={[
+          {
+            id: categoryId ?? "",
+            name: "",
+            icon: "folder",
+            iconUrl: null,
+            color: "#6366f1",
+            columns: 1,
+            order: 0,
+            boardId: "",
+            groups: [group],
+          } satisfies CategoryWithGroups,
+        ]}
+        defaultGroupId={group.id}
+        open={addTileOpen}
+        onOpenChange={setAddTileOpen}
       />
     </>
   );

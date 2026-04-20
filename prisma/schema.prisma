@@ -94,6 +94,8 @@ model Group {
   iconUrl    String?
   viewMode   String  @default("grid")
   columns    Int     @default(0)
+  /// Width of the group in board columns (1..boardColumns).
+  w          Int     @default(2)
   order      Int     @default(0)
   categoryId String
 
@@ -114,6 +116,12 @@ model Tile {
   description    String?
   statusCheck    Boolean @default(false)
   order          Int     @default(0)
+  /// Fixed size mode: "small" | "default" | "large" | "list"
+  size           String  @default("default")
+  /// Legacy — retained for backwards compatibility, not used by UI.
+  gridW          Int     @default(1)
+  /// Legacy — retained for backwards compatibility, not used by UI.
+  gridH          Int     @default(1)
   groupId        String
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)

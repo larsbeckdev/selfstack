@@ -67,10 +67,12 @@ function ColorInput({
 
 export function AddTileDialog({
   categories,
+  defaultGroupId,
   open,
   onOpenChange,
 }: {
   categories: CategoryWithGroups[];
+  defaultGroupId?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -87,10 +89,22 @@ export function AddTileDialog({
   const [url, setUrl] = useState("");
   const [description, setDescription] = useState("");
   const [statusCheck, setStatusCheck] = useState(false);
-  const [groupId, setGroupId] = useState(allGroups[0]?.id ?? "");
+  const [size, setSize] = useState<"small" | "default" | "large" | "list">(
+    "default",
+  );
+  const [groupId, setGroupId] = useState(
+    defaultGroupId ?? allGroups[0]?.id ?? "",
+  );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+
+  // Keep groupId in sync when the caller opens the dialog with a fresh default.
+  const [prevDefault, setPrevDefault] = useState(defaultGroupId);
+  if (defaultGroupId !== prevDefault) {
+    setPrevDefault(defaultGroupId);
+    if (defaultGroupId) setGroupId(defaultGroupId);
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -111,6 +125,7 @@ export function AddTileDialog({
         url: url || undefined,
         description: description || undefined,
         statusCheck,
+        size,
         groupId,
       });
       toast.success(t("tile.created"));
@@ -126,6 +141,7 @@ export function AddTileDialog({
       setUrl("");
       setDescription("");
       setStatusCheck(false);
+      setSize("default");
     } catch {
       toast.error(t("error.createFailed"));
     } finally {
@@ -152,7 +168,10 @@ export function AddTileDialog({
           </div>
           <div className="space-y-2">
             <Label>{t("tile.group")}</Label>
-            <Select value={groupId} onValueChange={setGroupId}>
+            <Select
+              value={groupId}
+              onValueChange={setGroupId}
+              disabled={!!defaultGroupId}>
               <SelectTrigger>
                 <SelectValue placeholder={t("tile.groupSelect")} />
               </SelectTrigger>
@@ -248,6 +267,22 @@ export function AddTileDialog({
               placeholder={t("tile.descriptionPlaceholder")}
               rows={2}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>{t("tile.size")}</Label>
+            <Select
+              value={size}
+              onValueChange={(v) => setSize(v as typeof size)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">{t("tile.sizeSmall")}</SelectItem>
+                <SelectItem value="default">{t("tile.sizeDefault")}</SelectItem>
+                <SelectItem value="large">{t("tile.sizeLarge")}</SelectItem>
+                <SelectItem value="list">{t("tile.sizeList")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

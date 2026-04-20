@@ -16,6 +16,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
@@ -77,6 +84,9 @@ export function EditTileDialog({
   const [url, setUrl] = useState(tile.url ?? "");
   const [description, setDescription] = useState(tile.description ?? "");
   const [statusCheck, setStatusCheck] = useState(tile.statusCheck);
+  const [size, setSize] = useState<"small" | "default" | "large" | "list">(
+    (tile.size as "small" | "default" | "large" | "list") ?? "default",
+  );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -98,6 +108,7 @@ export function EditTileDialog({
         url: url || undefined,
         description: description || undefined,
         statusCheck,
+        size,
       });
       toast.success(t("tile.updated"));
       router.refresh();
@@ -209,6 +220,22 @@ export function EditTileDialog({
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>{t("tile.size")}</Label>
+            <Select
+              value={size}
+              onValueChange={(v) => setSize(v as typeof size)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">{t("tile.sizeSmall")}</SelectItem>
+                <SelectItem value="default">{t("tile.sizeDefault")}</SelectItem>
+                <SelectItem value="large">{t("tile.sizeLarge")}</SelectItem>
+                <SelectItem value="list">{t("tile.sizeList")}</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

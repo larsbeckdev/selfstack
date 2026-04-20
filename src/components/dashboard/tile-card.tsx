@@ -10,7 +10,7 @@ import {
   Copy,
 } from "lucide-react";
 import type { Tile } from "@/generated/prisma/client";
-import type { TileViewMode } from "@/types";
+import { getTileSize, type TileSize } from "@/lib/tile-size";
 import { deleteTile, duplicateTile } from "@/lib/actions/board";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,13 @@ import { toast } from "sonner";
 
 export function TileCard({
   tile,
-  viewMode = "grid",
+  size: sizeProp,
 }: {
   tile: Tile;
-  viewMode?: TileViewMode;
+  /** Explicit size override. Defaults to tile.size. */
+  size?: TileSize;
 }) {
+  const size: TileSize = sizeProp ?? getTileSize(tile);
   const [editOpen, setEditOpen] = useState(false);
   const isEditing = useEditMode();
   const router = useRouter();
@@ -106,16 +108,16 @@ export function TileCard({
 
   let content: React.ReactNode;
 
-  if (viewMode === "grid-sm") {
-    // Small: icon only, always tooltip
+  if (size === "small") {
+    // Small (1×1): icon only, always tooltip
     const inner = (
       <div
-        className={`group relative flex size-10 items-center justify-center rounded-md border transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
+        className={`group relative flex size-full min-h-[56px] items-center justify-center rounded-md border transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
         style={{ borderColor: border, backgroundColor: bg }}>
         <DynamicIcon
           name={tile.icon}
           iconUrl={tile.iconUrl}
-          className="size-4"
+          className="size-5"
           style={{ color: iconColor }}
         />
 
@@ -128,14 +130,17 @@ export function TileCard({
             {tileMenu}
           </div>
         )}
-
       </div>
     );
     content = (
       <Tooltip>
         <TooltipTrigger asChild>
           {!isEditing && tile.url ? (
-            <a href={tile.url} target="_blank" rel="noopener noreferrer">
+            <a
+              href={tile.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block size-full">
               {inner}
             </a>
           ) : (
@@ -150,29 +155,36 @@ export function TileCard({
         </TooltipContent>
       </Tooltip>
     );
-  } else if (viewMode === "grid-lg") {
-    // Large: bigger tile with icon, name, and description preview
+  } else if (size === "large") {
+    // Large (4×4): full widget
     const inner = (
       <div
-        className={`group relative flex h-28 w-28 flex-col items-center justify-center gap-1.5 rounded-lg border p-3 transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
+        className={`group relative flex size-full min-h-[120px] flex-col items-center justify-center gap-2 rounded-lg border p-4 transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
         style={{ borderColor: border, backgroundColor: bg }}>
         <DynamicIcon
           name={tile.icon}
           iconUrl={tile.iconUrl}
-          className="size-8"
+          className="size-10"
           style={{ color: iconColor }}
         />
-        <span className="max-w-full truncate text-xs font-medium leading-tight">
-          {tile.name}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="block max-w-full truncate text-sm font-semibold leading-tight">
+              {tile.name}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tile.name}</p>
+          </TooltipContent>
+        </Tooltip>
         {tile.description && (
-          <span className="max-w-full truncate text-[9px] text-muted-foreground">
+          <span className="block max-w-full truncate text-center text-xs text-muted-foreground">
             {tile.description}
           </span>
         )}
-        {statusDot && <div className="absolute left-1 top-1">{statusDot}</div>}
+        {statusDot && <div className="absolute left-2 top-2">{statusDot}</div>}
         {tileMenu && (
-          <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
           </div>
         )}
@@ -180,37 +192,49 @@ export function TileCard({
     );
     content =
       !isEditing && tile.url ? (
-        <a href={tile.url} target="_blank" rel="noopener noreferrer">
+        <a
+          href={tile.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block size-full">
           {inner}
         </a>
       ) : (
         inner
       );
-  } else if (viewMode === "list") {
-    // List: horizontal row
+  } else if (size === "list") {
+    // List: horizontal row — fixed column widths, truncated title
     const inner = (
       <div
-        className={`group relative flex items-center gap-3 rounded-md border px-3 py-2 transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
+        className={`group relative flex items-center gap-2 rounded-md border px-3 py-2 transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
         style={{ borderColor: border, backgroundColor: bg }}>
-        <DynamicIcon
-          name={tile.icon}
-          iconUrl={tile.iconUrl}
-          className="size-4 shrink-0"
-          style={{ color: iconColor }}
-        />
-        {statusDot}
-        <span className="flex-1 truncate text-sm font-medium">{tile.name}</span>
-        {tile.description && (
-          <span className="hidden truncate text-xs text-muted-foreground sm:block sm:max-w-[200px]">
-            {tile.description}
-          </span>
-        )}
-        {isEditing && tile.url && (
+        <div className="flex w-8 shrink-0 items-center justify-center">
+          <DynamicIcon
+            name={tile.icon}
+            iconUrl={tile.iconUrl}
+            className="size-4"
+            style={{ color: iconColor }}
+          />
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="flex-1 truncate text-sm font-medium">
+              {tile.name}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tile.name}</p>
+          </TooltipContent>
+        </Tooltip>
+        <div className="flex w-20 shrink-0 items-center justify-end gap-2">
+          {statusDot}
+        </div>
+        {tile.url && (
           <a
             href={tile.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-muted-foreground hover:text-foreground"
+            className="flex w-8 shrink-0 items-center justify-center text-muted-foreground hover:text-foreground"
             onClick={(e) => e.stopPropagation()}>
             <ExternalLink className="size-3.5" />
           </a>
@@ -222,29 +246,34 @@ export function TileCard({
         )}
       </div>
     );
-    content =
-      !isEditing && tile.url ? (
-        <a href={tile.url} target="_blank" rel="noopener noreferrer">
-          {inner}
-        </a>
-      ) : (
-        inner
-      );
+    content = inner;
   } else {
-    // Default grid: current medium size
+    // Default (2×2): icon + title + content preview
     const inner = (
       <div
-        className={`group relative flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-lg border p-2 transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
+        className={`group relative flex size-full min-h-[80px] flex-col items-center justify-center gap-1 rounded-lg border p-2 transition-colors hover:brightness-110 ${isEditing ? "cursor-grab" : ""}`}
         style={{ borderColor: border, backgroundColor: bg }}>
         <DynamicIcon
           name={tile.icon}
           iconUrl={tile.iconUrl}
-          className="size-6"
+          className="size-7"
           style={{ color: iconColor }}
         />
-        <span className="max-w-full truncate text-[10px] font-medium leading-tight">
-          {tile.name}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className="block max-w-full truncate text-xs font-medium leading-tight">
+              {tile.name}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{tile.name}</p>
+          </TooltipContent>
+        </Tooltip>
+        {tile.description && (
+          <span className="block max-w-full truncate text-center text-[10px] text-muted-foreground">
+            {tile.description}
+          </span>
+        )}
         {statusDot && <div className="absolute left-1 top-1">{statusDot}</div>}
         {tileMenu && (
           <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
@@ -255,7 +284,11 @@ export function TileCard({
     );
     content =
       !isEditing && tile.url ? (
-        <a href={tile.url} target="_blank" rel="noopener noreferrer">
+        <a
+          href={tile.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block size-full">
           {inner}
         </a>
       ) : (
@@ -263,8 +296,8 @@ export function TileCard({
       );
   }
 
-  // Wrap non-small grid items with tooltip if they have a description
-  if (viewMode !== "grid-sm" && tile.description && viewMode !== "list") {
+  // Wrap medium/large tiles with a description tooltip.
+  if (size !== "small" && size !== "list" && tile.description) {
     content = (
       <Tooltip>
         <TooltipTrigger asChild>{content}</TooltipTrigger>

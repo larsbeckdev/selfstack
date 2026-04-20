@@ -15,6 +15,7 @@ import {
   Copy,
   ChevronDown,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import type { CategoryWithGroups } from "@/types";
 import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
@@ -33,7 +34,10 @@ import {
 } from "@/components/ui/collapsible";
 import { SortableGroup } from "./sortable-group";
 import { EditCategoryDialog } from "./edit-category-dialog";
+import { AddGroupDialog } from "./add-group-dialog";
+import { AddTileDialog } from "./add-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
+import { useBoardColumnsContext } from "./board-columns-context";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -48,9 +52,12 @@ export function CategoryCard({
 }) {
   const [open, setOpen] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
+  const [addGroupOpen, setAddGroupOpen] = useState(false);
+  const [addTileOpen, setAddTileOpen] = useState(false);
   const isEditing = useEditMode();
   const router = useRouter();
   const { t } = useTranslation();
+  const { columns: boardColumns } = useBoardColumnsContext();
 
   const handleDelete = async () => {
     try {
@@ -144,20 +151,24 @@ export function CategoryCard({
             <SortableContext
               items={category.groups.map((g) => g.id)}
               strategy={
-                category.columns > 1
+                boardColumns > 1
                   ? rectSortingStrategy
                   : verticalListSortingStrategy
               }>
               <div
-                className={
-                  category.columns > 1
+                className={[
+                  boardColumns > 1
                     ? "grid gap-4 px-4 pb-4"
-                    : "space-y-4 px-4 pb-4"
-                }
+                    : "space-y-4 px-4 pb-4",
+                  isEditing
+                    ? "bg-edit-grid rounded-b-lg border-t border-dashed border-border/40 pt-4"
+                    : "",
+                ].join(" ")}
                 style={
-                  category.columns > 1
+                  boardColumns > 1
                     ? {
-                        gridTemplateColumns: `repeat(${category.columns}, minmax(0, 1fr))`,
+                        gridTemplateColumns: `repeat(${boardColumns}, minmax(0, 1fr))`,
+                        gridAutoRows: "minmax(0, auto)",
                       }
                     : undefined
                 }>
@@ -166,6 +177,7 @@ export function CategoryCard({
                     key={group.id}
                     group={group}
                     categoryId={category.id}
+                    boardColumns={boardColumns}
                   />
                 ))}
                 {category.groups.length === 0 && (
@@ -175,6 +187,26 @@ export function CategoryCard({
                 )}
               </div>
             </SortableContext>
+
+            {isEditing && !isDragOverlay && (
+              <div className="flex items-center gap-2 px-4 pb-4">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAddGroupOpen(true)}>
+                  <Plus className="mr-1 size-3.5" />
+                  {t("category.addGroup")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAddTileOpen(true)}
+                  disabled={category.groups.length === 0}>
+                  <Plus className="mr-1 size-3.5" />
+                  {t("category.addTile")}
+                </Button>
+              </div>
+            )}
           </CollapsibleContent>
         </div>
       </Collapsible>
@@ -183,6 +215,17 @@ export function CategoryCard({
         category={category}
         open={editOpen}
         onOpenChange={setEditOpen}
+      />
+      <AddGroupDialog
+        categories={[category]}
+        defaultCategoryId={category.id}
+        open={addGroupOpen}
+        onOpenChange={setAddGroupOpen}
+      />
+      <AddTileDialog
+        categories={[category]}
+        open={addTileOpen}
+        onOpenChange={setAddTileOpen}
       />
     </>
   );

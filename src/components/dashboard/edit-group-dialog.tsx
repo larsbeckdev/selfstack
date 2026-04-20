@@ -37,7 +37,7 @@ export function EditGroupDialog({
   const [name, setName] = useState(group.name);
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
-  const [columns, setColumns] = useState(group.columns ?? 0);
+  const [w, setW] = useState((group as Group & { w?: number }).w ?? 2);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -46,7 +46,7 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl, columns });
+      await updateGroup(group.id, { name, icon, iconUrl, w });
       toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
@@ -83,16 +83,13 @@ export function EditGroupDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>{t("common.columns")}</Label>
-            <Select
-              value={String(columns)}
-              onValueChange={(v) => setColumns(Number(v))}>
+            <Label>{t("group.width")}</Label>
+            <Select value={String(w)} onValueChange={(v) => setW(Number(v))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="0">{t("common.columnsAuto")}</SelectItem>
-                {[1, 2, 3, 4, 5, 6].map((n) => (
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                   <SelectItem key={n} value={String(n)}>
                     {n}
                   </SelectItem>
