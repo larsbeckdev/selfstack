@@ -142,6 +142,7 @@ const de = {
   "group.viewList": "Liste",
   "group.tileCount": "Kacheln",
   "group.width": "Breite (Spalten)",
+  "group.bgColor": "Hintergrundfarbe",
   "group.noTiles": "Keine Kacheln",
   "group.changeViewFailed": "Fehler beim Ändern der Ansicht",
   "group.namePlaceholder": "z.B. Frontend",

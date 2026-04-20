@@ -142,6 +142,7 @@ const en: Record<TranslationKey, string> = {
   "group.viewList": "List",
   "group.tileCount": "Tiles",
   "group.width": "Width (columns)",
+  "group.bgColor": "Background color",
   "group.noTiles": "No tiles",
   "group.changeViewFailed": "Failed to change view",
   "group.namePlaceholder": "e.g. Frontend",
