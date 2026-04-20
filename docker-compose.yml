@@ -1,0 +1,22 @@
+services:
+  selfstack:
+    build: .
+    image: selfstack:latest
+    container_name: selfstack
+    restart: unless-stopped
+    ports:
+      - "3026:3026"
+    environment:
+      DATABASE_URL: "file:/data/selfstack.db"
+      # Change this in production! Generate with:
+      #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
+      # Enable when serving over HTTPS
+      # SECURE_COOKIES: "true"
+    volumes:
+      - selfstack-data:/data
+      - selfstack-uploads:/app/public/uploads
+
+volumes:
+  selfstack-data:
+  selfstack-uploads:
