@@ -28,6 +28,12 @@ import {
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { EditBoardDialog } from "@/components/dashboard/edit-board-dialog";
 import { useTranslation } from "@/components/locale-provider";
+import { copyToClipboard } from "@/lib/clipboard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 
 export function BoardSettings({ boards }: { boards: Board[] }) {
@@ -78,10 +84,11 @@ function BoardSettingsRow({ board }: { board: Board }) {
     }
   };
 
-  const copyPublicLink = () => {
+  const copyPublicLink = async () => {
     const url = `${window.location.origin}/b/${board.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success(t("common.linkCopied"));
+    const ok = await copyToClipboard(url);
+    if (ok) toast.success(t("common.linkCopied"));
+    else toast.error(t("common.copyFailed"));
   };
 
   const handleDelete = async () => {
@@ -112,39 +119,69 @@ function BoardSettingsRow({ board }: { board: Board }) {
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={() => setEditOpen(true)}>
-          <Pencil className="size-4" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditOpen(true)}>
+              <Pencil className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("common.edit")}</TooltipContent>
+        </Tooltip>
 
         {isPublic && (
-          <Button variant="ghost" size="icon" onClick={copyPublicLink}>
-            <Copy className="size-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" onClick={copyPublicLink}>
+                <Copy className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("common.copy")} {t("common.link").toLowerCase()}
+            </TooltipContent>
+          </Tooltip>
         )}
 
-        <div className="flex items-center gap-2">
-          <Label htmlFor={`public-${board.id}`} className="sr-only">
-            {t("common.public")}
-          </Label>
-          {isPublic ? (
-            <Globe className="size-4 text-primary" />
-          ) : (
-            <Lock className="size-4 text-muted-foreground" />
-          )}
-          <Switch
-            id={`public-${board.id}`}
-            checked={isPublic}
-            onCheckedChange={toggleVisibility}
-            disabled={loading}
-          />
-        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-2">
+              <Label htmlFor={`public-${board.id}`} className="sr-only">
+                {t("common.public")}
+              </Label>
+              {isPublic ? (
+                <Globe className="size-4 text-primary" />
+              ) : (
+                <Lock className="size-4 text-muted-foreground" />
+              )}
+              <Switch
+                id={`public-${board.id}`}
+                checked={isPublic}
+                onCheckedChange={toggleVisibility}
+                disabled={loading}
+              />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            {isPublic ? t("common.public") : t("common.private")}
+          </TooltipContent>
+        </Tooltip>
 
         <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-destructive">
-              <Trash2 className="size-4" />
-            </Button>
-          </AlertDialogTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive">
+                  <Trash2 className="size-4" />
+                </Button>
+              </AlertDialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent>{t("common.delete")}</TooltipContent>
+          </Tooltip>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>

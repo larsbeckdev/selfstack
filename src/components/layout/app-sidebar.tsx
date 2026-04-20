@@ -38,6 +38,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateBoardDialog } from "@/components/dashboard/create-board-dialog";
+import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
 
 export function AppSidebar({
@@ -51,11 +52,12 @@ export function AppSidebar({
   const router = useRouter();
   const { t } = useTranslation();
 
-  const copyBoardLink = (board: Board) => {
+  const copyBoardLink = async (board: Board) => {
     const path = board.isPublic ? `/b/${board.slug}` : `/board/${board.slug}`;
     const url = `${window.location.origin}${path}`;
-    navigator.clipboard.writeText(url);
-    toast.success(t("common.linkCopied"));
+    const ok = await copyToClipboard(url);
+    if (ok) toast.success(t("common.linkCopied"));
+    else toast.error(t("common.copyFailed"));
   };
 
   return (

@@ -370,7 +370,12 @@ export function BoardDndContext({ board }: { board: BoardWithContents }) {
       <SortableContext
         items={categories.map((c) => c.id)}
         strategy={verticalListSortingStrategy}>
-        <div className="space-y-6">
+        <div
+          className={`space-y-6 ${
+            isEditing
+              ? "bg-edit-grid rounded-lg border border-dashed border-border/40 p-4"
+              : ""
+          }`}>
           {categories.map((category) => (
             <SortableCategory key={category.id} category={category} />
           ))}

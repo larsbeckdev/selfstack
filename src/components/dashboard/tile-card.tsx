@@ -51,7 +51,10 @@ export function TileCard({
     ? tile.bgColor || tile.color + "40"
     : tile.borderColor || tile.color + "40";
   const showStatus = tile.statusCheck && !!tile.url;
-  const statusDot = showStatus ? (
+  // Only one corner indicator at a time:
+  //  - view mode: status dot (top-right)
+  //  - edit mode: three-dot menu (top-right, replaces status)
+  const statusDot = showStatus && !isEditing ? (
     <TileStatusIndicator tileId={tile.id} />
   ) : null;
 
@@ -122,7 +125,7 @@ export function TileCard({
         />
 
         {statusDot && (
-          <div className="absolute left-0.5 top-0">{statusDot}</div>
+          <div className="absolute right-0.5 top-0.5">{statusDot}</div>
         )}
 
         {tileMenu && (
@@ -182,7 +185,7 @@ export function TileCard({
             {tile.description}
           </span>
         )}
-        {statusDot && <div className="absolute left-2 top-2">{statusDot}</div>}
+        {statusDot && <div className="absolute right-2 top-2">{statusDot}</div>}
         {tileMenu && (
           <div className="absolute right-1 top-1 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
@@ -274,7 +277,7 @@ export function TileCard({
             {tile.description}
           </span>
         )}
-        {statusDot && <div className="absolute left-1 top-1">{statusDot}</div>}
+        {statusDot && <div className="absolute right-1 top-1">{statusDot}</div>}
         {tileMenu && (
           <div className="absolute right-0.5 top-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}

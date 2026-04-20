@@ -20,7 +20,6 @@ import type { CategoryWithGroups, GroupWithTiles } from "@/types";
 import { deleteGroup, duplicateGroup } from "@/lib/actions/board";
 import { getTileSize } from "@/lib/tile-size";
 import { getShadcnSurface } from "@/lib/shadcn-palette";
-import { useTheme } from "next-themes";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +35,11 @@ import { useEditMode } from "./edit-mode-context";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
+type GroupWithBg = GroupWithTiles & {
+  w?: number;
+  bgColor?: string | null;
+};
+
 export function GroupCard({
   group,
   categoryId,
@@ -50,21 +54,19 @@ export function GroupCard({
   const isEditing = useEditMode();
   const router = useRouter();
   const { t } = useTranslation();
-  const { resolvedTheme } = useTheme();
 
   // Sub-grid width: number of columns inside the group.
-  const groupCols = Math.max(
-    1,
-    (group as GroupWithTiles & { w?: number }).w ?? 2,
-  );
+  const groupCols = Math.max(1, (group as GroupWithBg).w ?? 2);
 
-  const surface = getShadcnSurface(
-    (group as GroupWithTiles & { bgColor?: string | null }).bgColor,
-  );
-  const bgStyle = surface
-    ? resolvedTheme === "dark"
-      ? surface.dark
-      : surface.light
+  const surface = getShadcnSurface((group as GroupWithBg).bgColor);
+  // Use CSS variables + class-based dark mode so the correct shade is
+  // applied immediately on first render (no flash from next-themes
+  // being unresolved on the client initially).
+  const surfaceStyle = surface
+    ? ({
+        "--group-bg-light": surface.light,
+        "--group-bg-dark": surface.dark,
+      } as React.CSSProperties)
     : undefined;
 
   // Render as vertical list when there are tiles and ALL of them are sized "list".
@@ -91,8 +93,8 @@ export function GroupCard({
   return (
     <>
       <div
-        className="rounded-lg bg-card shadow-sm"
-        style={bgStyle ? { backgroundColor: bgStyle } : undefined}>
+        className={`rounded-lg shadow-sm ${surface ? "bg-[var(--group-bg-light)] dark:bg-[var(--group-bg-dark)]" : "bg-card"}`}
+        style={surfaceStyle}>
         <div className="flex items-center gap-2 px-3 py-2">
           {isEditing && dragHandleProps && (
             <button
