@@ -120,7 +120,7 @@ export function TileCard({
         />
 
         {statusDot && (
-          <div className="absolute -left-1 -top-1">{statusDot}</div>
+          <div className="absolute left-0.5 top-0">{statusDot}</div>
         )}
 
         {tileMenu && (
