@@ -9,10 +9,17 @@ export default async function BoardPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const session = await getSession();
-  if (!session) redirect("/login");
-
   const { slug } = await params;
+  const session = await getSession();
+
+  if (!session) {
+    const publicBoard = await db.board.findFirst({
+      where: { slug, isPublic: true },
+      select: { id: true },
+    });
+    if (publicBoard) redirect(`/b/${slug}`);
+    redirect(`/login?redirect=/board/${slug}`);
+  }
 
   const board = await db.board.findFirst({
     where: {
@@ -43,7 +50,14 @@ export default async function BoardPage({
     },
   });
 
-  if (!board) notFound();
+  if (!board) {
+    const publicBoard = await db.board.findFirst({
+      where: { slug, isPublic: true },
+      select: { id: true },
+    });
+    if (publicBoard) redirect(`/b/${slug}`);
+    notFound();
+  }
 
   let boardRole: BoardRole = "viewer";
   if (board.userId === session.user.id) {

@@ -4,6 +4,9 @@ import type { NextRequest } from "next/server";
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/" || pathname === "/b" || pathname.startsWith("/b/"))
     return true;
+  // /board/<slug> may be publicly accessible if the board is public; let the
+  // page decide (it redirects to /b/<slug> for public boards or /login otherwise).
+  if (pathname.startsWith("/board/")) return true;
   if (pathname === "/login" || pathname === "/register") return true;
   return false;
 }
