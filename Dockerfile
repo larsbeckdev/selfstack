@@ -9,9 +9,9 @@ WORKDIR /app
 # ─── Dependencies (with build tools for native modules like better-sqlite3) ──
 FROM base AS deps
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-        python3 make g++ openssl \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends \
+    python3 make g++ openssl \
+    && rm -rf /var/lib/apt/lists/*
 COPY package.json package-lock.json* ./
 # Install full deps (includes dev deps needed for `next build`)
 RUN npm ci --include=dev
@@ -19,8 +19,8 @@ RUN npm ci --include=dev
 # ─── Builder ─────────────────────────────────────────────────────────────────
 FROM base AS builder
 RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -33,12 +33,12 @@ RUN npm run build
 # ─── Runner ──────────────────────────────────────────────────────────────────
 FROM base AS runner
 RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl \
- && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y --no-install-recommends openssl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Non-root user
 RUN groupadd --system --gid 1001 nodejs \
- && useradd  --system --uid 1001 --gid nodejs nextjs
+    && useradd  --system --uid 1001 --gid nodejs nextjs
 
 # Standalone Next.js output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
@@ -59,7 +59,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.bin/tsx ./node_modu
 
 # Data dir for SQLite + uploads (bind-mounted as volumes in production)
 RUN mkdir -p /data /app/public/uploads \
- && chown -R nextjs:nodejs /data /app/public/uploads
+    && chown -R nextjs:nodejs /data /app/public/uploads
 
 COPY --chown=nextjs:nodejs docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
