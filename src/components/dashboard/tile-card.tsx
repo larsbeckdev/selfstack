@@ -118,14 +118,17 @@ export function TileCard({
           className="size-4"
           style={{ color: iconColor }}
         />
+
         {statusDot && (
-          <div className="absolute -left-0.5 -top-0.5">{statusDot}</div>
+          <div className="absolute -left-1 -top-1">{statusDot}</div>
         )}
+
         {tileMenu && (
           <div className="absolute -right-1 -top-1 opacity-0 transition-opacity group-hover:opacity-100">
             {tileMenu}
           </div>
         )}
+
       </div>
     );
     content = (
