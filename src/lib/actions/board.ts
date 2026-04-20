@@ -372,6 +372,7 @@ const tileSchema = z.object({
   borderMatchesBg: z.boolean().default(false),
   url: z.string().url().optional().or(z.literal("")),
   description: z.string().max(500).optional(),
+  statusCheck: z.boolean().default(false),
   groupId: z.string(),
 });
 

@@ -26,6 +26,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { EditTileDialog } from "./edit-tile-dialog";
+import { TileStatusIndicator } from "./tile-status-indicator";
 import { useEditMode } from "./edit-mode-context";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
