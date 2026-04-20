@@ -17,7 +17,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export function LoginForm() {
+export function LoginForm({
+  registrationEnabled = true,
+}: {
+  registrationEnabled?: boolean;
+}) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     login,
     {},
@@ -73,12 +77,14 @@ export function LoginForm() {
           <Button type="submit" className="w-full" disabled={pending}>
             {pending ? t("auth.loggingIn") : t("auth.login")}
           </Button>
-          <p className="text-sm text-muted-foreground">
-            {t("auth.noAccount")}{" "}
-            <Link href="/register" className="text-primary hover:underline">
-              {t("auth.register")}
-            </Link>
-          </p>
+          {registrationEnabled && (
+            <p className="text-sm text-muted-foreground">
+              {t("auth.noAccount")}{" "}
+              <Link href="/register" className="text-primary hover:underline">
+                {t("auth.register")}
+              </Link>
+            </p>
+          )}
         </CardFooter>
       </form>
     </Card>
