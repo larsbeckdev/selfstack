@@ -54,9 +54,8 @@ export function TileCard({
   // Only one corner indicator at a time:
   //  - view mode: status dot (top-right)
   //  - edit mode: three-dot menu (top-right, replaces status)
-  const statusDot = showStatus && !isEditing ? (
-    <TileStatusIndicator tileId={tile.id} />
-  ) : null;
+  const statusDot =
+    showStatus && !isEditing ? <TileStatusIndicator tileId={tile.id} /> : null;
 
   const handleDelete = async () => {
     try {
