@@ -28,6 +28,7 @@ const de = {
   "common.copy": "Kopieren",
   "common.link": "Link",
   "common.linkCopied": "Link kopiert",
+  "common.copyFailed": "Kopieren fehlgeschlagen",
   "common.color": "Farbe",
   "common.columns": "Spalten",
   "common.columnsAuto": "Auto",
