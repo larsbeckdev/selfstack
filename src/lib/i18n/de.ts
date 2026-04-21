@@ -9,6 +9,7 @@ const de = {
   "common.creating": "Erstellen...",
   "common.duplicate": "Duplizieren",
   "common.moreActions": "Weitere Aktionen",
+  "common.resize": "Größe ändern",
   "common.open": "Öffnen",
   "common.close": "Schließen",
   "common.back": "Zurück",

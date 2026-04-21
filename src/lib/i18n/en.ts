@@ -11,6 +11,7 @@ const en: Record<TranslationKey, string> = {
   "common.creating": "Creating...",
   "common.duplicate": "Duplicate",
   "common.moreActions": "More actions",
+  "common.resize": "Resize",
   "common.open": "Open",
   "common.close": "Close",
   "common.back": "Back",
