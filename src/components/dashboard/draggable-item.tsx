@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { GripVertical } from "lucide-react";
+import { GripHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGridMetrics } from "@/hooks/use-grid-metrics";
 import type { GridBox } from "@/lib/grid";
@@ -137,7 +137,7 @@ export function DraggableItem({
   return (
     <div
       style={{ ...positionStyle, ...liveStyle }}
-      className={cn("relative min-h-0", className)}>
+      className={cn("group/drag relative min-h-0", className)}>
       {children}
       {enabled && (
         <>
@@ -149,12 +149,15 @@ export function DraggableItem({
             onPointerUp={finish}
             onPointerCancel={finish}
             className={cn(
-              "absolute left-1 top-1 z-20 flex size-6 items-center justify-center rounded",
-              "bg-background/80 text-muted-foreground shadow-sm ring-1 ring-border",
+              "absolute left-1/2 top-1 z-20 -translate-x-1/2",
+              "flex h-4 w-10 items-center justify-center rounded-full",
+              "bg-background/90 text-muted-foreground shadow-sm ring-1 ring-border",
+              "opacity-0 transition-opacity group-hover/drag:opacity-100",
+              mode !== "idle" && "opacity-100",
               "hover:bg-background hover:text-foreground",
               "touch-none cursor-grab active:cursor-grabbing",
             )}>
-            <GripVertical className="size-3.5" />
+            <GripHorizontal className="size-3" />
           </button>
           {canResize && (
             <div
@@ -168,6 +171,8 @@ export function DraggableItem({
                 "absolute bottom-0 right-0 z-20 size-4 cursor-se-resize",
                 "touch-none rounded-tl-md",
                 "bg-background/80 ring-1 ring-border",
+                "opacity-0 transition-opacity group-hover/drag:opacity-100",
+                mode !== "idle" && "opacity-100",
                 "after:absolute after:bottom-0.5 after:right-0.5 after:size-0",
                 "after:border-b-[6px] after:border-r-[6px] after:border-l-[6px] after:border-t-[6px]",
                 "after:border-transparent after:border-b-foreground/60 after:border-r-foreground/60",
