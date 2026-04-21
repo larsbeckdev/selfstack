@@ -1,0 +1,8 @@
+[main 8b77f96] feat(board): drag & resize with DraggableItem + syncBoardLayout on Done
+ Date: Tue Apr 21 12:11:45 2026 +0200
+ 8 files changed, 455 insertions(+), 58 deletions(-)
+ create mode 100644 src/components/dashboard/draggable-item.tsx
+ create mode 100644 src/hooks/use-grid-metrics.ts
+8b77f96 feat(board): drag & resize with DraggableItem + syncBoardLayout on Done
+83f8f37 feat(board): positional grid renderer with dot-pattern canvas
+6a8a89c Add responsive grid system and utility classes for board layout
