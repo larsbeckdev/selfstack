@@ -146,8 +146,11 @@ export function BoardView({
             h: Math.max(1, g.h),
           }));
           const compacted = compactWithPriority(withBox, innerCols, groupId);
+          const usedRows = layoutRows(compacted);
+          const minOuterH = usedRows + CATEGORY_HEADER_ROWS;
           return {
             ...c,
+            h: Math.max(c.h, minOuterH),
             groups: compacted.map((it) => ({
               ...it.group,
               x: it.x,
@@ -168,29 +171,40 @@ export function BoardView({
       setCategories((prev) =>
         prev.map((c) => {
           if (c.id !== categoryId) return c;
+          let categoryGrowth = 0;
+          const newGroups = c.groups.map((g) => {
+            if (g.id !== groupId) return g;
+            const innerCols = Math.max(1, g.w);
+            const tiles = g.tiles.map((tile) =>
+              tile.id === tileId ? { ...tile, x: box.x, y: box.y } : tile,
+            );
+            const withBox = tiles.map((tile) => ({
+              id: tile.id,
+              tile,
+              ...getTileBox(tile),
+            }));
+            const compacted = compactWithPriority(withBox, innerCols, tileId);
+            const usedRows = layoutRows(compacted);
+            const minGroupH = usedRows + GROUP_HEADER_ROWS;
+            const newH = Math.max(g.h, minGroupH);
+            categoryGrowth = Math.max(
+              categoryGrowth,
+              g.y + newH + CATEGORY_HEADER_ROWS,
+            );
+            return {
+              ...g,
+              h: newH,
+              tiles: compacted.map((it) => ({
+                ...it.tile,
+                x: it.x,
+                y: it.y,
+              })),
+            };
+          });
           return {
             ...c,
-            groups: c.groups.map((g) => {
-              if (g.id !== groupId) return g;
-              const innerCols = Math.max(1, g.w);
-              const tiles = g.tiles.map((tile) =>
-                tile.id === tileId ? { ...tile, x: box.x, y: box.y } : tile,
-              );
-              const withBox = tiles.map((tile) => ({
-                id: tile.id,
-                tile,
-                ...getTileBox(tile),
-              }));
-              const compacted = compactWithPriority(withBox, innerCols, tileId);
-              return {
-                ...g,
-                tiles: compacted.map((it) => ({
-                  ...it.tile,
-                  x: it.x,
-                  y: it.y,
-                })),
-              };
-            }),
+            h: Math.max(c.h, categoryGrowth),
+            groups: newGroups,
           };
         }),
       );

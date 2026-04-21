@@ -24,6 +24,11 @@ export function getTileBox(tile: Pick<Tile, "size" | "x" | "y">): GridBox {
 /** A positioned rectangle on a grid canvas, in grid units. */
 export type GridBox = { x: number; y: number; w: number; h: number };
 
+/** How many grid rows the category card's header occupies (incl. ~40px header). */
+export const CATEGORY_HEADER_ROWS = 1;
+/** How many grid rows the group card's header occupies (~32px). */
+export const GROUP_HEADER_ROWS = 1;
+
 export type GroupLayoutMode = "grid" | "list";
 
 export function getGroupLayout(group: {
