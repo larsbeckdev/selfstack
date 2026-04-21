@@ -94,8 +94,11 @@ model Group {
   iconUrl    String?
   viewMode   String  @default("grid")
   columns    Int     @default(0)
-  /// Width of the group in board columns (1..boardColumns).
+  /// Width of the group in board columns (1..boardColumns). @deprecated — replaced by `layout`.
   w          Int     @default(2)
+  /// Layout template that governs the group's internal tile grid.
+  /// One of: "cols-1" | "cols-2" | "cols-3" | "auto" | "list".
+  layout     String  @default("auto")
   /// Optional background color (tailwind/shadcn named shade, e.g. "slate-100").
   bgColor    String?
   order      Int     @default(0)
