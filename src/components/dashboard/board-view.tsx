@@ -713,7 +713,7 @@ export function BoardView({
           ) : (
             <div
               className={cn(
-                "grid grid-cols-1 gap-4 rounded-xl md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4",
+                "grid grid-cols-1 gap-4 rounded-xl lg:grid-cols-4",
                 isEditing && "p-3 bg-edit-grid",
               )}
               style={{ gridAutoFlow: "dense" }}>
@@ -722,21 +722,16 @@ export function BoardView({
                 strategy={undefined}>
                 {categories.map((cat) => {
                   const width = getCategoryWidth(cat.w);
+                  // On <lg (1-col grid) all categories take full width.
+                  // On >=lg (4-col grid) width maps 1:1 to col-span.
+                  const widthClass = {
+                    1: "lg:col-span-1",
+                    2: "lg:col-span-2",
+                    3: "lg:col-span-3",
+                    4: "lg:col-span-4",
+                  }[width];
                   return (
-                    <div
-                      key={cat.id}
-                      className={cn(
-                        // base: always 1 col on narrow screens
-                        // md (2 cols): cap at 2
-                        width >= 2 && "md:col-span-2",
-                        // xl (3 cols): cap at 3
-                        width === 2 && "xl:col-span-2",
-                        width >= 3 && "xl:col-span-3",
-                        // 2xl (4 cols): full 1..4
-                        width === 2 && "2xl:col-span-2",
-                        width === 3 && "2xl:col-span-3",
-                        width === 4 && "2xl:col-span-4",
-                      )}>
+                    <div key={cat.id} className={cn("min-w-0", widthClass)}>
                       <SortableCategory
                         category={cat}
                         allGroups={allGroups}

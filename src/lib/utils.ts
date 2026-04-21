@@ -23,6 +23,8 @@ export function withAlpha(
       .map((c) => c + c)
       .join("");
   }
+  // Strip any existing alpha channel — we replace it with the provided alpha.
+  if (hex.length === 8) hex = hex.slice(0, 6);
   if (hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)) return undefined;
   const a = Math.round(Math.max(0, Math.min(1, alpha)) * 255)
     .toString(16)
