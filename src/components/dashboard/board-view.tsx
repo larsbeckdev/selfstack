@@ -559,7 +559,7 @@ export function BoardView({
             containerMode === "boxed" && "mx-auto max-w-screen-xl",
           )}>
           {/* board header */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="sticky top-14 z-20 flex flex-wrap items-center gap-3 border-b border-border/50 bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/75">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <DynamicIcon
                 name={board.icon}

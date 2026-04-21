@@ -127,7 +127,7 @@ export function TileCard({
         style={{
           backgroundColor: withAlpha(tile.bgColor, 0.22),
           borderColor: tile.borderMatchesBg
-            ? withAlpha(tile.bgColor, 0.35) ?? withAlpha(tile.color, 0.25)
+            ? (withAlpha(tile.bgColor, 0.35) ?? withAlpha(tile.color, 0.25))
             : tile.borderColor || undefined,
         }}>
         <DynamicIcon
@@ -207,7 +207,7 @@ export function TileCard({
   const cardStyle: React.CSSProperties = {
     backgroundColor: withAlpha(tile.bgColor, 0.22),
     borderColor: tile.borderMatchesBg
-      ? withAlpha(tile.bgColor, 0.35) ?? withAlpha(tile.color, 0.25)
+      ? (withAlpha(tile.bgColor, 0.35) ?? withAlpha(tile.color, 0.25))
       : tile.borderColor || undefined,
   };
 
