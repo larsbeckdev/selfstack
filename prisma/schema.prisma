@@ -20,6 +20,8 @@ model User {
   mustChangePassword Boolean  @default(false)
   themePreset        String   @default("default")
   customColors       String?
+  theme              String   @default("system") // light | dark | system
+  sidebarOpen        Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

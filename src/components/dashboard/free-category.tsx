@@ -20,17 +20,12 @@ export function FreeCategory({
   onAddTile: (groupId: string) => void;
 }) {
   const isEditing = useEditMode();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: category.id,
-    data: { type: "category", categoryId: category.id, free: true },
-    disabled: !isEditing,
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: category.id,
+      data: { type: "category", categoryId: category.id, free: true },
+      disabled: !isEditing,
+    });
 
   const width = getCategoryWidth(category.w);
   const x = Math.max(0, Math.min(category.x ?? 0, CATEGORY_COLS - width));

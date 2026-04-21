@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
 import {
   saveThemePreference,
@@ -393,13 +394,13 @@ export function ThemeCustomizer() {
                   .trim();
               return (
                 <div key={key} className="flex items-center gap-2">
-                  <input
-                    type="color"
+                  <ColorPicker
                     value={
                       currentValue.startsWith("#") ? currentValue : "#888888"
                     }
-                    onChange={(e) => handleColorChange(key, e.target.value)}
-                    className="size-8 cursor-pointer rounded border border-border bg-transparent p-0.5"
+                    onChange={(v) => handleColorChange(key, v ?? "#888888")}
+                    allowNone={false}
+                    size="sm"
                   />
                   <Label className="text-xs">{label}</Label>
                 </div>

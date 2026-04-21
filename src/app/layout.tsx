@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeInitScript } from "@/components/theme-init-script";
 import { ThemeApplier } from "@/components/theme-applier";
+import { ThemeSyncer } from "@/components/theme-syncer";
 import { LocaleProvider } from "@/components/locale-provider";
 import { getSession } from "@/lib/auth";
 import type { Locale } from "@/lib/i18n";
@@ -21,16 +22,22 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   let locale: Locale = "de";
+  let theme = "system";
+  let hasSession = false;
   try {
     const session = await getSession();
     if (session) {
+      hasSession = true;
       const { db } = await import("@/lib/db");
       const u = await db.user.findUnique({
         where: { id: session.user.id },
-        select: { locale: true },
+        select: { locale: true, theme: true },
       });
       if (u?.locale && (u.locale === "de" || u.locale === "en")) {
         locale = u.locale;
+      }
+      if (u?.theme && ["light", "dark", "system"].includes(u.theme)) {
+        theme = u.theme;
       }
     } else {
       const cookieStore = await cookies();
@@ -49,8 +56,9 @@ export default async function RootLayout({
         <ThemeInitScript />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
-        <ThemeProvider>
+        <ThemeProvider defaultTheme={theme}>
           <ThemeApplier />
+          {hasSession && <ThemeSyncer initialTheme={theme} />}
           <LocaleProvider locale={locale}>
             {children}
             <Toaster richColors position="bottom-right" />

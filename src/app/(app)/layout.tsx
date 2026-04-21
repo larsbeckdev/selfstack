@@ -3,7 +3,8 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
+import { PersistedSidebarProvider } from "@/components/layout/persisted-sidebar-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default async function AppLayout({
@@ -17,7 +18,7 @@ export default async function AppLayout({
   // Force password change if required
   const user = await db.user.findUnique({
     where: { id: session.user.id },
-    select: { mustChangePassword: true },
+    select: { mustChangePassword: true, sidebarOpen: true },
   });
   if (user?.mustChangePassword) redirect("/change-password");
 
@@ -28,13 +29,13 @@ export default async function AppLayout({
 
   return (
     <TooltipProvider>
-      <SidebarProvider>
+      <PersistedSidebarProvider defaultOpen={user?.sidebarOpen ?? true}>
         <AppSidebar user={session.user} boards={boards} />
         <SidebarInset>
           <AppHeader user={session.user} />
           <main className="flex-1 p-6">{children}</main>
         </SidebarInset>
-      </SidebarProvider>
+      </PersistedSidebarProvider>
     </TooltipProvider>
   );
 }

@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
-import { ShadcnColorPicker } from "@/components/shadcn-color-picker";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -78,7 +78,7 @@ export function EditGroupDialog({
           </div>
           <div className="space-y-2">
             <Label>{t("group.bgColor")}</Label>
-            <ShadcnColorPicker value={bgColor} onChange={setBgColor} />
+            <ColorPicker value={bgColor} onChange={setBgColor} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

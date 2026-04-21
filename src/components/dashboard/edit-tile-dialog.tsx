@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -45,20 +46,13 @@ function ColorInput({
       <Label htmlFor={id} className="text-xs">
         {label}
       </Label>
-      <div className="flex items-center gap-2">
-        <input
-          id={id}
-          type="color"
+      <div className={disabled ? "pointer-events-none opacity-50" : undefined}>
+        <ColorPicker
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className="h-8 w-10 cursor-pointer rounded border disabled:cursor-not-allowed disabled:opacity-50"
-        />
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          disabled={disabled}
-          className="h-8 flex-1 text-xs"
+          onChange={(v) => onChange(v ?? "")}
+          allowNone={false}
+          size="sm"
+          label={label}
         />
       </div>
     </div>

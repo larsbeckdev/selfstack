@@ -319,9 +319,7 @@ export function BoardView({
         const newY = Math.max(0, oData.y ?? 0);
         if (cat.x === newX && cat.y === newY) return;
         setCategories((prev) =>
-          prev.map((c) =>
-            c.id === cat.id ? { ...c, x: newX, y: newY } : c,
-          ),
+          prev.map((c) => (c.id === cat.id ? { ...c, x: newX, y: newY } : c)),
         );
         dirtyRef.current = true;
         try {
@@ -706,12 +704,7 @@ export function BoardView({
               {isEditing && activeType === "category" && (
                 <FreeDropGrid
                   rows={
-                    Math.max(
-                      ...categories.map(
-                        (c) => (c.y ?? 0) + 1,
-                      ),
-                      0,
-                    ) + 3
+                    Math.max(...categories.map((c) => (c.y ?? 0) + 1), 0) + 3
                   }
                 />
               )}

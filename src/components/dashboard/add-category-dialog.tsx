@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
-import { ShadcnColorPicker } from "@/components/shadcn-color-picker";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -78,25 +78,16 @@ export function AddCategoryDialog({
             <IconPicker value={icon} onChange={setIcon} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cat-color">{t("common.color")}</Label>
-            <div className="flex items-center gap-2">
-              <input
-                id="cat-color"
-                type="color"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="h-9 w-12 cursor-pointer rounded border"
-              />
-              <Input
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="flex-1"
-              />
-            </div>
+            <Label>{t("common.color")}</Label>
+            <ColorPicker
+              value={color}
+              onChange={(v) => setColor(v ?? "#6366f1")}
+              allowNone={false}
+            />
           </div>
           <div className="space-y-2">
             <Label>{t("category.bgColor")}</Label>
-            <ShadcnColorPicker value={bgColor} onChange={setBgColor} />
+            <ColorPicker value={bgColor} onChange={setBgColor} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

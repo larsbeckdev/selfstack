@@ -233,6 +233,27 @@ export async function getThemePreference() {
   };
 }
 
+// ─── UI Preferences (sidebar + theme mode) ──────────────────────────────────
+
+export async function setSidebarOpen(open: boolean) {
+  const { user } = await requireAuth();
+  await db.user.update({
+    where: { id: user.id },
+    data: { sidebarOpen: open },
+  });
+}
+
+export async function setUserTheme(theme: string) {
+  const { user } = await requireAuth();
+  if (!["light", "dark", "system"].includes(theme)) {
+    throw new Error("Invalid theme");
+  }
+  await db.user.update({
+    where: { id: user.id },
+    data: { theme },
+  });
+}
+
 // ─── Locale Actions ─────────────────────────────────────────────────────────
 
 export async function updateLocale(locale: string) {
