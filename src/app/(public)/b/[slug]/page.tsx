@@ -9,4 +9,3 @@ export default async function LegacyPublicBoardRedirect({
   const { slug } = await params;
   redirect(`/${slug}`);
 }
-

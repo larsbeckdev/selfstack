@@ -1,14 +1,32 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
+// Top-level path segments that require authentication.
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/admin",
+  "/board",
+  "/media",
+  "/settings",
+  "/change-password",
+];
+
 function isPublicPath(pathname: string): boolean {
-  if (pathname === "/" || pathname === "/b" || pathname.startsWith("/b/"))
-    return true;
-  // /board/<slug> may be publicly accessible if the board is public; let the
-  // page decide (it redirects to /b/<slug> for public boards or /login otherwise).
-  if (pathname.startsWith("/board/")) return true;
+  if (pathname === "/") return true;
   if (pathname === "/login" || pathname === "/register") return true;
-  return false;
+  // Legacy public-board URLs
+  if (pathname === "/b" || pathname.startsWith("/b/")) return true;
+  // /board/<slug> may be publicly accessible if the board is public; the
+  // page redirects to /<slug> for public boards or /login otherwise.
+  if (pathname.startsWith("/board/")) return true;
+  // Protected app routes require auth
+  for (const p of PROTECTED_PREFIXES) {
+    if (pathname === p || pathname.startsWith(p + "/")) return false;
+  }
+  // Anything else (single-segment URLs etc.) is treated as a potential
+  // public board slug; the page will 404 if the slug does not match a
+  // public board.
+  return true;
 }
 
 export function proxy(request: NextRequest) {
