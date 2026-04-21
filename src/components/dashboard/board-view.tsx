@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   Pencil,
   Plus,
@@ -18,6 +19,8 @@ import {
   LayoutGrid,
   Square,
   Sparkles,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import {
   DndContext,
@@ -86,6 +89,7 @@ export function BoardView({
   forceReadonly?: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useTranslation();
   const dndId = useId();
 
@@ -94,6 +98,20 @@ export function BoardView({
   const isOwner = !forceReadonly && boardRole === "owner";
 
   const [isEditing, setIsEditing] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<"fullwidth" | "boxed">(
+    "fullwidth",
+  );
+  useEffect(() => {
+    const saved = window.localStorage.getItem("board.layoutMode");
+    if (saved === "boxed" || saved === "fullwidth") setLayoutMode(saved);
+  }, []);
+  const toggleLayoutMode = useCallback(() => {
+    setLayoutMode((prev) => {
+      const next = prev === "fullwidth" ? "boxed" : "fullwidth";
+      window.localStorage.setItem("board.layoutMode", next);
+      return next;
+    });
+  }, []);
   const [categories, setCategories] = useState<CategoryWithGroups[]>(
     board.categories,
   );
@@ -107,6 +125,15 @@ export function BoardView({
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [addTileOpen, setAddTileOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  useEffect(() => {
+    if (isOwner && searchParams?.get("settings") === "true") {
+      setSettingsOpen(true);
+      // strip the query so the dialog doesn't re-open on back navigation
+      const url = new URL(window.location.href);
+      url.searchParams.delete("settings");
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, [isOwner, searchParams]);
   const [targetCategoryId, setTargetCategoryId] = useState<string | undefined>(
     undefined,
   );
@@ -469,7 +496,11 @@ export function BoardView({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}>
-        <div className="space-y-4">
+        <div
+          className={cn(
+            "space-y-4",
+            layoutMode === "boxed" && "mx-auto max-w-screen-xl",
+          )}>
           {/* board header */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -484,6 +515,21 @@ export function BoardView({
                 {board.name}
               </h1>
             </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={toggleLayoutMode}
+              title={
+                layoutMode === "fullwidth"
+                  ? t("board.layoutBoxed")
+                  : t("board.layoutFullwidth")
+              }>
+              {layoutMode === "fullwidth" ? (
+                <Minimize2 className="size-4" />
+              ) : (
+                <Maximize2 className="size-4" />
+              )}
+            </Button>
             {canEdit && (
               <div className="flex items-center gap-2">
                 {isEditing ? (
