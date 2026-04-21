@@ -34,7 +34,7 @@ import { useEditMode } from "./edit-mode-context";
 import { deleteGroup, duplicateGroup, updateGroup } from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, withAlpha } from "@/lib/utils";
 import { getGroupLayout, INNER_COLS, INNER_ROW_PX } from "@/lib/grid";
 
 export function GroupCard({
@@ -183,7 +183,7 @@ export function GroupCard({
           )}
           style={
             group.bgColor && !(isOver && isEditing)
-              ? { backgroundColor: group.bgColor }
+              ? { backgroundColor: withAlpha(group.bgColor, 0.18) }
               : undefined
           }>
           <SortableContext

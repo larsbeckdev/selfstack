@@ -587,7 +587,7 @@ export function BoardView({
                 <Maximize2 className="size-4" />
               )}
             </Button>
-            {canEdit && (
+            {canEdit && isEditing && (
               <Button
                 size="icon"
                 variant={positionMode === "free" ? "default" : "ghost"}
@@ -610,17 +610,21 @@ export function BoardView({
                   <Button
                     size="sm"
                     onClick={() => setIsEditing(false)}
-                    variant="default">
-                    <Check className="mr-2 size-4" />
-                    {t("common.done")}
+                    variant="default"
+                    title={t("common.done")}>
+                    <Check className="size-4 sm:mr-2" />
+                    <span className="hidden sm:inline">{t("common.done")}</span>
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setIsEditing(true)}>
-                    <Pencil className="mr-2 size-4" />
-                    {t("board.editMode")}
+                    onClick={() => setIsEditing(true)}
+                    title={t("board.editMode")}>
+                    <Pencil className="size-4 sm:mr-2" />
+                    <span className="hidden sm:inline">
+                      {t("board.editMode")}
+                    </span>
                   </Button>
                 )}
                 {isEditing && (

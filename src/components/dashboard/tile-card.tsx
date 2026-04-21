@@ -50,7 +50,7 @@ import {
 } from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, withAlpha } from "@/lib/utils";
 import { getTileSize, type TileSize, type GroupLayoutMode } from "@/lib/grid";
 
 /**
@@ -125,9 +125,9 @@ export function TileCard({
           isEditing && "cursor-grab active:cursor-grabbing",
         )}
         style={{
-          backgroundColor: tile.bgColor || undefined,
+          backgroundColor: withAlpha(tile.bgColor, 0.22),
           borderColor: tile.borderMatchesBg
-            ? tile.bgColor || tile.color + "40"
+            ? withAlpha(tile.bgColor, 0.35) ?? withAlpha(tile.color, 0.25)
             : tile.borderColor || undefined,
         }}>
         <DynamicIcon
@@ -205,9 +205,9 @@ export function TileCard({
   );
 
   const cardStyle: React.CSSProperties = {
-    backgroundColor: tile.bgColor || undefined,
+    backgroundColor: withAlpha(tile.bgColor, 0.22),
     borderColor: tile.borderMatchesBg
-      ? tile.bgColor || tile.color + "40"
+      ? withAlpha(tile.bgColor, 0.35) ?? withAlpha(tile.color, 0.25)
       : tile.borderColor || undefined,
   };
 
