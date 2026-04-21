@@ -1,4 +1,4 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { BoardView } from "@/components/dashboard/board-view";
@@ -12,13 +12,26 @@ export default async function BoardPage({
   const { slug } = await params;
   const session = await getSession();
 
+  // Unauthenticated visitors: only public boards are viewable (readonly).
   if (!session) {
     const publicBoard = await db.board.findFirst({
       where: { slug, isPublic: true },
-      select: { id: true },
+      include: {
+        categories: {
+          orderBy: [{ y: "asc" }, { x: "asc" }],
+          include: {
+            groups: {
+              orderBy: [{ y: "asc" }, { x: "asc" }],
+              include: {
+                tiles: { orderBy: [{ y: "asc" }, { x: "asc" }] },
+              },
+            },
+          },
+        },
+      },
     });
-    if (publicBoard) redirect(`/${slug}`);
-    redirect(`/login?redirect=/board/${slug}`);
+    if (!publicBoard) notFound();
+    return <BoardView board={publicBoard as BoardWithContents} forceReadonly />;
   }
 
   const board = await db.board.findFirst({
@@ -50,13 +63,27 @@ export default async function BoardPage({
     },
   });
 
+  // Logged-in user without board access: fall back to readonly public view
+  // if the board happens to be public, otherwise 404.
   if (!board) {
     const publicBoard = await db.board.findFirst({
       where: { slug, isPublic: true },
-      select: { id: true },
+      include: {
+        categories: {
+          orderBy: [{ y: "asc" }, { x: "asc" }],
+          include: {
+            groups: {
+              orderBy: [{ y: "asc" }, { x: "asc" }],
+              include: {
+                tiles: { orderBy: [{ y: "asc" }, { x: "asc" }] },
+              },
+            },
+          },
+        },
+      },
     });
-    if (publicBoard) redirect(`/${slug}`);
-    notFound();
+    if (!publicBoard) notFound();
+    return <BoardView board={publicBoard as BoardWithContents} forceReadonly />;
   }
 
   let boardRole: BoardRole = "viewer";

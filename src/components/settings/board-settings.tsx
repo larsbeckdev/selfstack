@@ -85,7 +85,7 @@ function BoardSettingsRow({ board }: { board: Board }) {
   };
 
   const copyPublicLink = async () => {
-    const url = `${window.location.origin}/${board.slug}`;
+    const url = `${window.location.origin}/board/${board.slug}`;
     const ok = await copyToClipboard(url);
     if (ok) toast.success(t("common.linkCopied"));
     else toast.error(t("common.copyFailed"));
