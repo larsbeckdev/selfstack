@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import {
   SortableContext,
   verticalListSortingStrategy,
-  rectSortingStrategy,
 } from "@dnd-kit/sortable";
 import {
   GripVertical,
@@ -37,7 +36,6 @@ import { EditCategoryDialog } from "./edit-category-dialog";
 import { AddGroupDialog } from "./add-group-dialog";
 import { AddTileDialog } from "./add-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
-import { useBoardColumnsContext } from "./board-columns-context";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -57,8 +55,6 @@ export function CategoryCard({
   const isEditing = useEditMode();
   const router = useRouter();
   const { t } = useTranslation();
-  const { columns: boardColumns } = useBoardColumnsContext();
-
   const handleDelete = async () => {
     try {
       await deleteCategory(category.id);
