@@ -1,6 +1,6 @@
 "use client";
 
-import { Maximize2, Minimize2 } from "lucide-react";
+import { GalleryHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -17,11 +17,7 @@ export function LayoutModeToggle() {
     <Tooltip>
       <TooltipTrigger asChild>
         <Button size="icon" variant="ghost" onClick={toggleContainerMode}>
-          {containerMode === "fullwidth" ? (
-            <Minimize2 className="size-4" />
-          ) : (
-            <Maximize2 className="size-4" />
-          )}
+          <GalleryHorizontal className="size-4" />
         </Button>
       </TooltipTrigger>
       <TooltipContent>
