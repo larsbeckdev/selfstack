@@ -14,8 +14,6 @@ const PROTECTED_PREFIXES = [
 function isPublicPath(pathname: string): boolean {
   if (pathname === "/") return true;
   if (pathname === "/login" || pathname === "/register") return true;
-  // Legacy public-board URLs
-  if (pathname === "/b" || pathname.startsWith("/b/")) return true;
   // /board/<slug> may be publicly accessible if the board is public; the
   // page redirects to /<slug> for public boards or /login otherwise.
   if (pathname.startsWith("/board/")) return true;

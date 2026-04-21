@@ -39,7 +39,7 @@ export default async function PublicBoardPage({
     <div className="min-h-svh">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-          <Link href="/b" className="flex items-center gap-2 font-semibold">
+          <Link href="/" className="flex items-center gap-2 font-semibold">
             <Layers className="size-5 text-primary" />
             Selfstack
           </Link>
