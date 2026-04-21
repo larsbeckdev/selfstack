@@ -1039,11 +1039,7 @@ export async function setCategoryPosition(
   refresh();
 }
 
-export async function setTilePosition(
-  tileId: string,
-  x: number,
-  y: number,
-) {
+export async function setTilePosition(tileId: string, x: number, y: number) {
   if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
     throw new Error("Invalid position");
   const tile = await db.tile.findUnique({

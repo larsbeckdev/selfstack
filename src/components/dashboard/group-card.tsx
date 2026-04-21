@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   LayoutGrid,
   Rows3,
+  Move,
   GripVertical,
 } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SortableTile } from "./sortable-tile";
+import { FreeTile, FreeTileGrid } from "./free-tile";
 import { EditGroupDialog } from "./edit-group-dialog";
 import { useEditMode } from "./edit-mode-context";
 import { deleteGroup, duplicateGroup, updateGroup } from "@/lib/actions/board";
@@ -84,7 +86,9 @@ export function GroupCard({
   };
 
   const handleToggleLayout = async () => {
-    const next = layout === "grid" ? "list" : "grid";
+    // Cycle: grid -> snap -> list -> grid
+    const next: "grid" | "list" | "snap" =
+      layout === "grid" ? "snap" : layout === "snap" ? "list" : "grid";
     try {
       await updateGroup(group.id, { layout: next });
       router.refresh();
@@ -124,10 +128,14 @@ export function GroupCard({
                 onClick={handleToggleLayout}
                 title={
                   layout === "grid"
-                    ? t("group.layoutList")
-                    : t("group.layoutGrid")
+                    ? t("group.layoutSnap")
+                    : layout === "snap"
+                      ? t("group.layoutList")
+                      : t("group.layoutGrid")
                 }>
                 {layout === "grid" ? (
+                  <Move className="size-3" />
+                ) : layout === "snap" ? (
                   <Rows3 className="size-3" />
                 ) : (
                   <LayoutGrid className="size-3" />
