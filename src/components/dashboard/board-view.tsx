@@ -21,6 +21,8 @@ import {
   Sparkles,
   Maximize2,
   Minimize2,
+  Move,
+  Rows3,
 } from "lucide-react";
 import {
   DndContext,
@@ -61,6 +63,7 @@ import { SortableCategory } from "./sortable-category";
 import { CategoryCard } from "./category-card";
 import { GroupCard } from "./group-card";
 import { TileCard } from "./tile-card";
+import { FreeCategory, FreeDropGrid } from "./free-category";
 import { EditModeProvider } from "./edit-mode-context";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { AddGroupDialog } from "./add-group-dialog";
@@ -72,8 +75,10 @@ import {
   reorderGroups,
   reorderTiles,
   moveTileToGroup,
+  setBoardLayoutMode,
+  setCategoryPosition,
 } from "@/lib/actions/board";
-import { getCategoryWidth, getGroupLayout } from "@/lib/grid";
+import { getCategoryWidth, getGroupLayout, CATEGORY_COLS } from "@/lib/grid";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -98,20 +103,41 @@ export function BoardView({
   const isOwner = !forceReadonly && boardRole === "owner";
 
   const [isEditing, setIsEditing] = useState(false);
-  const [layoutMode, setLayoutMode] = useState<"fullwidth" | "boxed">(
+  const [containerMode, setContainerMode] = useState<"fullwidth" | "boxed">(
     "fullwidth",
   );
   useEffect(() => {
     const saved = window.localStorage.getItem("board.layoutMode");
-    if (saved === "boxed" || saved === "fullwidth") setLayoutMode(saved);
+    if (saved === "boxed" || saved === "fullwidth") setContainerMode(saved);
   }, []);
-  const toggleLayoutMode = useCallback(() => {
-    setLayoutMode((prev) => {
+  const toggleContainerMode = useCallback(() => {
+    setContainerMode((prev) => {
       const next = prev === "fullwidth" ? "boxed" : "fullwidth";
       window.localStorage.setItem("board.layoutMode", next);
       return next;
     });
   }, []);
+
+  // Position mode: "auto" (sortable flow) or "free" (snap-to-grid positioning)
+  const [positionMode, setPositionMode] = useState<"auto" | "free">(
+    (board.layoutMode as "auto" | "free") === "free" ? "free" : "auto",
+  );
+  useEffect(() => {
+    setPositionMode(
+      (board.layoutMode as "auto" | "free") === "free" ? "free" : "auto",
+    );
+  }, [board.layoutMode]);
+  const togglePositionMode = useCallback(async () => {
+    const next = positionMode === "auto" ? "free" : "auto";
+    setPositionMode(next);
+    try {
+      await setBoardLayoutMode(board.id, next);
+      router.refresh();
+    } catch {
+      toast.error(t("error.updateFailed"));
+      setPositionMode(positionMode);
+    }
+  }, [positionMode, board.id, router, t]);
   const [categories, setCategories] = useState<CategoryWithGroups[]>(
     board.categories,
   );
@@ -164,18 +190,21 @@ export function BoardView({
     }),
   );
 
-  // For tiles: prefer pointerWithin (including the group droppable areas);
-  // for groups/categories: closestCenter works better.
+  // For tiles & free-positioned categories: prefer pointerWithin;
+  // for auto-mode groups/categories: closestCenter works better.
   const collisionDetection: CollisionDetection = useCallback(
     (args) => {
-      if (activeType === "tile") {
+      if (
+        activeType === "tile" ||
+        (activeType === "category" && positionMode === "free")
+      ) {
         const pointerCollisions = pointerWithin(args);
         if (pointerCollisions.length > 0) return pointerCollisions;
         return rectIntersection(args);
       }
       return closestCenter(args);
     },
-    [activeType],
+    [activeType, positionMode],
   );
 
   // ── Handlers ──────────────────────────────────────────────────────────
@@ -277,7 +306,37 @@ export function BoardView({
 
       if (!over) return;
 
-      // ── Category reorder
+      // ── Free-mode category reposition (snap to cell)
+      if (type === "category" && positionMode === "free") {
+        const oData = over.data.current as
+          | { type?: string; x?: number; y?: number }
+          | undefined;
+        if (oData?.type !== "free-cell") return;
+        const cat = categories.find((c) => c.id === active.id);
+        if (!cat) return;
+        const w = getCategoryWidth(cat.w);
+        const newX = Math.max(0, Math.min(oData.x ?? 0, CATEGORY_COLS - w));
+        const newY = Math.max(0, oData.y ?? 0);
+        if (cat.x === newX && cat.y === newY) return;
+        setCategories((prev) =>
+          prev.map((c) =>
+            c.id === cat.id ? { ...c, x: newX, y: newY } : c,
+          ),
+        );
+        dirtyRef.current = true;
+        try {
+          await setCategoryPosition(cat.id, newX, newY);
+          dirtyRef.current = false;
+          router.refresh();
+        } catch {
+          toast.error(t("error.updateFailed"));
+          setCategories(board.categories);
+          dirtyRef.current = false;
+        }
+        return;
+      }
+
+      // ── Category reorder (auto mode, sortable)
       if (type === "category") {
         if (active.id === over.id) return;
         const oldIdx = categories.findIndex((c) => c.id === active.id);
@@ -499,7 +558,7 @@ export function BoardView({
         <div
           className={cn(
             "space-y-4",
-            layoutMode === "boxed" && "mx-auto max-w-screen-xl",
+            containerMode === "boxed" && "mx-auto max-w-screen-xl",
           )}>
           {/* board header */}
           <div className="flex flex-wrap items-center gap-3">
@@ -518,18 +577,35 @@ export function BoardView({
             <Button
               size="icon"
               variant="ghost"
-              onClick={toggleLayoutMode}
+              onClick={toggleContainerMode}
               title={
-                layoutMode === "fullwidth"
+                containerMode === "fullwidth"
                   ? t("board.layoutBoxed")
                   : t("board.layoutFullwidth")
               }>
-              {layoutMode === "fullwidth" ? (
+              {containerMode === "fullwidth" ? (
                 <Minimize2 className="size-4" />
               ) : (
                 <Maximize2 className="size-4" />
               )}
             </Button>
+            {canEdit && (
+              <Button
+                size="icon"
+                variant={positionMode === "free" ? "default" : "ghost"}
+                onClick={togglePositionMode}
+                title={
+                  positionMode === "free"
+                    ? t("board.positionAuto")
+                    : t("board.positionFree")
+                }>
+                {positionMode === "free" ? (
+                  <Rows3 className="size-4" />
+                ) : (
+                  <Move className="size-4" />
+                )}
+              </Button>
+            )}
             {canEdit && (
               <div className="flex items-center gap-2">
                 {isEditing ? (
@@ -616,6 +692,38 @@ export function BoardView({
                   {t("category.addTo")}
                 </Button>
               )}
+            </div>
+          ) : positionMode === "free" ? (
+            <div
+              className={cn(
+                "grid gap-4 rounded-xl",
+                isEditing && "p-3 bg-edit-grid",
+              )}
+              style={{
+                gridTemplateColumns: `repeat(${CATEGORY_COLS}, minmax(0, 1fr))`,
+                gridAutoRows: "minmax(140px, auto)",
+              }}>
+              {isEditing && activeType === "category" && (
+                <FreeDropGrid
+                  rows={
+                    Math.max(
+                      ...categories.map(
+                        (c) => (c.y ?? 0) + 1,
+                      ),
+                      0,
+                    ) + 3
+                  }
+                />
+              )}
+              {categories.map((cat) => (
+                <FreeCategory
+                  key={cat.id}
+                  category={cat}
+                  allGroups={allGroups}
+                  onAddGroup={handleAddGroup}
+                  onAddTile={handleAddTile}
+                />
+              ))}
             </div>
           ) : (
             <div

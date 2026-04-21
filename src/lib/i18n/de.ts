@@ -362,6 +362,8 @@ const de = {
   "category.bgColor": "Hintergrundfarbe",
   "board.layoutFullwidth": "Volle Breite",
   "board.layoutBoxed": "Zentriert",
+  "board.positionFree": "Frei positionieren (Snap-Raster)",
+  "board.positionAuto": "Feste Reihenfolge",
   "common.size": "Größe",
   "common.drag": "Ziehen",
   "tile.size.small": "Klein",

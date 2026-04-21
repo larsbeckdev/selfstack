@@ -80,6 +80,7 @@ const boardSchema = z.object({
   icon: z.string().default("layout-dashboard"),
   iconUrl: iconUrlSchema,
   isPublic: z.boolean().default(false),
+  layoutMode: z.enum(["auto", "free"]).optional(),
 });
 
 export async function createBoard(data: z.infer<typeof boardSchema>) {
@@ -975,7 +976,65 @@ export async function setCategoryWidth(categoryId: string, width: number) {
   });
   if (!category) throw new Error("Category not found");
   await requireBoardAccess(category.boardId, "editor");
-  await db.category.update({ where: { id: categoryId }, data: { w: width } });
+  // Clamp x so that x + width stays within the 4-col grid.
+  const newX = Math.min(category.x, 4 - width);
+  await db.category.update({
+    where: { id: categoryId },
+    data: { w: width, x: Math.max(0, newX) },
+  });
+  await revalidateBoard(category.boardId);
+  refresh();
+}
+
+export async function setBoardLayoutMode(
+  boardId: string,
+  mode: "auto" | "free",
+) {
+  await requireBoardAccess(boardId, "editor");
+  const board = await db.board.findUnique({ where: { id: boardId } });
+  if (!board) throw new Error("Board not found");
+
+  // When switching to free mode for the first time, assign each category a
+  // unique (x, y) so they don't all stack at the origin.
+  if (mode === "free" && board.layoutMode !== "free") {
+    const cats = await db.category.findMany({
+      where: { boardId },
+      orderBy: [{ y: "asc" }, { x: "asc" }],
+    });
+    const allAtOrigin = cats.every((c) => c.x === 0 && c.y === 0);
+    if (allAtOrigin && cats.length > 1) {
+      await db.$transaction(
+        cats.map((c, i) =>
+          db.category.update({
+            where: { id: c.id },
+            data: { x: 0, y: i },
+          }),
+        ),
+      );
+    }
+  }
+
+  await db.board.update({
+    where: { id: boardId },
+    data: { layoutMode: mode },
+  });
+  await revalidateBoard(boardId);
+  refresh();
+}
+
+export async function setCategoryPosition(
+  categoryId: string,
+  x: number,
+  y: number,
+) {
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
+    throw new Error("Invalid position");
+  const category = await db.category.findUnique({
+    where: { id: categoryId },
+  });
+  if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
+  await db.category.update({ where: { id: categoryId }, data: { x, y } });
   await revalidateBoard(category.boardId);
   refresh();
 }

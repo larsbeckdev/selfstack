@@ -360,6 +360,8 @@ const en: Record<TranslationKey, string> = {
   "category.bgColor": "Background color",
   "board.layoutFullwidth": "Full width",
   "board.layoutBoxed": "Boxed",
+  "board.positionFree": "Free positioning (snap grid)",
+  "board.positionAuto": "Fixed order",
   "common.size": "Size",
   "common.drag": "Drag",
   "tile.size.small": "Small",

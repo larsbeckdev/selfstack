@@ -51,6 +51,8 @@ model Board {
   iconUrl   String?
   isPublic  Boolean  @default(false)
   order     Int      @default(0)
+  /// "auto" | "free" — controls whether categories snap to auto-flow or free grid
+  layoutMode String  @default("auto")
   userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
