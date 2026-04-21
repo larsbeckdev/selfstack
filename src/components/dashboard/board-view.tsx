@@ -2,9 +2,24 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Plus, Settings2, Check } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  Settings2,
+  Check,
+  FolderPlus,
+  LayoutGrid,
+  Square,
+  Sparkles,
+} from "lucide-react";
 import type { BoardRole, BoardWithContents, CategoryWithGroups } from "@/types";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { GridCanvas } from "./grid-canvas";
 import { CategoryCard } from "./category-card";
