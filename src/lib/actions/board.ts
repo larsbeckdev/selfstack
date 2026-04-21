@@ -924,3 +924,57 @@ export async function getAvailableUsersForBoard(boardId: string) {
     orderBy: { name: "asc" },
   });
 }
+
+// ─── Reorder Actions ─────────────────────────────────────────────────────────
+
+export async function reorderCategories(boardId: string, orderedIds: string[]) {
+  await requireBoardAccess(boardId, "editor");
+  await db.$transaction(
+    orderedIds.map((id, i) =>
+      db.category.update({ where: { id }, data: { y: i, x: 0 } }),
+    ),
+  );
+  await revalidateBoard(boardId);
+  refresh();
+}
+
+export async function reorderGroups(categoryId: string, orderedIds: string[]) {
+  const cat = await db.category.findUnique({ where: { id: categoryId } });
+  if (!cat) throw new Error("Category not found");
+  await requireBoardAccess(cat.boardId, "editor");
+  await db.$transaction(
+    orderedIds.map((id, i) =>
+      db.group.update({ where: { id }, data: { y: i, x: 0 } }),
+    ),
+  );
+  await revalidateBoard(cat.boardId);
+  refresh();
+}
+
+export async function reorderTiles(groupId: string, orderedIds: string[]) {
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    include: { category: true },
+  });
+  if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
+  await db.$transaction(
+    orderedIds.map((id, i) =>
+      db.tile.update({ where: { id }, data: { y: i, x: 0 } }),
+    ),
+  );
+  await revalidateBoard(group.category.boardId);
+  refresh();
+}
+
+export async function setCategoryWidth(categoryId: string, width: number) {
+  if (![1, 2, 3, 4].includes(width)) throw new Error("Invalid width");
+  const category = await db.category.findUnique({
+    where: { id: categoryId },
+  });
+  if (!category) throw new Error("Category not found");
+  await requireBoardAccess(category.boardId, "editor");
+  await db.category.update({ where: { id: categoryId }, data: { w: width } });
+  await revalidateBoard(category.boardId);
+  refresh();
+}

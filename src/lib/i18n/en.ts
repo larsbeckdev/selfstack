@@ -356,6 +356,12 @@ const en: Record<TranslationKey, string> = {
   "group.layoutGrid": "Grid",
   "group.layoutList": "List",
   "board.saved": "Board saved",
+  "category.width": "Width",
+  "common.size": "Size",
+  "common.drag": "Drag",
+  "tile.size.small": "Small",
+  "tile.size.default": "Normal",
+  "tile.size.large": "Large",
 };
 
 export default en;

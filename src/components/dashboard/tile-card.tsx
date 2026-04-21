@@ -9,6 +9,8 @@ import {
   Copy as CopyIcon,
   MoveRight,
   MoreHorizontal,
+  Ruler,
+  Check,
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import {
@@ -40,53 +42,38 @@ import { Button } from "@/components/ui/button";
 import { TileStatusIndicator } from "./tile-status-indicator";
 import { EditTileDialog } from "./edit-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
-import { useDrag } from "./draggable-item";
 import {
   duplicateTile,
   deleteTile,
   moveTileToGroup,
+  updateTile,
 } from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import {
-  TILE_SPANS,
-  type TileSize,
-  getTileSize,
-  gridItemStyle,
-} from "@/lib/grid";
+import { getTileSize, type TileSize, type GroupLayoutMode } from "@/lib/grid";
 
-type TileMode = "grid" | "list";
-
+/**
+ * Presentational tile card. Placement (grid span, sort order) is handled
+ * by the parent `SortableTile` + `GroupCard`; this component only renders
+ * the tile's visual content.
+ */
 export function TileCard({
   tile,
-  mode,
+  layout,
   otherGroups,
-  dragHandle,
 }: {
   tile: Tile;
-  mode: TileMode;
+  layout: GroupLayoutMode;
   otherGroups: { id: string; name: string; categoryName: string }[];
-  dragHandle?: React.ReactNode;
 }) {
   const isEditing = useEditMode();
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
-  const drag = useDrag();
-  const isDragging = drag?.isDragging ?? false;
 
   const size: TileSize = getTileSize(tile);
   const href = !isEditing && tile.url ? tile.url : undefined;
-  const { w, h } = TILE_SPANS[size];
-
-  const style: React.CSSProperties = {
-    ...(mode === "grid" ? gridItemStyle({ x: tile.x, y: tile.y, w, h }) : {}),
-    backgroundColor: tile.bgColor || undefined,
-    borderColor: tile.borderMatchesBg
-      ? tile.bgColor || tile.color + "40"
-      : tile.borderColor || tile.color + "40",
-  };
 
   const handleDuplicate = async () => {
     try {
@@ -118,21 +105,31 @@ export function TileCard({
     }
   };
 
+  const handleResize = async (newSize: TileSize) => {
+    if (newSize === size) return;
+    try {
+      await updateTile(tile.id, { size: newSize });
+      router.refresh();
+    } catch {
+      toast.error(t("error.updateFailed"));
+    }
+  };
+
   // ── List mode: row layout ─────────────────────────────────────────────
-  if (mode === "list") {
+  if (layout === "list") {
     const content = (
       <div
         className={cn(
-          "flex items-center gap-3 rounded-md border px-3 py-2 transition-colors",
-          href && "hover:bg-accent/50",
+          "flex h-full items-center gap-3 rounded-lg border border-border/40 bg-card px-3 py-2 transition-colors",
+          href && "hover:bg-accent/50 hover:border-border",
+          isEditing && "cursor-grab active:cursor-grabbing",
         )}
         style={{
           backgroundColor: tile.bgColor || undefined,
           borderColor: tile.borderMatchesBg
             ? tile.bgColor || tile.color + "40"
-            : tile.borderColor || tile.color + "40",
+            : tile.borderColor || undefined,
         }}>
-        {dragHandle}
         <DynamicIcon
           name={tile.icon}
           iconUrl={tile.iconUrl}
@@ -152,6 +149,18 @@ export function TileCard({
             </p>
           )}
         </div>
+        {isEditing && (
+          <TileActionsMenu
+            t={t}
+            size={size}
+            otherGroups={otherGroups}
+            onEdit={() => setEditOpen(true)}
+            onDuplicate={handleDuplicate}
+            onDelete={handleDelete}
+            onMove={handleMove}
+            onResize={handleResize}
+          />
+        )}
       </div>
     );
     return (
@@ -162,19 +171,21 @@ export function TileCard({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="block">
+              className="block h-full">
               {content}
             </a>
           ) : (
-            <div>{content}</div>
+            <div className="h-full">{content}</div>
           )}
         </ContextMenuTrigger>
         {tileContextMenu({
           t,
+          size,
           onEdit: () => setEditOpen(true),
           onDuplicate: handleDuplicate,
           onDelete: handleDelete,
           onMove: handleMove,
+          onResize: handleResize,
           otherGroups,
         })}
         <EditTileDialog
@@ -188,72 +199,37 @@ export function TileCard({
 
   // ── Grid mode: positional card ────────────────────────────────────────
   const cardClasses = cn(
-    "relative flex flex-col items-center justify-center rounded-xl border p-2 transition-all",
-    "overflow-hidden text-center shadow-sm",
-    href && "hover:brightness-110 hover:shadow-md",
-    isEditing &&
-      drag?.enabled &&
-      "cursor-grab select-none active:cursor-grabbing hover:ring-2 hover:ring-primary/50 hover:shadow-md",
-    isDragging && "ring-2 ring-primary shadow-2xl",
+    "relative flex h-full w-full flex-col items-center justify-center rounded-xl border border-border/40 bg-card p-2 text-center transition-all",
+    "shadow-sm overflow-hidden",
+    href && "hover:brightness-105 hover:shadow-md hover:border-border",
+    isEditing && "cursor-grab active:cursor-grabbing hover:border-primary/50",
   );
 
-  const dragProps =
-    isEditing && drag?.enabled ? drag.dragHandleProps : undefined;
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: tile.bgColor || undefined,
+    borderColor: tile.borderMatchesBg
+      ? tile.bgColor || tile.color + "40"
+      : tile.borderColor || undefined,
+  };
 
   const cornerSlot = isEditing ? (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="absolute right-1 top-1 size-6 rounded-md bg-background/80 shadow-sm hover:bg-background"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => e.stopPropagation()}
-          title={t("common.moreActions")}>
-          <MoreHorizontal className="size-3.5" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-        <DropdownMenuItem onClick={() => setEditOpen(true)}>
-          <Pencil className="mr-2 size-4" />
-          {t("common.edit")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleDuplicate}>
-          <CopyIcon className="mr-2 size-4" />
-          {t("common.duplicate")}
-        </DropdownMenuItem>
-        {otherGroups.length > 0 && (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <MoveRight className="mr-2 size-4" />
-              {t("tile.moveTo")}
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              {otherGroups.map((g) => (
-                <DropdownMenuItem key={g.id} onClick={() => handleMove(g.id)}>
-                  <span className="text-muted-foreground">
-                    {g.categoryName} /
-                  </span>
-                  <span className="ml-1">{g.name}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
-          <Trash2 className="mr-2 size-4" />
-          {t("common.delete")}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <TileActionsMenu
+      t={t}
+      size={size}
+      otherGroups={otherGroups}
+      onEdit={() => setEditOpen(true)}
+      onDuplicate={handleDuplicate}
+      onDelete={handleDelete}
+      onMove={handleMove}
+      onResize={handleResize}
+      className="absolute right-1 top-1"
+    />
   ) : tile.statusCheck ? (
     <TileStatusIndicator tileId={tile.id} className="absolute right-1 top-1" />
   ) : null;
 
   const inner = (
     <>
-      {dragHandle}
       {cornerSlot}
       <DynamicIcon
         name={tile.icon}
@@ -268,15 +244,15 @@ export function TileCard({
       {size !== "small" && (
         <span
           className={cn(
-            "mt-1 max-w-full truncate font-medium",
-            size === "default" && "text-[11px]",
+            "mt-1.5 max-w-full truncate font-medium",
+            size === "default" && "text-xs",
             size === "large" && "text-sm",
           )}>
           {tile.name}
         </span>
       )}
       {size === "large" && tile.description && (
-        <span className="mt-1 line-clamp-2 max-w-full text-[10px] text-muted-foreground">
+        <span className="mt-1 line-clamp-2 max-w-full text-xs text-muted-foreground">
           {tile.description}
         </span>
       )}
@@ -287,14 +263,14 @@ export function TileCard({
     size === "small" ? (
       <Tooltip>
         <TooltipTrigger asChild>
-          <div {...dragProps} className={cardClasses} style={style}>
+          <div className={cardClasses} style={cardStyle}>
             {inner}
           </div>
         </TooltipTrigger>
         <TooltipContent>{tile.name}</TooltipContent>
       </Tooltip>
     ) : (
-      <div {...dragProps} className={cardClasses} style={style}>
+      <div className={cardClasses} style={cardStyle}>
         {inner}
       </div>
     );
@@ -307,19 +283,21 @@ export function TileCard({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="contents">
+            className="block h-full w-full">
             {body}
           </a>
         ) : (
-          <div className="contents">{body}</div>
+          <div className="h-full w-full">{body}</div>
         )}
       </ContextMenuTrigger>
       {tileContextMenu({
         t,
+        size,
         onEdit: () => setEditOpen(true),
         onDuplicate: handleDuplicate,
         onDelete: handleDelete,
         onMove: handleMove,
+        onResize: handleResize,
         otherGroups,
       })}
       <EditTileDialog tile={tile} open={editOpen} onOpenChange={setEditOpen} />
@@ -327,19 +305,119 @@ export function TileCard({
   );
 }
 
-function tileContextMenu({
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
+const SIZE_OPTIONS: TileSize[] = ["small", "default", "large"];
+
+function TileActionsMenu({
   t,
+  size,
+  otherGroups,
   onEdit,
   onDuplicate,
   onDelete,
   onMove,
-  otherGroups,
+  onResize,
+  className,
 }: {
   t: ReturnType<typeof useTranslation>["t"];
+  size: TileSize;
+  otherGroups: { id: string; name: string; categoryName: string }[];
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
   onMove: (groupId: string) => void;
+  onResize: (size: TileSize) => void;
+  className?: string;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="secondary"
+          className={cn(
+            "size-6 rounded-md bg-background/80 shadow-sm hover:bg-background",
+            className,
+          )}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          title={t("common.moreActions")}>
+          <MoreHorizontal className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={onEdit}>
+          <Pencil className="mr-2 size-4" />
+          {t("common.edit")}
+        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger>
+            <Ruler className="mr-2 size-4" />
+            {t("common.size")}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent>
+            {SIZE_OPTIONS.map((s) => (
+              <DropdownMenuItem key={s} onClick={() => onResize(s)}>
+                {s === size ? (
+                  <Check className="mr-2 size-4" />
+                ) : (
+                  <span className="mr-2 size-4" />
+                )}
+                {t(`tile.size.${s}` as "tile.size.small")}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuItem onClick={onDuplicate}>
+          <CopyIcon className="mr-2 size-4" />
+          {t("common.duplicate")}
+        </DropdownMenuItem>
+        {otherGroups.length > 0 && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <MoveRight className="mr-2 size-4" />
+              {t("tile.moveTo")}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {otherGroups.map((g) => (
+                <DropdownMenuItem key={g.id} onClick={() => onMove(g.id)}>
+                  <span className="text-muted-foreground">
+                    {g.categoryName} /
+                  </span>
+                  <span className="ml-1">{g.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={onDelete}>
+          <Trash2 className="mr-2 size-4" />
+          {t("common.delete")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function tileContextMenu({
+  t,
+  size,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  onMove,
+  onResize,
+  otherGroups,
+}: {
+  t: ReturnType<typeof useTranslation>["t"];
+  size: TileSize;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onDelete: () => void;
+  onMove: (groupId: string) => void;
+  onResize: (size: TileSize) => void;
   otherGroups: { id: string; name: string; categoryName: string }[];
 }) {
   return (
@@ -348,6 +426,24 @@ function tileContextMenu({
         <Pencil className="mr-2 size-4" />
         {t("common.edit")}
       </ContextMenuItem>
+      <ContextMenuSub>
+        <ContextMenuSubTrigger>
+          <Ruler className="mr-2 size-4" />
+          {t("common.size")}
+        </ContextMenuSubTrigger>
+        <ContextMenuSubContent>
+          {SIZE_OPTIONS.map((s) => (
+            <ContextMenuItem key={s} onClick={() => onResize(s)}>
+              {s === size ? (
+                <Check className="mr-2 size-4" />
+              ) : (
+                <span className="mr-2 size-4" />
+              )}
+              {t(`tile.size.${s}` as "tile.size.small")}
+            </ContextMenuItem>
+          ))}
+        </ContextMenuSubContent>
+      </ContextMenuSub>
       <ContextMenuItem onClick={onDuplicate}>
         <CopyIcon className="mr-2 size-4" />
         {t("common.duplicate")}
@@ -361,14 +457,14 @@ function tileContextMenu({
           <ContextMenuSubContent>
             {otherGroups.map((g) => (
               <ContextMenuItem key={g.id} onClick={() => onMove(g.id)}>
-                {g.categoryName} → {g.name}
+                {g.categoryName} / {g.name}
               </ContextMenuItem>
             ))}
           </ContextMenuSubContent>
         </ContextMenuSub>
       )}
       <ContextMenuSeparator />
-      <ContextMenuItem className="text-destructive" onClick={onDelete}>
+      <ContextMenuItem variant="destructive" onClick={onDelete}>
         <Trash2 className="mr-2 size-4" />
         {t("common.delete")}
       </ContextMenuItem>

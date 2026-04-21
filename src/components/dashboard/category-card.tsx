@@ -8,7 +8,14 @@ import {
   Copy as CopyIcon,
   MoreHorizontal,
   Plus,
+  GripVertical,
+  Check,
+  Columns2,
 } from "lucide-react";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import type { CategoryWithGroups } from "@/types";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
@@ -17,52 +24,53 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { GridCanvas } from "./grid-canvas";
-import { GroupCard } from "./group-card";
-import { DraggableItem, useDrag } from "./draggable-item";
+import { SortableGroup } from "./sortable-group";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { useEditMode } from "./edit-mode-context";
-import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
+import {
+  deleteCategory,
+  duplicateCategory,
+  setCategoryWidth,
+} from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
-  compactLayout,
-  getTileBox,
-  layoutRows,
-  GROUP_HEADER_ROWS,
-  type GridBox,
+  CATEGORY_WIDTHS,
+  getCategoryWidth,
+  type CategoryWidth,
 } from "@/lib/grid";
 
-type TileMoveTarget = { id: string; name: string; categoryName: string };
+const WIDTH_LABELS: Record<CategoryWidth, string> = {
+  1: "1/4",
+  2: "2/4",
+  3: "3/4",
+  4: "4/4",
+};
 
 export function CategoryCard({
   category,
   allGroups,
   onAddGroup,
   onAddTile,
-  onMoveGroup,
-  onResizeGroup,
-  onMoveTile,
-  innerCols,
-  innerRows,
+  dragHandleProps,
 }: {
   category: CategoryWithGroups;
-  allGroups: TileMoveTarget[];
+  allGroups: { id: string; name: string; categoryName: string }[];
   onAddGroup: (categoryId: string) => void;
   onAddTile: (groupId: string) => void;
-  onMoveGroup?: (groupId: string, box: GridBox) => void;
-  onResizeGroup?: (groupId: string, box: GridBox) => void;
-  onMoveTile?: (groupId: string, tileId: string, box: GridBox) => void;
-  innerCols: number;
-  innerRows: number;
+  dragHandleProps?: Record<string, unknown>;
 }) {
   const isEditing = useEditMode();
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+  const width = getCategoryWidth(category.w);
 
   const handleDuplicate = async () => {
     try {
@@ -84,41 +92,19 @@ export function CategoryCard({
     }
   };
 
-  const cappedCols = Math.max(1, innerCols);
-  const groupsWithBox = category.groups.map((group) => {
-    const tileRows = group.tiles.reduce((m, tile) => {
-      const b = getTileBox(tile);
-      return Math.max(m, b.y + b.h);
-    }, 0);
-    const minH = Math.max(1, group.h, tileRows + GROUP_HEADER_ROWS);
-    return {
-      id: group.id,
-      group,
-      x: group.x,
-      y: group.y,
-      w: Math.min(group.w, cappedCols),
-      h: minH,
-    };
-  });
-  const compactedGroups = compactLayout(groupsWithBox, cappedCols);
-  const neededRows = layoutRows(compactedGroups);
-
-  const drag = useDrag();
-  const isDragging = drag?.isDragging ?? false;
-  const isResizing = drag?.isResizing ?? false;
-  const dragEnabled = drag?.enabled ?? false;
+  const handleWidth = async (w: CategoryWidth) => {
+    if (w === width) return;
+    try {
+      await setCategoryWidth(category.id, w);
+      router.refresh();
+    } catch {
+      toast.error(t("error.updateFailed"));
+    }
+  };
 
   return (
     <>
-      <div
-        className={cn(
-          "relative flex h-full w-full flex-col overflow-hidden rounded-2xl",
-          "bg-card border border-border/50 shadow-sm",
-          "transition-shadow",
-          isEditing && "hover:shadow-md",
-          isDragging && "shadow-2xl ring-2 ring-primary",
-          isResizing && "shadow-lg ring-2 ring-primary",
-        )}>
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
         {/* colored top accent */}
         <div
           className="h-1 w-full shrink-0"
@@ -126,13 +112,17 @@ export function CategoryCard({
           aria-hidden
         />
 
-        {/* header (drag handle in edit mode) */}
-        <div
-          {...(dragEnabled ? drag!.dragHandleProps : {})}
-          className={cn(
-            "flex items-center gap-3 px-5 py-3.5",
-            dragEnabled && "cursor-grab select-none active:cursor-grabbing",
-          )}>
+        {/* header */}
+        <div className="flex items-center gap-3 px-4 py-3">
+          {isEditing && (
+            <button
+              type="button"
+              {...(dragHandleProps ?? {})}
+              className="-ml-1 flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing touch-none"
+              title={t("common.drag")}>
+              <GripVertical className="size-4" />
+            </button>
+          )}
           <div
             className="flex size-9 shrink-0 items-center justify-center rounded-lg"
             style={{
@@ -154,7 +144,6 @@ export function CategoryCard({
                 size="icon"
                 variant="ghost"
                 className="size-8"
-                onPointerDown={(e) => e.stopPropagation()}
                 onClick={() => onAddGroup(category.id)}
                 title={t("group.addTo")}>
                 <Plus className="size-4" />
@@ -165,7 +154,6 @@ export function CategoryCard({
                     size="icon"
                     variant="ghost"
                     className="size-8"
-                    onPointerDown={(e) => e.stopPropagation()}
                     title={t("common.moreActions")}>
                     <MoreHorizontal className="size-4" />
                   </Button>
@@ -175,6 +163,26 @@ export function CategoryCard({
                     <Pencil className="mr-2 size-4" />
                     {t("common.edit")}
                   </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Columns2 className="mr-2 size-4" />
+                      {t("category.width")}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {CATEGORY_WIDTHS.map((w) => (
+                        <DropdownMenuItem
+                          key={w}
+                          onClick={() => handleWidth(w)}>
+                          {w === width ? (
+                            <Check className="mr-2 size-4" />
+                          ) : (
+                            <span className="mr-2 size-4" />
+                          )}
+                          {WIDTH_LABELS[w]}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
                   <DropdownMenuItem onClick={handleDuplicate}>
                     <CopyIcon className="mr-2 size-4" />
                     {t("common.duplicate")}
@@ -192,70 +200,40 @@ export function CategoryCard({
           )}
         </div>
 
-        {/* body */}
-        <GridCanvas
-          cols={cappedCols}
-          rows={Math.max(innerRows, neededRows, 1)}
-          showDots={isEditing}
-          className="flex-1 pb-2">
-          {compactedGroups.map(({ id, group, x, y, w, h }) => (
-            <DraggableItem
-              key={id}
-              box={{ x, y, w, h }}
-              canvasCols={cappedCols}
-              enabled={isEditing}
-              canResize
-              minW={1}
-              minH={2}
-              onDragEnd={(b) => onMoveGroup?.(id, b)}
-              onResizeEnd={(b) => onResizeGroup?.(id, b)}>
-              <GroupCard
+        {/* body: stacked groups */}
+        <div className="flex-1 space-y-3 px-3 pb-3">
+          <SortableContext
+            items={category.groups.map((g) => g.id)}
+            strategy={verticalListSortingStrategy}>
+            {category.groups.map((group) => (
+              <SortableGroup
+                key={group.id}
                 group={group}
+                categoryId={category.id}
                 allGroups={allGroups}
                 onAddTile={onAddTile}
-                onMoveTile={onMoveTile}
-                innerCols={w}
-                innerRows={Math.max(1, h - 1)}
               />
-            </DraggableItem>
-          ))}
-          {category.groups.length === 0 && isEditing && (
-            <button
-              type="button"
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={() => onAddGroup(category.id)}
-              className={cn(
-                "flex items-center justify-center gap-2 rounded-xl",
-                "border-2 border-dashed border-border/60 text-sm text-muted-foreground",
-                "transition-colors hover:border-primary/60 hover:text-primary hover:bg-primary/5",
-              )}
-              style={{
-                gridColumn: `1 / span ${cappedCols}`,
-                gridRow: `1 / span ${Math.max(1, innerRows)}`,
-              }}>
-              <Plus className="size-4" />
-              {t("group.addTo")}
-            </button>
-          )}
-        </GridCanvas>
+            ))}
+          </SortableContext>
 
-        {/* resize corner — always visible while editing */}
-        {isEditing && drag?.resizeHandleProps && (
-          <div
-            {...drag.resizeHandleProps}
-            className={cn(
-              drag.resizeHandleProps.className,
-              "absolute bottom-0 right-0 z-10 size-6 rounded-tl-xl",
-              "bg-muted/60 hover:bg-primary/20",
-              "transition-colors",
-              isResizing && "bg-primary/20",
-              "after:absolute after:bottom-1 after:right-1 after:size-0",
-              "after:border-b-[10px] after:border-r-[10px] after:border-t-[10px] after:border-l-[10px]",
-              "after:border-transparent after:border-b-foreground/60 after:border-r-foreground/60",
-            )}
-            title={t("common.resize")}
-          />
-        )}
+          {category.groups.length === 0 &&
+            (isEditing ? (
+              <button
+                type="button"
+                onClick={() => onAddGroup(category.id)}
+                className={cn(
+                  "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/60 py-8 text-sm text-muted-foreground transition-colors",
+                  "hover:border-primary/60 hover:bg-primary/5 hover:text-primary",
+                )}>
+                <Plus className="size-4" />
+                {t("group.addTo")}
+              </button>
+            ) : (
+              <div className="py-6 text-center text-xs text-muted-foreground/60">
+                {t("group.emptyHint")}
+              </div>
+            ))}
+        </div>
       </div>
       <EditCategoryDialog
         category={category}

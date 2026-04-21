@@ -358,6 +358,12 @@ const de = {
   "group.layoutGrid": "Raster",
   "group.layoutList": "Liste",
   "board.saved": "Board gespeichert",
+  "category.width": "Breite",
+  "common.size": "Größe",
+  "common.drag": "Ziehen",
+  "tile.size.small": "Klein",
+  "tile.size.default": "Normal",
+  "tile.size.large": "Groß",
 } as const;
 
 export type TranslationKey = keyof typeof de;

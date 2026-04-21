@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Pencil,
@@ -12,7 +19,33 @@ import {
   Square,
   Sparkles,
 } from "lucide-react";
-import type { BoardRole, BoardWithContents, CategoryWithGroups } from "@/types";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  pointerWithin,
+  rectIntersection,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+  type DragOverEvent,
+  type CollisionDetection,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import type {
+  BoardRole,
+  BoardWithContents,
+  CategoryWithGroups,
+  GroupWithTiles,
+} from "@/types";
+import type { Tile } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -21,26 +54,27 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DynamicIcon } from "@/components/dynamic-icon";
-import { GridCanvas } from "./grid-canvas";
+import { SortableCategory } from "./sortable-category";
 import { CategoryCard } from "./category-card";
-import { DraggableItem } from "./draggable-item";
+import { GroupCard } from "./group-card";
+import { TileCard } from "./tile-card";
 import { EditModeProvider } from "./edit-mode-context";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { AddGroupDialog } from "./add-group-dialog";
 import { AddTileDialog } from "./add-tile-dialog";
 import { BoardSettingsDialog } from "./board-settings-dialog";
-import { useGridViewport } from "@/hooks/use-grid-viewport";
 import { useTranslation } from "@/components/locale-provider";
 import {
-  compactWithPriority,
-  getTileBox,
-  layoutRows,
-  CATEGORY_HEADER_ROWS,
-  GROUP_HEADER_ROWS,
-  type GridBox,
-} from "@/lib/grid";
-import { syncBoardLayout } from "@/lib/actions/board";
+  reorderCategories,
+  reorderGroups,
+  reorderTiles,
+  moveTileToGroup,
+} from "@/lib/actions/board";
+import { getCategoryWidth, getGroupLayout } from "@/lib/grid";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+
+type ActiveType = "category" | "group" | "tile" | null;
 
 export function BoardView({
   board,
@@ -53,7 +87,7 @@ export function BoardView({
 }) {
   const router = useRouter();
   const { t } = useTranslation();
-  const { cols: viewportCols } = useGridViewport();
+  const dndId = useId();
 
   const canEdit =
     !forceReadonly && (boardRole === "owner" || boardRole === "editor");
@@ -65,7 +99,6 @@ export function BoardView({
   );
   const dirtyRef = useRef(false);
 
-  // Adopt server snapshot while clean; ignore while user has pending edits.
   useEffect(() => {
     if (!dirtyRef.current) setCategories(board.categories);
   }, [board.categories]);
@@ -81,39 +114,6 @@ export function BoardView({
     undefined,
   );
 
-  const cappedCols = Math.max(1, viewportCols);
-
-  const compactedCategories = useMemo(() => {
-    const items = categories.map((cat) => {
-      const innerCols = Math.max(1, Math.min(cat.w, cappedCols));
-      // Compute the minimum h this category needs so groups fit inside.
-      let neededInnerRows = 0;
-      for (const g of cat.groups) {
-        const gh = Math.max(1, g.h);
-        // tiles inside the group push the group height up too
-        const tileBoxes = g.tiles.map((tile) => ({
-          id: tile.id,
-          ...getTileBox(tile),
-        }));
-        const tileRows = tileBoxes.reduce((m, b) => Math.max(m, b.y + b.h), 0);
-        const groupH = Math.max(gh, tileRows + GROUP_HEADER_ROWS);
-        neededInnerRows = Math.max(neededInnerRows, g.y + groupH);
-      }
-      const minH = neededInnerRows + CATEGORY_HEADER_ROWS;
-      return {
-        id: cat.id,
-        category: cat,
-        x: cat.x,
-        y: cat.y,
-        w: Math.min(cat.w, cappedCols),
-        h: Math.max(cat.h, minH, 1),
-        innerCols,
-      };
-    });
-    return compactWithPriority(items, cappedCols);
-  }, [categories, cappedCols]);
-  const totalRows = layoutRows(compactedCategories);
-
   const allGroups = useMemo(
     () =>
       categories.flatMap((c) =>
@@ -126,124 +126,266 @@ export function BoardView({
     [categories],
   );
 
-  const markDirty = () => {
-    dirtyRef.current = true;
-  };
+  // ── DnD state ─────────────────────────────────────────────────────────
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeType, setActiveType] = useState<ActiveType>(null);
 
-  const mutateCategory = useCallback(
-    (id: string, box: GridBox) => {
-      markDirty();
-      setCategories((prev) => {
-        const next = prev.map((c) =>
-          c.id === id ? { ...c, x: box.x, y: box.y, w: box.w, h: box.h } : c,
-        );
-        const withBox = next.map((c) => ({
-          id: c.id,
-          category: c,
-          x: c.x,
-          y: c.y,
-          w: Math.min(c.w, cappedCols),
-          h: Math.max(1, c.h),
-        }));
-        const compacted = compactWithPriority(withBox, cappedCols, id);
-        return compacted.map((it) => ({
-          ...it.category,
-          x: it.x,
-          y: it.y,
-          w: it.w,
-          h: it.h,
-        }));
-      });
-    },
-    [cappedCols],
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
-  const mutateGroup = useCallback(
-    (categoryId: string, groupId: string, box: GridBox) => {
-      markDirty();
-      setCategories((prev) =>
-        prev.map((c) => {
-          if (c.id !== categoryId) return c;
-          const innerCols = Math.max(1, Math.min(c.w, cappedCols));
-          const groups = c.groups.map((g) =>
-            g.id === groupId
-              ? { ...g, x: box.x, y: box.y, w: box.w, h: box.h }
-              : g,
+  // For tiles: prefer pointerWithin (including the group droppable areas);
+  // for groups/categories: closestCenter works better.
+  const collisionDetection: CollisionDetection = useCallback(
+    (args) => {
+      if (activeType === "tile") {
+        const pointerCollisions = pointerWithin(args);
+        if (pointerCollisions.length > 0) return pointerCollisions;
+        return rectIntersection(args);
+      }
+      return closestCenter(args);
+    },
+    [activeType],
+  );
+
+  // ── Handlers ──────────────────────────────────────────────────────────
+
+  const findTileLocation = useCallback(
+    (
+      cats: CategoryWithGroups[],
+      tileId: string,
+    ): { catIdx: number; grpIdx: number; tileIdx: number } | null => {
+      for (let ci = 0; ci < cats.length; ci++) {
+        for (let gi = 0; gi < cats[ci].groups.length; gi++) {
+          const tIdx = cats[ci].groups[gi].tiles.findIndex(
+            (x) => x.id === tileId,
           );
-          const withBox = groups.map((g) => ({
-            id: g.id,
-            group: g,
-            x: g.x,
-            y: g.y,
-            w: Math.min(g.w, innerCols),
-            h: Math.max(1, g.h),
-          }));
-          const compacted = compactWithPriority(withBox, innerCols, groupId);
-          const usedRows = layoutRows(compacted);
-          const minOuterH = usedRows + CATEGORY_HEADER_ROWS;
-          return {
-            ...c,
-            h: Math.max(c.h, minOuterH),
-            groups: compacted.map((it) => ({
-              ...it.group,
-              x: it.x,
-              y: it.y,
-              w: it.w,
-              h: it.h,
-            })),
-          };
-        }),
-      );
-    },
-    [cappedCols],
-  );
-
-  const mutateTile = useCallback(
-    (categoryId: string, groupId: string, tileId: string, box: GridBox) => {
-      markDirty();
-      setCategories((prev) =>
-        prev.map((c) => {
-          if (c.id !== categoryId) return c;
-          let categoryGrowth = 0;
-          const newGroups = c.groups.map((g) => {
-            if (g.id !== groupId) return g;
-            const innerCols = Math.max(1, g.w);
-            const tiles = g.tiles.map((tile) =>
-              tile.id === tileId ? { ...tile, x: box.x, y: box.y } : tile,
-            );
-            const withBox = tiles.map((tile) => ({
-              id: tile.id,
-              tile,
-              ...getTileBox(tile),
-            }));
-            const compacted = compactWithPriority(withBox, innerCols, tileId);
-            const usedRows = layoutRows(compacted);
-            const minGroupH = usedRows + GROUP_HEADER_ROWS;
-            const newH = Math.max(g.h, minGroupH);
-            categoryGrowth = Math.max(
-              categoryGrowth,
-              g.y + newH + CATEGORY_HEADER_ROWS,
-            );
-            return {
-              ...g,
-              h: newH,
-              tiles: compacted.map((it) => ({
-                ...it.tile,
-                x: it.x,
-                y: it.y,
-              })),
-            };
-          });
-          return {
-            ...c,
-            h: Math.max(c.h, categoryGrowth),
-            groups: newGroups,
-          };
-        }),
-      );
+          if (tIdx >= 0) return { catIdx: ci, grpIdx: gi, tileIdx: tIdx };
+        }
+      }
+      return null;
     },
     [],
   );
+
+  const handleDragStart = useCallback((e: DragStartEvent) => {
+    const type = (e.active.data.current as { type?: ActiveType } | undefined)
+      ?.type;
+    setActiveId(e.active.id as string);
+    setActiveType(type ?? null);
+  }, []);
+
+  const handleDragOver = useCallback(
+    (e: DragOverEvent) => {
+      const { active, over } = e;
+      if (!over) return;
+      const aData = active.data.current as
+        | { type?: string; groupId?: string }
+        | undefined;
+      if (aData?.type !== "tile") return;
+
+      const oData = over.data.current as
+        | { type?: string; groupId?: string }
+        | undefined;
+      let overGroupId: string | null = null;
+      if (oData?.type === "tile") overGroupId = oData.groupId ?? null;
+      else if (oData?.type === "group-drop")
+        overGroupId = oData.groupId ?? null;
+      if (!overGroupId) return;
+
+      setCategories((prev) => {
+        const loc = findTileLocation(prev, active.id as string);
+        if (!loc) return prev;
+        const srcGroupId = prev[loc.catIdx].groups[loc.grpIdx].id;
+        if (srcGroupId === overGroupId) return prev;
+
+        // Move tile to target group (position determined by over: tile index or end).
+        const tile = prev[loc.catIdx].groups[loc.grpIdx].tiles[loc.tileIdx];
+        const next = prev.map((c) => ({
+          ...c,
+          groups: c.groups.map((g) => ({ ...g, tiles: [...g.tiles] })),
+        }));
+        // remove from source
+        next[loc.catIdx].groups[loc.grpIdx].tiles.splice(loc.tileIdx, 1);
+
+        // insert into target
+        for (let ci = 0; ci < next.length; ci++) {
+          const gi = next[ci].groups.findIndex((g) => g.id === overGroupId);
+          if (gi < 0) continue;
+          const tiles = next[ci].groups[gi].tiles;
+          let insertIdx = tiles.length;
+          if (oData?.type === "tile") {
+            const overIdx = tiles.findIndex((x) => x.id === over.id);
+            insertIdx = overIdx >= 0 ? overIdx : tiles.length;
+          }
+          tiles.splice(insertIdx, 0, {
+            ...tile,
+            groupId: overGroupId,
+          } as Tile);
+          break;
+        }
+        dirtyRef.current = true;
+        return next;
+      });
+    },
+    [findTileLocation],
+  );
+
+  const handleDragEnd = useCallback(
+    async (e: DragEndEvent) => {
+      const { active, over } = e;
+      const aData = active.data.current as
+        | {
+            type?: ActiveType;
+            categoryId?: string;
+            groupId?: string;
+          }
+        | undefined;
+      const type = aData?.type ?? null;
+      setActiveId(null);
+      setActiveType(null);
+
+      if (!over) return;
+
+      // ── Category reorder
+      if (type === "category") {
+        if (active.id === over.id) return;
+        const oldIdx = categories.findIndex((c) => c.id === active.id);
+        const newIdx = categories.findIndex((c) => c.id === over.id);
+        if (oldIdx < 0 || newIdx < 0) return;
+        const next = arrayMove(categories, oldIdx, newIdx);
+        setCategories(next);
+        dirtyRef.current = true;
+        try {
+          await reorderCategories(
+            board.id,
+            next.map((c) => c.id),
+          );
+          dirtyRef.current = false;
+          router.refresh();
+        } catch {
+          toast.error(t("error.updateFailed"));
+        }
+        return;
+      }
+
+      // ── Group reorder (within a single category)
+      if (type === "group") {
+        const activeCatId = aData?.categoryId ?? null;
+        const overData = over.data.current as
+          | { type?: string; categoryId?: string }
+          | undefined;
+        const overCatId = overData?.categoryId ?? activeCatId;
+        if (!activeCatId || activeCatId !== overCatId) return;
+        const cat = categories.find((c) => c.id === activeCatId);
+        if (!cat) return;
+        const oldIdx = cat.groups.findIndex((g) => g.id === active.id);
+        const newIdx = cat.groups.findIndex((g) => g.id === over.id);
+        if (oldIdx < 0 || newIdx < 0 || oldIdx === newIdx) return;
+        const nextGroups = arrayMove(cat.groups, oldIdx, newIdx);
+        const next = categories.map((c) =>
+          c.id === activeCatId ? { ...c, groups: nextGroups } : c,
+        );
+        setCategories(next);
+        dirtyRef.current = true;
+        try {
+          await reorderGroups(
+            activeCatId,
+            nextGroups.map((g) => g.id),
+          );
+          dirtyRef.current = false;
+          router.refresh();
+        } catch {
+          toast.error(t("error.updateFailed"));
+        }
+        return;
+      }
+
+      // ── Tile reorder / cross-group move
+      if (type === "tile") {
+        const loc = findTileLocation(categories, active.id as string);
+        if (!loc) return;
+        const currentGroup = categories[loc.catIdx].groups[loc.grpIdx];
+        const originalGroupId = findOriginalGroupId(
+          board.categories,
+          active.id as string,
+        );
+
+        const oData = over.data.current as
+          | { type?: string; groupId?: string }
+          | undefined;
+
+        // Same group: reorder within current group based on over-tile position
+        if (oData?.type === "tile" && active.id !== over.id) {
+          const sameGroup = oData.groupId === currentGroup.id;
+          if (sameGroup) {
+            const oldIdx = loc.tileIdx;
+            const newIdx = currentGroup.tiles.findIndex(
+              (x) => x.id === over.id,
+            );
+            if (newIdx >= 0 && newIdx !== oldIdx) {
+              const nextTiles = arrayMove(currentGroup.tiles, oldIdx, newIdx);
+              const next = categories.map((c, ci) =>
+                ci === loc.catIdx
+                  ? {
+                      ...c,
+                      groups: c.groups.map((g, gi) =>
+                        gi === loc.grpIdx ? { ...g, tiles: nextTiles } : g,
+                      ),
+                    }
+                  : c,
+              );
+              setCategories(next);
+              dirtyRef.current = true;
+              try {
+                await reorderTiles(
+                  currentGroup.id,
+                  nextTiles.map((x) => x.id),
+                );
+                dirtyRef.current = false;
+                router.refresh();
+              } catch {
+                toast.error(t("error.updateFailed"));
+              }
+              return;
+            }
+          }
+        }
+
+        // Cross-group move (handleDragOver already moved state; persist).
+        if (originalGroupId && originalGroupId !== currentGroup.id) {
+          try {
+            await moveTileToGroup(active.id as string, currentGroup.id);
+            await reorderTiles(
+              currentGroup.id,
+              currentGroup.tiles.map((x) => x.id),
+            );
+            dirtyRef.current = false;
+            router.refresh();
+          } catch {
+            toast.error(t("error.updateFailed"));
+            // Revert by re-adopting server state
+            setCategories(board.categories);
+            dirtyRef.current = false;
+          }
+          return;
+        }
+      }
+    },
+    [board.id, board.categories, categories, findTileLocation, router, t],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setActiveType(null);
+    if (dirtyRef.current) {
+      setCategories(board.categories);
+      dirtyRef.current = false;
+    }
+  }, [board.categories]);
 
   const handleAddGroup = (categoryId: string) => {
     setTargetCategoryId(categoryId);
@@ -254,208 +396,260 @@ export function BoardView({
     setAddTileOpen(true);
   };
 
-  const exitEdit = async () => {
-    if (!dirtyRef.current) {
-      setIsEditing(false);
-      return;
-    }
-    try {
-      const cats = categories.map((c) => ({
-        id: c.id,
-        x: c.x,
-        y: c.y,
-        w: c.w,
-        h: c.h,
-      }));
-      const grps = categories.flatMap((c) =>
-        c.groups.map((g) => ({
-          id: g.id,
-          x: g.x,
-          y: g.y,
-          w: g.w,
-          h: g.h,
-        })),
+  // ── Drag overlay ──────────────────────────────────────────────────────
+  const overlay = useMemo(() => {
+    if (!activeId) return null;
+    if (activeType === "category") {
+      const cat = categories.find((c) => c.id === activeId);
+      if (!cat) return null;
+      return (
+        <div style={{ width: 320, opacity: 0.95 }}>
+          <CategoryCard
+            category={cat}
+            allGroups={allGroups}
+            onAddGroup={() => {}}
+            onAddTile={() => {}}
+          />
+        </div>
       );
-      const tls = categories.flatMap((c) =>
-        c.groups.flatMap((g) =>
-          g.tiles.map((tile) => ({ id: tile.id, x: tile.x, y: tile.y })),
-        ),
-      );
-      await syncBoardLayout(board.id, {
-        categories: cats,
-        groups: grps,
-        tiles: tls,
-      });
-      dirtyRef.current = false;
-      toast.success(t("board.saved"));
-    } catch {
-      toast.error(t("error.updateFailed"));
-    } finally {
-      setIsEditing(false);
-      router.refresh();
     }
-  };
+    if (activeType === "group") {
+      let group: GroupWithTiles | null = null;
+      let catId = "";
+      for (const c of categories) {
+        const g = c.groups.find((x) => x.id === activeId);
+        if (g) {
+          group = g;
+          catId = c.id;
+          break;
+        }
+      }
+      if (!group) return null;
+      return (
+        <div style={{ width: 280, opacity: 0.95 }}>
+          <GroupCard
+            group={group}
+            categoryId={catId}
+            allGroups={allGroups}
+            onAddTile={() => {}}
+          />
+        </div>
+      );
+    }
+    if (activeType === "tile") {
+      for (const c of categories) {
+        for (const g of c.groups) {
+          const tile = g.tiles.find((x) => x.id === activeId);
+          if (tile) {
+            return (
+              <div style={{ width: 140, opacity: 0.95 }}>
+                <TileCard
+                  tile={tile}
+                  layout={getGroupLayout(g)}
+                  otherGroups={[]}
+                />
+              </div>
+            );
+          }
+        }
+      }
+    }
+    return null;
+  }, [activeId, activeType, categories, allGroups]);
+
+  // ── Render ────────────────────────────────────────────────────────────
 
   return (
     <EditModeProvider isEditing={canEdit && isEditing}>
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <DynamicIcon
-              name={board.icon}
-              iconUrl={board.iconUrl}
-              className="size-5"
-            />
+      <DndContext
+        id={dndId}
+        sensors={sensors}
+        collisionDetection={collisionDetection}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}>
+        <div className="space-y-4">
+          {/* board header */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <DynamicIcon
+                name={board.icon}
+                iconUrl={board.iconUrl}
+                className="size-5"
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-2xl font-bold tracking-tight">
+                {board.name}
+              </h1>
+            </div>
+            {canEdit && (
+              <div className="flex items-center gap-2">
+                {isEditing ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setIsEditing(false)}
+                    variant="default">
+                    <Check className="mr-2 size-4" />
+                    {t("common.done")}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditing(true)}>
+                    <Pencil className="mr-2 size-4" />
+                    {t("board.editMode")}
+                  </Button>
+                )}
+                {isEditing && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="outline">
+                        <Plus className="mr-2 size-4" />
+                        {t("common.add")}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => setAddCategoryOpen(true)}>
+                        <FolderPlus className="mr-2 size-4" />
+                        {t("category.addTo")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={categories.length === 0}
+                        onClick={() => {
+                          setTargetCategoryId(undefined);
+                          setAddGroupOpen(true);
+                        }}>
+                        <LayoutGrid className="mr-2 size-4" />
+                        {t("group.addTo")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={allGroups.length === 0}
+                        onClick={() => {
+                          setTargetGroupId(undefined);
+                          setAddTileOpen(true);
+                        }}>
+                        <Square className="mr-2 size-4" />
+                        {t("tile.addTo")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem disabled>
+                        <Sparkles className="mr-2 size-4" />
+                        {t("widget.addTo")}
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          ({t("common.comingSoon")})
+                        </span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+                {isOwner && (
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setSettingsOpen(true)}
+                    title={t("board.settings")}>
+                    <Settings2 className="size-4" />
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate text-2xl font-bold tracking-tight">
-              {board.name}
-            </h1>
-          </div>
-          {canEdit && (
-            <div className="flex items-center gap-2">
-              {isEditing ? (
-                <Button size="sm" onClick={exitEdit} variant="default">
-                  <Check className="mr-2 size-4" />
-                  {t("common.done")}
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setIsEditing(true)}>
-                  <Pencil className="mr-2 size-4" />
-                  {t("board.editMode")}
-                </Button>
-              )}
-              {isEditing && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Plus className="mr-2 size-4" />
-                      {t("common.add")}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setAddCategoryOpen(true)}>
-                      <FolderPlus className="mr-2 size-4" />
-                      {t("category.addTo")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={categories.length === 0}
-                      onClick={() => {
-                        setTargetCategoryId(undefined);
-                        setAddGroupOpen(true);
-                      }}>
-                      <LayoutGrid className="mr-2 size-4" />
-                      {t("group.addTo")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={allGroups.length === 0}
-                      onClick={() => {
-                        setTargetGroupId(undefined);
-                        setAddTileOpen(true);
-                      }}>
-                      <Square className="mr-2 size-4" />
-                      {t("tile.addTo")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled>
-                      <Sparkles className="mr-2 size-4" />
-                      {t("widget.addTo")}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        ({t("common.comingSoon")})
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              {isOwner && (
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => setSettingsOpen(true)}
-                  title={t("board.settings")}>
-                  <Settings2 className="size-4" />
+
+          {/* dashboard surface */}
+          {categories.length === 0 ? (
+            <div className="rounded-lg border bg-card p-12 text-center">
+              <p className="mb-4 text-sm text-muted-foreground">
+                {t("board.noCategoriesTitle")}
+              </p>
+              {canEdit && (
+                <Button onClick={() => setAddCategoryOpen(true)}>
+                  <Plus className="mr-2 size-4" />
+                  {t("category.addTo")}
                 </Button>
               )}
             </div>
+          ) : (
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-4 rounded-xl sm:grid-cols-2 lg:grid-cols-4",
+                isEditing && "p-3 bg-edit-grid",
+              )}
+              style={{ gridAutoFlow: "dense" }}>
+              <SortableContext
+                items={categories.map((c) => c.id)}
+                strategy={undefined}>
+                {categories.map((cat) => {
+                  const width = getCategoryWidth(cat.w);
+                  return (
+                    <div
+                      key={cat.id}
+                      className={cn(
+                        width === 1 && "lg:col-span-1",
+                        width === 2 && "lg:col-span-2",
+                        width === 3 && "lg:col-span-3",
+                        width === 4 && "lg:col-span-4",
+                      )}>
+                      <SortableCategory
+                        category={cat}
+                        allGroups={allGroups}
+                        onAddGroup={handleAddGroup}
+                        onAddTile={handleAddTile}
+                      />
+                    </div>
+                  );
+                })}
+              </SortableContext>
+            </div>
+          )}
+
+          {canEdit && (
+            <>
+              <AddCategoryDialog
+                boardId={board.id}
+                open={addCategoryOpen}
+                onOpenChange={setAddCategoryOpen}
+              />
+              <AddGroupDialog
+                categories={board.categories}
+                defaultCategoryId={targetCategoryId}
+                open={addGroupOpen}
+                onOpenChange={setAddGroupOpen}
+              />
+              <AddTileDialog
+                categories={board.categories}
+                defaultGroupId={targetGroupId}
+                open={addTileOpen}
+                onOpenChange={setAddTileOpen}
+              />
+            </>
+          )}
+          {isOwner && (
+            <BoardSettingsDialog
+              board={board}
+              boardRole={boardRole}
+              open={settingsOpen}
+              onOpenChange={setSettingsOpen}
+            />
           )}
         </div>
 
-        {categories.length === 0 ? (
-          <div className="rounded-lg border bg-card p-12 text-center">
-            <p className="mb-4 text-sm text-muted-foreground">
-              {t("board.noCategoriesTitle")}
-            </p>
-            {canEdit && (
-              <Button onClick={() => setAddCategoryOpen(true)}>
-                <Plus className="mr-2 size-4" />
-                {t("category.addTo")}
-              </Button>
-            )}
-          </div>
-        ) : (
-          <GridCanvas
-            cols={cappedCols}
-            rows={Math.max(totalRows, 1)}
-            showDots={canEdit && isEditing}>
-            {compactedCategories.map(({ id, category, x, y, w, h }) => (
-              <DraggableItem
-                key={id}
-                box={{ x, y, w, h }}
-                canvasCols={cappedCols}
-                enabled={canEdit && isEditing}
-                canResize
-                minW={2}
-                minH={2}
-                onDragEnd={(b) => mutateCategory(id, b)}
-                onResizeEnd={(b) => mutateCategory(id, b)}>
-                <CategoryCard
-                  category={category}
-                  allGroups={allGroups}
-                  onAddGroup={handleAddGroup}
-                  onAddTile={handleAddTile}
-                  onMoveGroup={(gid, b) => mutateGroup(id, gid, b)}
-                  onResizeGroup={(gid, b) => mutateGroup(id, gid, b)}
-                  onMoveTile={(gid, tid, b) => mutateTile(id, gid, tid, b)}
-                  innerCols={w}
-                  innerRows={Math.max(1, h - 1)}
-                />
-              </DraggableItem>
-            ))}
-          </GridCanvas>
-        )}
-
-        {canEdit && (
-          <>
-            <AddCategoryDialog
-              boardId={board.id}
-              open={addCategoryOpen}
-              onOpenChange={setAddCategoryOpen}
-            />
-            <AddGroupDialog
-              categories={board.categories}
-              defaultCategoryId={targetCategoryId}
-              open={addGroupOpen}
-              onOpenChange={setAddGroupOpen}
-            />
-            <AddTileDialog
-              categories={board.categories}
-              defaultGroupId={targetGroupId}
-              open={addTileOpen}
-              onOpenChange={setAddTileOpen}
-            />
-          </>
-        )}
-        {isOwner && (
-          <BoardSettingsDialog
-            board={board}
-            boardRole={boardRole}
-            open={settingsOpen}
-            onOpenChange={setSettingsOpen}
-          />
-        )}
-      </div>
+        <DragOverlay>{overlay}</DragOverlay>
+      </DndContext>
     </EditModeProvider>
   );
+}
+
+function findOriginalGroupId(
+  categories: CategoryWithGroups[],
+  tileId: string,
+): string | null {
+  for (const c of categories) {
+    for (const g of c.groups) {
+      if (g.tiles.some((t) => t.id === tileId)) return g.id;
+    }
+  }
+  return null;
 }
