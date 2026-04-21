@@ -150,19 +150,34 @@ export function CategoryCard({
             />
             <SortableContext
               items={category.groups.map((g) => g.id)}
-              strategy={verticalListSortingStrategy}>
+              strategy={
+                boardColumns > 1
+                  ? rectSortingStrategy
+                  : verticalListSortingStrategy
+              }>
               <div
                 className={[
-                  "space-y-4 px-4 pb-4",
+                  boardColumns > 1
+                    ? "grid gap-4 px-4 pb-4"
+                    : "space-y-4 px-4 pb-4",
                   isEditing
                     ? "bg-edit-grid rounded-b-lg border-t border-dashed border-border/40 pt-4"
                     : "",
-                ].join(" ")}>
+                ].join(" ")}
+                style={
+                  boardColumns > 1
+                    ? {
+                        gridTemplateColumns: `repeat(${boardColumns}, minmax(0, 1fr))`,
+                        gridAutoRows: "minmax(0, auto)",
+                      }
+                    : undefined
+                }>
                 {category.groups.map((group) => (
                   <SortableGroup
                     key={group.id}
                     group={group}
                     categoryId={category.id}
+                    boardColumns={boardColumns}
                   />
                 ))}
                 {category.groups.length === 0 && (
