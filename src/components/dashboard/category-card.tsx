@@ -22,7 +22,13 @@ import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { compactLayout, layoutRows, type GridBox } from "@/lib/grid";
+import {
+  compactLayout,
+  getTileBox,
+  layoutRows,
+  GROUP_HEADER_ROWS,
+  type GridBox,
+} from "@/lib/grid";
 
 type TileMoveTarget = { id: string; name: string; categoryName: string };
 
@@ -74,14 +80,21 @@ export function CategoryCard({
 
   const cappedCols = Math.max(1, innerCols);
   // Clamp group widths and heights to the available canvas, then compact.
-  const groupsWithBox = category.groups.map((group) => ({
-    id: group.id,
-    group,
-    x: group.x,
-    y: group.y,
-    w: Math.min(group.w, cappedCols),
-    h: Math.max(1, group.h),
-  }));
+  const groupsWithBox = category.groups.map((group) => {
+    const tileRows = group.tiles.reduce((m, tile) => {
+      const b = getTileBox(tile);
+      return Math.max(m, b.y + b.h);
+    }, 0);
+    const minH = Math.max(1, group.h, tileRows + GROUP_HEADER_ROWS);
+    return {
+      id: group.id,
+      group,
+      x: group.x,
+      y: group.y,
+      w: Math.min(group.w, cappedCols),
+      h: minH,
+    };
+  });
   const compactedGroups = compactLayout(groupsWithBox, cappedCols);
   const neededRows = layoutRows(compactedGroups);
 

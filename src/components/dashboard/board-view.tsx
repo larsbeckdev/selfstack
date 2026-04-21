@@ -69,14 +69,32 @@ export function BoardView({
   const cappedCols = Math.max(1, viewportCols);
 
   const compactedCategories = useMemo(() => {
-    const items = categories.map((cat) => ({
-      id: cat.id,
-      category: cat,
-      x: cat.x,
-      y: cat.y,
-      w: Math.min(cat.w, cappedCols),
-      h: Math.max(1, cat.h),
-    }));
+    const items = categories.map((cat) => {
+      const innerCols = Math.max(1, Math.min(cat.w, cappedCols));
+      // Compute the minimum h this category needs so groups fit inside.
+      let neededInnerRows = 0;
+      for (const g of cat.groups) {
+        const gh = Math.max(1, g.h);
+        // tiles inside the group push the group height up too
+        const tileBoxes = g.tiles.map((tile) => ({
+          id: tile.id,
+          ...getTileBox(tile),
+        }));
+        const tileRows = tileBoxes.reduce((m, b) => Math.max(m, b.y + b.h), 0);
+        const groupH = Math.max(gh, tileRows + GROUP_HEADER_ROWS);
+        neededInnerRows = Math.max(neededInnerRows, g.y + groupH);
+      }
+      const minH = neededInnerRows + CATEGORY_HEADER_ROWS;
+      return {
+        id: cat.id,
+        category: cat,
+        x: cat.x,
+        y: cat.y,
+        w: Math.min(cat.w, cappedCols),
+        h: Math.max(cat.h, minH, 1),
+        innerCols,
+      };
+    });
     return compactWithPriority(items, cappedCols);
   }, [categories, cappedCols]);
   const totalRows = layoutRows(compactedCategories);
