@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { Languages } from "lucide-react";
-import { useLocale } from "@/components/locale-provider";
+import { useLocale, useTranslation } from "@/components/locale-provider";
 import { locales, type Locale } from "@/lib/i18n";
 import { updateLocale } from "@/lib/actions/settings";
 import { Button } from "@/components/ui/button";
@@ -12,9 +12,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export function LanguageToggle() {
   const currentLocale = useLocale();
+  const { t } = useTranslation();
   const [pending, startTransition] = useTransition();
 
   const handleChange = (locale: Locale) => {
@@ -29,16 +35,21 @@ export function LanguageToggle() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          disabled={pending}>
-          <Languages className="size-4" />
-          <span className="sr-only">Language</span>
-        </Button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8"
+              disabled={pending}>
+              <Languages className="size-4" />
+              <span className="sr-only">{t("common.language")}</span>
+            </Button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{t("common.language")}</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent align="end">
         {(
           Object.entries(locales) as [Locale, { label: string; flag: string }][]

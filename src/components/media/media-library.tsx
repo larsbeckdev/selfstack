@@ -315,7 +315,7 @@ export function MediaLibrary() {
                 <img
                   src={file.url}
                   alt={file.name}
-                  className="max-h-full max-w-full object-contain"
+                  className="max-h-[40%] max-w-[40%] object-contain"
                   loading="lazy"
                 />
               </div>
