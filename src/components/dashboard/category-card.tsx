@@ -108,37 +108,42 @@ export function CategoryCard({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all",
+              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm transition-shadow",
               isEditing &&
-                "ring-1 ring-border/60 hover:ring-2 hover:ring-primary/50 hover:shadow-md",
-              isDragging && "rotate-[0.5deg] ring-2 ring-primary shadow-2xl",
+                "hover:shadow-md hover:ring-1 hover:ring-primary/40",
+              isDragging && "ring-2 ring-primary shadow-2xl",
               isResizing && "ring-2 ring-primary shadow-lg",
-            )}
-            style={{
-              borderLeftColor: category.color,
-              borderLeftWidth: 4,
-            }}>
+            )}>
             <div
               {...(drag?.enabled ? drag.dragHandleProps : {})}
               className={cn(
-                "flex items-center gap-2 border-b bg-card/50 px-4 py-3",
+                "flex items-center gap-3 px-5 py-4",
                 drag?.enabled &&
                   "cursor-grab select-none active:cursor-grabbing",
-              )}>
-              <DynamicIcon
-                name={category.icon}
-                iconUrl={category.iconUrl}
-                className="size-4"
-                style={{ color: category.color }}
-              />
-              <h2 className="flex-1 truncate text-sm font-semibold">
+              )}
+              style={{
+                background: `linear-gradient(135deg, ${category.color}14, transparent 60%)`,
+              }}>
+              <div
+                className="flex size-9 shrink-0 items-center justify-center rounded-xl"
+                style={{
+                  backgroundColor: `${category.color}22`,
+                  color: category.color,
+                }}>
+                <DynamicIcon
+                  name={category.icon}
+                  iconUrl={category.iconUrl}
+                  className="size-4"
+                />
+              </div>
+              <h2 className="flex-1 truncate text-base font-semibold tracking-tight">
                 {category.name}
               </h2>
               {isEditing && (
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="size-7"
+                  className="size-8 shrink-0"
                   onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => onAddGroup(category.id)}
                   title={t("group.addTo")}>

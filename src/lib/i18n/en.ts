@@ -10,6 +10,7 @@ const en: Record<TranslationKey, string> = {
   "common.create": "Create",
   "common.creating": "Creating...",
   "common.duplicate": "Duplicate",
+  "common.moreActions": "More actions",
   "common.open": "Open",
   "common.close": "Close",
   "common.back": "Back",

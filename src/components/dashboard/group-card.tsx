@@ -103,16 +103,15 @@ export function GroupCard({
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-all",
-              isEditing &&
-                "ring-1 ring-border/60 hover:ring-2 hover:ring-primary/50 hover:shadow-md",
-              isDragging && "rotate-[0.5deg] ring-2 ring-primary shadow-2xl",
+              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-xl bg-muted/30 transition-shadow",
+              isEditing && "hover:bg-muted/50 hover:shadow-sm",
+              isDragging && "ring-2 ring-primary shadow-2xl bg-card",
               isResizing && "ring-2 ring-primary shadow-lg",
             )}>
             <div
               {...(drag?.enabled ? drag.dragHandleProps : {})}
               className={cn(
-                "flex items-center gap-2 border-b px-3 py-2",
+                "flex items-center gap-2 px-3 pt-2.5 pb-1.5",
                 drag?.enabled &&
                   "cursor-grab select-none active:cursor-grabbing",
               )}
@@ -120,9 +119,9 @@ export function GroupCard({
               <DynamicIcon
                 name={group.icon}
                 iconUrl={group.iconUrl}
-                className="size-4 text-muted-foreground"
+                className="size-3.5 shrink-0 text-muted-foreground"
               />
-              <h3 className="flex-1 truncate text-xs font-medium">
+              <h3 className="flex-1 truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                 {group.name}
               </h3>
               {isEditing && (

@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Tile } from "@/generated/prisma/client";
-import { Pencil, Trash2, Copy as CopyIcon, MoveRight } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Copy as CopyIcon,
+  MoveRight,
+  MoreHorizontal,
+} from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import {
   Tooltip,
@@ -20,6 +26,17 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 import { TileStatusIndicator } from "./tile-status-indicator";
 import { EditTileDialog } from "./edit-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
@@ -171,27 +188,80 @@ export function TileCard({
 
   // ── Grid mode: positional card ────────────────────────────────────────
   const cardClasses = cn(
-    "relative flex flex-col items-center justify-center rounded-lg border p-2 transition-all",
-    "overflow-hidden text-center",
-    href && "hover:brightness-110",
+    "relative flex flex-col items-center justify-center rounded-xl border p-2 transition-all",
+    "overflow-hidden text-center shadow-sm",
+    href && "hover:brightness-110 hover:shadow-md",
     isEditing &&
       drag?.enabled &&
       "cursor-grab select-none active:cursor-grabbing hover:ring-2 hover:ring-primary/50 hover:shadow-md",
-    isDragging && "rotate-[1deg] ring-2 ring-primary shadow-2xl",
+    isDragging && "ring-2 ring-primary shadow-2xl",
   );
 
   const dragProps =
     isEditing && drag?.enabled ? drag.dragHandleProps : undefined;
 
+  const cornerSlot = isEditing ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant="secondary"
+          className="absolute right-1 top-1 size-6 rounded-md bg-background/80 shadow-sm hover:bg-background"
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
+          title={t("common.moreActions")}>
+          <MoreHorizontal className="size-3.5" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuItem onClick={() => setEditOpen(true)}>
+          <Pencil className="mr-2 size-4" />
+          {t("common.edit")}
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleDuplicate}>
+          <CopyIcon className="mr-2 size-4" />
+          {t("common.duplicate")}
+        </DropdownMenuItem>
+        {otherGroups.length > 0 && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <MoveRight className="mr-2 size-4" />
+              {t("tile.moveTo")}
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {otherGroups.map((g) => (
+                <DropdownMenuItem
+                  key={g.id}
+                  onClick={() => handleMove(g.id)}>
+                  <span className="text-muted-foreground">
+                    {g.categoryName} /
+                  </span>
+                  <span className="ml-1">{g.name}</span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          variant="destructive"
+          onClick={handleDelete}>
+          <Trash2 className="mr-2 size-4" />
+          {t("common.delete")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : tile.statusCheck ? (
+    <TileStatusIndicator
+      tileId={tile.id}
+      className="absolute right-1 top-1"
+    />
+  ) : null;
+
   const inner = (
     <>
       {dragHandle}
-      {tile.statusCheck && (
-        <TileStatusIndicator
-          tileId={tile.id}
-          className="absolute right-1 top-1"
-        />
-      )}
+      {cornerSlot}
       <DynamicIcon
         name={tile.icon}
         iconUrl={tile.iconUrl}
