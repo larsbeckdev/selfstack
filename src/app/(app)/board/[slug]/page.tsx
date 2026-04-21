@@ -31,13 +31,13 @@ export default async function BoardPage({
     },
     include: {
       categories: {
-        orderBy: { order: "asc" },
+        orderBy: [{ y: "asc" }, { x: "asc" }],
         include: {
           groups: {
-            orderBy: { order: "asc" },
+            orderBy: [{ y: "asc" }, { x: "asc" }],
             include: {
               tiles: {
-                orderBy: { order: "asc" },
+                orderBy: [{ y: "asc" }, { x: "asc" }],
               },
             },
           },
