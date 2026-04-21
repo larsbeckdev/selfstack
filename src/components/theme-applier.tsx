@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useEffect,
-  useState,
-  useCallback,
-  useSyncExternalStore,
-} from "react";
+import { useEffect, useState, useCallback, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { themePresets } from "@/lib/theme-presets";
 
