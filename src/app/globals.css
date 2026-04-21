@@ -133,3 +133,35 @@
   background-size: 16px 16px;
   background-position: 0 0;
 }
+
+/* ─── Board Grid System ─────────────────────────────────────────────────── */
+/* 1 grid unit (u) is the base cell size. Gap sits between cells. */
+:root {
+  --grid-u: 72px;
+  --grid-gap: 8px;
+  --grid-cols: 12;
+}
+@media (max-width: 1279px) {
+  :root { --grid-u: 64px; --grid-cols: 8; }
+}
+@media (max-width: 767px) {
+  :root { --grid-u: 56px; --grid-cols: 4; }
+}
+
+@utility grid-canvas {
+  display: grid;
+  grid-template-columns: repeat(var(--canvas-cols, var(--grid-cols)), var(--grid-u));
+  grid-auto-rows: var(--grid-u);
+  gap: var(--grid-gap);
+  justify-content: start;
+}
+
+@utility grid-canvas-dots {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--border) 70%, transparent) 1.25px,
+    transparent 1.5px
+  );
+  background-size: calc(var(--grid-u) + var(--grid-gap)) calc(var(--grid-u) + var(--grid-gap));
+  background-position: calc(var(--grid-gap) / -2) calc(var(--grid-gap) / -2);
+}
