@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/context-menu";
 import { GridCanvas } from "./grid-canvas";
 import { TileCard } from "./tile-card";
-import { DraggableItem } from "./draggable-item";
+import { DraggableItem, useDrag } from "./draggable-item";
 import { EditGroupDialog } from "./edit-group-dialog";
 import { useEditMode } from "./edit-mode-context";
 import { deleteGroup, duplicateGroup } from "@/lib/actions/board";
@@ -93,17 +93,29 @@ export function GroupCard({
     ? { backgroundColor: group.bgColor }
     : undefined;
 
+  const drag = useDrag();
+  const isDragging = drag?.isDragging ?? false;
+  const isResizing = drag?.isResizing ?? false;
+
   return (
     <>
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card",
-              isEditing && "ring-1 ring-border/60",
+              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-all",
+              isEditing &&
+                "ring-1 ring-border/60 hover:ring-2 hover:ring-primary/50 hover:shadow-md",
+              isDragging && "rotate-[0.5deg] ring-2 ring-primary shadow-2xl",
+              isResizing && "ring-2 ring-primary shadow-lg",
             )}>
             <div
-              className="flex items-center gap-2 border-b px-3 py-2"
+              {...(drag?.enabled ? drag.dragHandleProps : {})}
+              className={cn(
+                "flex items-center gap-2 border-b px-3 py-2",
+                drag?.enabled &&
+                  "cursor-grab select-none active:cursor-grabbing",
+              )}
               style={headerStyle}>
               <DynamicIcon
                 name={group.icon}
@@ -118,6 +130,7 @@ export function GroupCard({
                   size="icon"
                   variant="ghost"
                   className="size-6"
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => onAddTile(group.id)}
                   title={t("tile.addTo")}>
                   <Plus className="size-3.5" />
@@ -177,6 +190,20 @@ export function GroupCard({
                   </p>
                 )}
               </div>
+            )}
+            {drag?.resizeHandleProps && (
+              <div
+                {...drag.resizeHandleProps}
+                className={cn(
+                  drag.resizeHandleProps.className,
+                  "absolute bottom-0 right-0 z-10 size-4 rounded-tl-md bg-muted/70",
+                  "opacity-0 transition-opacity group-hover/card:opacity-100",
+                  (isDragging || isResizing) && "opacity-100",
+                  "after:absolute after:bottom-0.5 after:right-0.5 after:size-0",
+                  "after:border-b-[6px] after:border-r-[6px] after:border-t-[6px] after:border-l-[6px]",
+                  "after:border-transparent after:border-b-muted-foreground after:border-r-muted-foreground",
+                )}
+              />
             )}
           </div>
         </ContextMenuTrigger>

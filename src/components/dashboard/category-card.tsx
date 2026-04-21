@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/context-menu";
 import { GridCanvas } from "./grid-canvas";
 import { GroupCard } from "./group-card";
-import { DraggableItem } from "./draggable-item";
+import { DraggableItem, useDrag } from "./draggable-item";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { useEditMode } from "./edit-mode-context";
 import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
@@ -98,20 +98,33 @@ export function CategoryCard({
   const compactedGroups = compactLayout(groupsWithBox, cappedCols);
   const neededRows = layoutRows(compactedGroups);
 
+  const drag = useDrag();
+  const isDragging = drag?.isDragging ?? false;
+  const isResizing = drag?.isResizing ?? false;
+
   return (
     <>
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
             className={cn(
-              "relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card",
-              isEditing && "ring-1 ring-border/60",
+              "group/card relative flex h-full w-full flex-col overflow-hidden rounded-xl border bg-card shadow-sm transition-all",
+              isEditing &&
+                "ring-1 ring-border/60 hover:ring-2 hover:ring-primary/50 hover:shadow-md",
+              isDragging && "rotate-[0.5deg] ring-2 ring-primary shadow-2xl",
+              isResizing && "ring-2 ring-primary shadow-lg",
             )}
             style={{
               borderLeftColor: category.color,
               borderLeftWidth: 4,
             }}>
-            <div className="flex items-center gap-2 px-4 py-3">
+            <div
+              {...(drag?.enabled ? drag.dragHandleProps : {})}
+              className={cn(
+                "flex items-center gap-2 border-b bg-card/50 px-4 py-3",
+                drag?.enabled &&
+                  "cursor-grab select-none active:cursor-grabbing",
+              )}>
               <DynamicIcon
                 name={category.icon}
                 iconUrl={category.iconUrl}
@@ -126,6 +139,7 @@ export function CategoryCard({
                   size="icon"
                   variant="ghost"
                   className="size-7"
+                  onPointerDown={(e) => e.stopPropagation()}
                   onClick={() => onAddGroup(category.id)}
                   title={t("group.addTo")}>
                   <Plus className="size-4" />
@@ -137,7 +151,7 @@ export function CategoryCard({
               cols={cappedCols}
               rows={Math.max(innerRows, neededRows, 1)}
               showDots={isEditing}
-              className="flex-1 px-4 pb-4">
+              className="flex-1 px-4 pb-4 pt-3">
               {compactedGroups.map(({ id, group, x, y, w, h }) => (
                 <DraggableItem
                   key={id}
@@ -161,7 +175,7 @@ export function CategoryCard({
               ))}
               {category.groups.length === 0 && isEditing && (
                 <div
-                  className="flex items-center justify-center text-xs text-muted-foreground"
+                  className="flex items-center justify-center rounded-lg border-2 border-dashed border-border/60 text-xs text-muted-foreground"
                   style={{
                     gridColumn: `1 / span ${cappedCols}`,
                     gridRow: `1 / span ${Math.max(1, innerRows)}`,
@@ -170,6 +184,20 @@ export function CategoryCard({
                 </div>
               )}
             </GridCanvas>
+            {drag?.resizeHandleProps && (
+              <div
+                {...drag.resizeHandleProps}
+                className={cn(
+                  drag.resizeHandleProps.className,
+                  "absolute bottom-0 right-0 z-10 size-5 rounded-tl-lg bg-muted/70",
+                  "opacity-0 transition-opacity group-hover/card:opacity-100",
+                  (isDragging || isResizing) && "opacity-100",
+                  "after:absolute after:bottom-1 after:right-1 after:size-0",
+                  "after:border-b-[8px] after:border-r-[8px] after:border-t-[8px] after:border-l-[8px]",
+                  "after:border-transparent after:border-b-muted-foreground after:border-r-muted-foreground",
+                )}
+              />
+            )}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>

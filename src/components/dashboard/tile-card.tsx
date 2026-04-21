@@ -23,6 +23,7 @@ import {
 import { TileStatusIndicator } from "./tile-status-indicator";
 import { EditTileDialog } from "./edit-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
+import { useDrag } from "./draggable-item";
 import {
   duplicateTile,
   deleteTile,
@@ -55,6 +56,8 @@ export function TileCard({
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
+  const drag = useDrag();
+  const isDragging = drag?.isDragging ?? false;
 
   const size: TileSize = getTileSize(tile);
   const href = !isEditing && tile.url ? tile.url : undefined;
@@ -168,11 +171,17 @@ export function TileCard({
 
   // ── Grid mode: positional card ────────────────────────────────────────
   const cardClasses = cn(
-    "relative flex flex-col items-center justify-center rounded-lg border p-2 transition-colors",
+    "relative flex flex-col items-center justify-center rounded-lg border p-2 transition-all",
     "overflow-hidden text-center",
     href && "hover:brightness-110",
-    isEditing && "ring-0",
+    isEditing &&
+      drag?.enabled &&
+      "cursor-grab select-none active:cursor-grabbing hover:ring-2 hover:ring-primary/50 hover:shadow-md",
+    isDragging && "rotate-[1deg] ring-2 ring-primary shadow-2xl",
   );
+
+  const dragProps =
+    isEditing && drag?.enabled ? drag.dragHandleProps : undefined;
 
   const inner = (
     <>
@@ -215,14 +224,14 @@ export function TileCard({
     size === "small" ? (
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className={cardClasses} style={style}>
+          <div {...dragProps} className={cardClasses} style={style}>
             {inner}
           </div>
         </TooltipTrigger>
         <TooltipContent>{tile.name}</TooltipContent>
       </Tooltip>
     ) : (
-      <div className={cardClasses} style={style}>
+      <div {...dragProps} className={cardClasses} style={style}>
         {inner}
       </div>
     );
