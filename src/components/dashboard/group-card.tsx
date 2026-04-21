@@ -194,47 +194,75 @@ export function GroupCard({
               ? { backgroundColor: withAlpha(group.bgColor, 0.18) }
               : undefined
           }>
-          <SortableContext
-            items={group.tiles.map((tile) => tile.id)}
-            strategy={
-              layout === "grid"
-                ? rectSortingStrategy
-                : verticalListSortingStrategy
-            }>
-            {layout === "grid" ? (
-              <div
-                className="grid gap-2"
-                style={{
-                  gridTemplateColumns: `repeat(${INNER_COLS}, minmax(0, 1fr))`,
-                  gridAutoRows: `${INNER_ROW_PX}px`,
-                  gridAutoFlow: "dense",
-                }}>
-                {group.tiles.map((tile) => (
-                  <SortableTile
-                    key={tile.id}
-                    tile={tile}
-                    groupId={group.id}
-                    categoryId={categoryId}
-                    layout="grid"
-                    otherGroups={otherGroups}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-1.5">
-                {group.tiles.map((tile) => (
-                  <SortableTile
-                    key={tile.id}
-                    tile={tile}
-                    groupId={group.id}
-                    categoryId={categoryId}
-                    layout="list"
-                    otherGroups={otherGroups}
-                  />
-                ))}
-              </div>
-            )}
-          </SortableContext>
+          {layout === "snap" ? (
+            <div
+              className="relative grid gap-2"
+              style={{
+                gridTemplateColumns: `repeat(${INNER_COLS}, minmax(0, 1fr))`,
+                gridAutoRows: `${INNER_ROW_PX}px`,
+              }}>
+              {isEditing && (
+                <FreeTileGrid
+                  groupId={group.id}
+                  rows={Math.max(
+                    ...group.tiles.map((tile) => (tile.y ?? 0) + 2),
+                    4,
+                  )}
+                />
+              )}
+              {group.tiles.map((tile) => (
+                <FreeTile
+                  key={tile.id}
+                  tile={tile}
+                  groupId={group.id}
+                  categoryId={categoryId}
+                  otherGroups={otherGroups}
+                />
+              ))}
+            </div>
+          ) : (
+            <SortableContext
+              items={group.tiles.map((tile) => tile.id)}
+              strategy={
+                layout === "grid"
+                  ? rectSortingStrategy
+                  : verticalListSortingStrategy
+              }>
+              {layout === "grid" ? (
+                <div
+                  className="grid gap-2"
+                  style={{
+                    gridTemplateColumns: `repeat(${INNER_COLS}, minmax(0, 1fr))`,
+                    gridAutoRows: `${INNER_ROW_PX}px`,
+                    gridAutoFlow: "dense",
+                  }}>
+                  {group.tiles.map((tile) => (
+                    <SortableTile
+                      key={tile.id}
+                      tile={tile}
+                      groupId={group.id}
+                      categoryId={categoryId}
+                      layout="grid"
+                      otherGroups={otherGroups}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  {group.tiles.map((tile) => (
+                    <SortableTile
+                      key={tile.id}
+                      tile={tile}
+                      groupId={group.id}
+                      categoryId={categoryId}
+                      layout="list"
+                      otherGroups={otherGroups}
+                    />
+                  ))}
+                </div>
+              )}
+            </SortableContext>
+          )}
 
           {group.tiles.length === 0 &&
             (isEditing ? (

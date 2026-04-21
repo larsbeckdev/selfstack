@@ -245,14 +245,21 @@ export function ThemeCustomizer() {
     applyCurrentTheme();
   }, [applyCurrentTheme]);
 
-  const notifyThemeChange = () => {
-    window.dispatchEvent(new Event("selfstack-theme-change"));
+  const notifyThemeChange = (
+    preset: string = activePreset,
+    colors: Record<string, string> = customColors,
+  ) => {
+    window.dispatchEvent(
+      new CustomEvent("selfstack-theme-change", {
+        detail: { preset, customColors: colors },
+      }),
+    );
   };
 
   const selectPreset = (key: string) => {
     setActivePreset(key);
     setCustomColors({});
-    notifyThemeChange();
+    notifyThemeChange(key, {});
     saveThemePreference(key, null).catch(() => {});
     toast.success(`Theme "${themePresets[key].label}" aktiviert`);
   };
@@ -262,14 +269,14 @@ export function ThemeCustomizer() {
     setCustomColors(next);
     const serialized = JSON.stringify(next);
     applyThemeColors({ [varName]: value });
-    notifyThemeChange();
+    notifyThemeChange(activePreset, next);
     saveThemePreference(activePreset, serialized).catch(() => {});
   };
 
   const resetCustomColors = () => {
     setCustomColors({});
     applyCurrentTheme();
-    notifyThemeChange();
+    notifyThemeChange(activePreset, {});
     saveThemePreference(activePreset, null).catch(() => {});
     toast.success("Farbanpassungen zurückgesetzt");
   };

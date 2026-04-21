@@ -80,8 +80,16 @@ import {
   moveTileToGroup,
   setBoardLayoutMode,
   setCategoryPosition,
+  setTilePosition,
 } from "@/lib/actions/board";
-import { getCategoryWidth, getGroupLayout, CATEGORY_COLS } from "@/lib/grid";
+import {
+  getCategoryWidth,
+  getGroupLayout,
+  getTileSize,
+  CATEGORY_COLS,
+  INNER_COLS,
+  TILE_SPANS,
+} from "@/lib/grid";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -287,6 +295,7 @@ export function BoardView({
             type?: ActiveType;
             categoryId?: string;
             groupId?: string;
+            free?: boolean;
           }
         | undefined;
       const type = aData?.type ?? null;
@@ -388,8 +397,58 @@ export function BoardView({
         );
 
         const oData = over.data.current as
-          | { type?: string; groupId?: string }
+          | { type?: string; groupId?: string; x?: number; y?: number }
           | undefined;
+
+        // Snap-mode: dropped on a tile-free-cell → update tile position
+        if (
+          oData?.type === "tile-free-cell" &&
+          aData?.free &&
+          oData.groupId === currentGroup.id
+        ) {
+          const tile = currentGroup.tiles.find((x) => x.id === active.id);
+          if (!tile) return;
+          const size = getTileSize(tile);
+          const { w } = TILE_SPANS[size];
+          const newX = Math.max(0, Math.min(oData.x ?? 0, INNER_COLS - w));
+          const newY = Math.max(0, oData.y ?? 0);
+          const crossGroup =
+            originalGroupId && originalGroupId !== currentGroup.id;
+          if (!crossGroup && tile.x === newX && tile.y === newY) return;
+          setCategories((prev) =>
+            prev.map((c, ci) =>
+              ci === loc.catIdx
+                ? {
+                    ...c,
+                    groups: c.groups.map((g, gi) =>
+                      gi === loc.grpIdx
+                        ? {
+                            ...g,
+                            tiles: g.tiles.map((x) =>
+                              x.id === tile.id ? { ...x, x: newX, y: newY } : x,
+                            ),
+                          }
+                        : g,
+                    ),
+                  }
+                : c,
+            ),
+          );
+          dirtyRef.current = true;
+          try {
+            if (crossGroup) {
+              await moveTileToGroup(tile.id, currentGroup.id);
+            }
+            await setTilePosition(tile.id, newX, newY);
+            dirtyRef.current = false;
+            router.refresh();
+          } catch {
+            toast.error(t("error.updateFailed"));
+            setCategories(board.categories);
+            dirtyRef.current = false;
+          }
+          return;
+        }
 
         // Same group: reorder within current group based on over-tile position
         if (oData?.type === "tile" && active.id !== over.id) {

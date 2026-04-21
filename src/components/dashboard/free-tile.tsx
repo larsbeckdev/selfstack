@@ -66,7 +66,9 @@ export function FreeTileGrid({
   const cells: React.ReactNode[] = [];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < INNER_COLS; x++) {
-      cells.push(<TileDropCell key={`${x}-${y}`} groupId={groupId} x={x} y={y} />);
+      cells.push(
+        <TileDropCell key={`${x}-${y}`} groupId={groupId} x={x} y={y} />,
+      );
     }
   }
   return <>{cells}</>;
