@@ -3,20 +3,19 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Tile } from "@/generated/prisma/client";
-import { getTileSize, type TileSize } from "@/lib/tile-size";
-import { getTilePlacement, type GroupLayout } from "@/lib/group-layout";
+import { getTileSpans, getTileSize } from "@/lib/tile-size";
 import { useEditMode } from "./edit-mode-context";
 import { TileCard } from "./tile-card";
 
 export function SortableTile({
   tile,
   groupId,
-  layout,
+  groupCols,
 }: {
   tile: Tile;
   groupId: string;
-  /** Layout template of the parent group. */
-  layout: GroupLayout;
+  /** Width of the parent group's sub-grid in columns. */
+  groupCols: number;
 }) {
   const isEditing = useEditMode();
   const {
@@ -32,20 +31,16 @@ export function SortableTile({
     disabled: !isEditing,
   });
 
-  const { colSpan, asList } = getTilePlacement(tile, layout);
-  const baseSize: TileSize = getTileSize(tile);
-  // In the "list" layout we force every tile to render in its list form.
-  const renderSize: TileSize = asList && layout === "list" ? "list" : baseSize;
+  const { colSpan, rowSpan, isList } = getTileSpans(tile, groupCols);
+  const size = getTileSize(tile);
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    gridColumn: `span ${colSpan} / span ${colSpan}`,
+    gridRow: isList ? undefined : `span ${rowSpan} / span ${rowSpan}`,
   };
-  // Only apply a grid-column span in grids — skip for pure list layouts.
-  if (layout !== "list") {
-    style.gridColumn = `span ${colSpan} / span ${colSpan}`;
-  }
 
   return (
     <div
@@ -53,7 +48,7 @@ export function SortableTile({
       style={style}
       className="min-w-0"
       {...(isEditing ? { ...attributes, ...listeners } : {})}>
-      <TileCard tile={tile} size={renderSize} />
+      <TileCard tile={tile} size={size} />
     </div>
   );
 }
