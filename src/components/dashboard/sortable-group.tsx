@@ -9,12 +9,9 @@ import { GroupCard } from "./group-card";
 export function SortableGroup({
   group,
   categoryId,
-  boardColumns,
 }: {
   group: GroupWithTiles;
   categoryId: string;
-  /** Current number of columns on the board. */
-  boardColumns: number;
 }) {
   const isEditing = useEditMode();
   const {
@@ -30,15 +27,12 @@ export function SortableGroup({
     disabled: !isEditing,
   });
 
-  // Group width in board columns, clamped to current grid.
-  const rawW = (group as GroupWithTiles & { w?: number }).w ?? 2;
-  const colSpan = Math.max(1, Math.min(rawW, boardColumns));
-
+  // Hybrid layout: groups always span the full category width and stack
+  // vertically. Horizontal freedom lives inside the group's layout template.
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-    gridColumn: `span ${colSpan} / span ${colSpan}`,
   };
 
   return (
