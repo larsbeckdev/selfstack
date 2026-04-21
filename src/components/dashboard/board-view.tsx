@@ -20,6 +20,8 @@ import {
   compactWithPriority,
   getTileBox,
   layoutRows,
+  CATEGORY_HEADER_ROWS,
+  GROUP_HEADER_ROWS,
   type GridBox,
 } from "@/lib/grid";
 import { syncBoardLayout } from "@/lib/actions/board";

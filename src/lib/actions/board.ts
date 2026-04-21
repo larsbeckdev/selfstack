@@ -222,7 +222,7 @@ const categorySchema = z.object({
   color: z.string().default("#6366f1"),
   x: z.number().int().min(0).default(0).optional(),
   y: z.number().int().min(0).default(0).optional(),
-  w: z.number().int().min(1).max(48).default(12).optional(),
+  w: z.number().int().min(1).max(48).default(6).optional(),
   h: z.number().int().min(1).max(48).default(4).optional(),
   boardId: z.string(),
 });
@@ -245,7 +245,7 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
       iconUrl: parsed.iconUrl || null,
       x: parsed.x ?? 0,
       y: parsed.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
-      w: parsed.w ?? 12,
+      w: parsed.w ?? 6,
       h: parsed.h ?? 4,
     },
   });
