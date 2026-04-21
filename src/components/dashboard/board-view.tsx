@@ -13,6 +13,8 @@ import { BoardDndContext } from "@/components/dashboard/board-dnd-context";
 import { EditModeProvider } from "@/components/dashboard/edit-mode-context";
 import { AddCategoryDialog } from "@/components/dashboard/add-category-dialog";
 import { BoardSettingsDialog } from "@/components/dashboard/board-settings-dialog";
+import { BoardColumnsProvider } from "@/components/dashboard/board-columns-context";
+import { useBoardColumns } from "@/hooks/use-board-columns";
 import { useTranslation } from "@/components/locale-provider";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -29,6 +31,7 @@ export function BoardView({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useTranslation();
+  const { columns: boardColumns, isMobile } = useBoardColumns();
 
   // Auto-open settings when ?settings=true is in the URL
   useEffect(() => {
@@ -105,7 +108,9 @@ export function BoardView({
       </div>
 
       <EditModeProvider isEditing={isEditing}>
-        <BoardDndContext board={board} />
+        <BoardColumnsProvider value={{ columns: boardColumns, isMobile }}>
+          <BoardDndContext board={board} />
+        </BoardColumnsProvider>
       </EditModeProvider>
 
       <AddCategoryDialog
