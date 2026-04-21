@@ -220,6 +220,7 @@ const categorySchema = z.object({
   icon: z.string().default("folder"),
   iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1"),
+  bgColor: z.string().nullable().optional(),
   x: z.number().int().min(0).default(0).optional(),
   y: z.number().int().min(0).default(0).optional(),
   w: z.number().int().min(1).max(48).default(6).optional(),
