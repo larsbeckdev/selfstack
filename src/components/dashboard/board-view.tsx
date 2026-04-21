@@ -329,13 +329,45 @@ export function BoardView({
                 </Button>
               )}
               {isEditing && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setAddCategoryOpen(true)}>
-                  <Plus className="mr-2 size-4" />
-                  {t("category.addTo")}
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Plus className="mr-2 size-4" />
+                      {t("common.add")}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setAddCategoryOpen(true)}>
+                      <FolderPlus className="mr-2 size-4" />
+                      {t("category.addTo")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={categories.length === 0}
+                      onClick={() => {
+                        setTargetCategoryId(undefined);
+                        setAddGroupOpen(true);
+                      }}>
+                      <LayoutGrid className="mr-2 size-4" />
+                      {t("group.addTo")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled={allGroups.length === 0}
+                      onClick={() => {
+                        setTargetGroupId(undefined);
+                        setAddTileOpen(true);
+                      }}>
+                      <Square className="mr-2 size-4" />
+                      {t("tile.addTo")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem disabled>
+                      <Sparkles className="mr-2 size-4" />
+                      {t("widget.addTo")}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        ({t("common.comingSoon")})
+                      </span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
               {isOwner && (
                 <Button
