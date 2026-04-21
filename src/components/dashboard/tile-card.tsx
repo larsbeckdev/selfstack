@@ -336,7 +336,7 @@ function TileActionsMenu({
           size="icon"
           variant="secondary"
           className={cn(
-            "size-6 rounded-md bg-background/80 shadow-sm hover:bg-background",
+            "size-6 rounded-md border border-border/60 bg-background shadow-md hover:bg-background z-10",
             className,
           )}
           onPointerDown={(e) => e.stopPropagation()}

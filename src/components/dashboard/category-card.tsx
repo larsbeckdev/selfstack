@@ -105,7 +105,10 @@ export function CategoryCard({
   return (
     <>
       <div
-        className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card"
+        className={cn(
+          "flex h-full flex-col overflow-hidden rounded-2xl border border-border/50",
+          !category.bgColor && "bg-card",
+        )}
         style={
           category.bgColor
             ? { backgroundColor: withAlpha(category.bgColor, 0.18) }

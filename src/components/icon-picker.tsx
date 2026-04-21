@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
-import { icons, Link as LinkIcon, Upload } from "lucide-react";
+import { useState, useMemo, useRef, useEffect } from "react";
+import { icons, Link as LinkIcon, Upload, FolderOpen } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,27 @@ export function IconPicker({
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Media library tab ──────────────────────────────────────────────
+  type MediaFile = { name: string; url: string; size: number };
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[] | null>(null);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaSearch, setMediaSearch] = useState("");
+  useEffect(() => {
+    if (!open || mediaFiles !== null) return;
+    setMediaLoading(true);
+    fetch("/api/media")
+      .then((r) => r.json())
+      .then((d) => setMediaFiles(d.files ?? []))
+      .catch(() => setMediaFiles([]))
+      .finally(() => setMediaLoading(false));
+  }, [open, mediaFiles]);
+  const filteredMedia = useMemo(() => {
+    if (!mediaFiles) return [];
+    if (!mediaSearch) return mediaFiles;
+    const q = mediaSearch.toLowerCase();
+    return mediaFiles.filter((f) => f.name.toLowerCase().includes(q));
+  }, [mediaFiles, mediaSearch]);
 
   const ACCEPTED_TYPES = ".png,.jpg,.jpeg,.webp,.svg,.ico";
 
@@ -90,6 +111,10 @@ export function IconPicker({
             <TabsTrigger value="icons" className="flex-1">
               Icons
             </TabsTrigger>
+            <TabsTrigger value="media" className="flex-1">
+              <FolderOpen className="mr-1 size-3" />
+              Medien
+            </TabsTrigger>
             <TabsTrigger value="upload" className="flex-1">
               <Upload className="mr-1 size-3" />
               Upload
@@ -133,6 +158,56 @@ export function IconPicker({
                   </p>
                 )}
               </div>
+            </ScrollArea>
+          </TabsContent>
+          <TabsContent value="media" className="mt-0">
+            <div className="p-2">
+              <Input
+                placeholder="Medien suchen..."
+                value={mediaSearch}
+                onChange={(e) => setMediaSearch(e.target.value)}
+              />
+            </div>
+            <ScrollArea className="h-64">
+              {mediaLoading ? (
+                <p className="py-6 text-center text-xs text-muted-foreground">
+                  Lädt...
+                </p>
+              ) : filteredMedia.length === 0 ? (
+                <p className="py-6 text-center text-xs text-muted-foreground">
+                  Keine Dateien gefunden
+                </p>
+              ) : (
+                <div className="grid grid-cols-5 gap-1 p-2">
+                  {filteredMedia.map((file) => {
+                    const selected = iconUrl === file.url;
+                    return (
+                      <button
+                        key={file.name}
+                        type="button"
+                        title={file.name}
+                        className={`flex aspect-square items-center justify-center rounded-md border p-1 transition-colors hover:border-primary/50 hover:bg-accent ${
+                          selected
+                            ? "border-primary ring-1 ring-primary"
+                            : "border-border/50"
+                        }`}
+                        onClick={() => {
+                          onIconUrlChange?.(file.url);
+                          setUploadPreview(file.url);
+                          setUploadName(file.name);
+                          setOpen(false);
+                        }}>
+                        <img
+                          src={file.url}
+                          alt={file.name}
+                          className="max-h-full max-w-full object-contain"
+                          loading="lazy"
+                        />
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </ScrollArea>
           </TabsContent>
           <TabsContent value="upload" className="mt-0 p-3 space-y-3">

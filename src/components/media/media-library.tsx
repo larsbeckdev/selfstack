@@ -306,12 +306,12 @@ export function MediaLibrary() {
           )}
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
           {filtered.map((file) => (
             <Card
               key={file.name}
               className="group relative overflow-hidden p-0">
-              <div className="flex aspect-square items-center justify-center bg-muted/30 p-4">
+              <div className="flex aspect-square items-center justify-center bg-muted/30 p-2">
                 <img
                   src={file.url}
                   alt={file.name}
@@ -319,14 +319,16 @@ export function MediaLibrary() {
                   loading="lazy"
                 />
               </div>
-              <div className="p-2">
+              <div className="p-1.5">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <p className="truncate text-xs font-medium">{file.name}</p>
+                    <p className="truncate text-[11px] font-medium leading-tight">
+                      {file.name}
+                    </p>
                   </TooltipTrigger>
                   <TooltipContent>{file.name}</TooltipContent>
                 </Tooltip>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground">
                   {formatBytes(file.size)}
                 </p>
               </div>
@@ -334,16 +336,16 @@ export function MediaLibrary() {
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="size-7"
+                  className="size-6"
                   onClick={() => handleDownload(file)}>
-                  <Download className="size-3.5" />
+                  <Download className="size-3" />
                 </Button>
                 <Button
                   variant="destructive"
                   size="icon"
-                  className="size-7"
+                  className="size-6"
                   onClick={() => setDeleteTarget(file)}>
-                  <Trash2 className="size-3.5" />
+                  <Trash2 className="size-3" />
                 </Button>
               </div>
             </Card>
