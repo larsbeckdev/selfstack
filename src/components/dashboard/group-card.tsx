@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/context-menu";
 import { GridCanvas } from "./grid-canvas";
 import { TileCard } from "./tile-card";
+import { DraggableItem } from "./draggable-item";
 import { EditGroupDialog } from "./edit-group-dialog";
 import { useEditMode } from "./edit-mode-context";
 import { deleteGroup, duplicateGroup } from "@/lib/actions/board";
@@ -32,7 +33,7 @@ import {
   getGroupLayout,
   getTileBox,
   layoutRows,
-  gridItemStyle,
+  type GridBox,
 } from "@/lib/grid";
 
 type TileMoveTarget = { id: string; name: string; categoryName: string };
@@ -41,16 +42,14 @@ export function GroupCard({
   group,
   allGroups,
   onAddTile,
-  dragHandle,
-  resizeHandle,
+  onMoveTile,
   innerCols,
   innerRows,
 }: {
   group: GroupWithTiles;
   allGroups: TileMoveTarget[];
   onAddTile: (groupId: string) => void;
-  dragHandle?: React.ReactNode;
-  resizeHandle?: React.ReactNode;
+  onMoveTile?: (groupId: string, tileId: string, box: GridBox) => void;
   /** How many columns the group's inner canvas has (clamped by parent). */
   innerCols: number;
   /** How many rows the group's inner canvas has (clamped by parent). */
@@ -103,7 +102,6 @@ export function GroupCard({
               "group/card relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card",
               isEditing && "ring-1 ring-border/60",
             )}>
-            {dragHandle}
             <div
               className="flex items-center gap-2 border-b px-3 py-2"
               style={headerStyle}>
@@ -134,16 +132,18 @@ export function GroupCard({
                 showDots={isEditing}
                 className="flex-1 p-2">
                 {compactedTiles.map(({ id, tile, x, y, w, h }) => (
-                  <div
+                  <DraggableItem
                     key={id}
-                    style={gridItemStyle({ x, y, w, h })}
-                    className="min-h-0">
+                    box={{ x, y, w, h }}
+                    canvasCols={Math.max(1, innerCols)}
+                    enabled={isEditing}
+                    onDragEnd={(b) => onMoveTile?.(group.id, id, b)}>
                     <TileCard
                       tile={tile}
                       mode="grid"
                       otherGroups={allGroups.filter((x) => x.id !== group.id)}
                     />
-                  </div>
+                  </DraggableItem>
                 ))}
                 {group.tiles.length === 0 && isEditing && (
                   <div
@@ -178,7 +178,6 @@ export function GroupCard({
                 )}
               </div>
             )}
-            {resizeHandle}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>

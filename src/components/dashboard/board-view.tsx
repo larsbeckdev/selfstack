@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil, Plus, Settings2, Check } from "lucide-react";
-import type { BoardRole, BoardWithContents } from "@/types";
+import type { BoardRole, BoardWithContents, CategoryWithGroups } from "@/types";
 import { Button } from "@/components/ui/button";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { GridCanvas } from "./grid-canvas";
 import { CategoryCard } from "./category-card";
+import { DraggableItem } from "./draggable-item";
 import { EditModeProvider } from "./edit-mode-context";
 import { AddCategoryDialog } from "./add-category-dialog";
 import { AddGroupDialog } from "./add-group-dialog";
@@ -15,7 +16,14 @@ import { AddTileDialog } from "./add-tile-dialog";
 import { BoardSettingsDialog } from "./board-settings-dialog";
 import { useGridViewport } from "@/hooks/use-grid-viewport";
 import { useTranslation } from "@/components/locale-provider";
-import { compactLayout, gridItemStyle, layoutRows } from "@/lib/grid";
+import {
+  compactWithPriority,
+  getTileBox,
+  layoutRows,
+  type GridBox,
+} from "@/lib/grid";
+import { syncBoardLayout } from "@/lib/actions/board";
+import { toast } from "sonner";
 
 export function BoardView({
   board,
@@ -24,7 +32,6 @@ export function BoardView({
 }: {
   board: BoardWithContents;
   boardRole?: BoardRole;
-  /** If true, disables all edit affordances regardless of role. */
   forceReadonly?: boolean;
 }) {
   const router = useRouter();
@@ -36,6 +43,16 @@ export function BoardView({
   const isOwner = !forceReadonly && boardRole === "owner";
 
   const [isEditing, setIsEditing] = useState(false);
+  const [categories, setCategories] = useState<CategoryWithGroups[]>(
+    board.categories,
+  );
+  const dirtyRef = useRef(false);
+
+  // Adopt server snapshot while clean; ignore while user has pending edits.
+  useEffect(() => {
+    if (!dirtyRef.current) setCategories(board.categories);
+  }, [board.categories]);
+
   const [addCategoryOpen, setAddCategoryOpen] = useState(false);
   const [addGroupOpen, setAddGroupOpen] = useState(false);
   const [addTileOpen, setAddTileOpen] = useState(false);
@@ -49,36 +66,134 @@ export function BoardView({
 
   const cappedCols = Math.max(1, viewportCols);
 
-  // Compact categories at the viewport level (width clamped).
-  const categoriesWithBox = useMemo(
-    () =>
-      board.categories.map((cat) => ({
-        id: cat.id,
-        category: cat,
-        x: cat.x,
-        y: cat.y,
-        w: Math.min(cat.w, cappedCols),
-        h: Math.max(1, cat.h),
-      })),
-    [board.categories, cappedCols],
-  );
-  const compactedCategories = useMemo(
-    () => compactLayout(categoriesWithBox, cappedCols),
-    [categoriesWithBox, cappedCols],
-  );
+  const compactedCategories = useMemo(() => {
+    const items = categories.map((cat) => ({
+      id: cat.id,
+      category: cat,
+      x: cat.x,
+      y: cat.y,
+      w: Math.min(cat.w, cappedCols),
+      h: Math.max(1, cat.h),
+    }));
+    return compactWithPriority(items, cappedCols);
+  }, [categories, cappedCols]);
   const totalRows = layoutRows(compactedCategories);
 
-  // Flat list of all groups — used for the "move tile" submenu.
   const allGroups = useMemo(
     () =>
-      board.categories.flatMap((c) =>
+      categories.flatMap((c) =>
         c.groups.map((g) => ({
           id: g.id,
           name: g.name,
           categoryName: c.name,
         })),
       ),
-    [board.categories],
+    [categories],
+  );
+
+  const markDirty = () => {
+    dirtyRef.current = true;
+  };
+
+  const mutateCategory = useCallback(
+    (id: string, box: GridBox) => {
+      markDirty();
+      setCategories((prev) => {
+        const next = prev.map((c) =>
+          c.id === id ? { ...c, x: box.x, y: box.y, w: box.w, h: box.h } : c,
+        );
+        const withBox = next.map((c) => ({
+          id: c.id,
+          category: c,
+          x: c.x,
+          y: c.y,
+          w: Math.min(c.w, cappedCols),
+          h: Math.max(1, c.h),
+        }));
+        const compacted = compactWithPriority(withBox, cappedCols, id);
+        return compacted.map((it) => ({
+          ...it.category,
+          x: it.x,
+          y: it.y,
+          w: it.w,
+          h: it.h,
+        }));
+      });
+    },
+    [cappedCols],
+  );
+
+  const mutateGroup = useCallback(
+    (categoryId: string, groupId: string, box: GridBox) => {
+      markDirty();
+      setCategories((prev) =>
+        prev.map((c) => {
+          if (c.id !== categoryId) return c;
+          const innerCols = Math.max(1, Math.min(c.w, cappedCols));
+          const groups = c.groups.map((g) =>
+            g.id === groupId
+              ? { ...g, x: box.x, y: box.y, w: box.w, h: box.h }
+              : g,
+          );
+          const withBox = groups.map((g) => ({
+            id: g.id,
+            group: g,
+            x: g.x,
+            y: g.y,
+            w: Math.min(g.w, innerCols),
+            h: Math.max(1, g.h),
+          }));
+          const compacted = compactWithPriority(withBox, innerCols, groupId);
+          return {
+            ...c,
+            groups: compacted.map((it) => ({
+              ...it.group,
+              x: it.x,
+              y: it.y,
+              w: it.w,
+              h: it.h,
+            })),
+          };
+        }),
+      );
+    },
+    [cappedCols],
+  );
+
+  const mutateTile = useCallback(
+    (categoryId: string, groupId: string, tileId: string, box: GridBox) => {
+      markDirty();
+      setCategories((prev) =>
+        prev.map((c) => {
+          if (c.id !== categoryId) return c;
+          return {
+            ...c,
+            groups: c.groups.map((g) => {
+              if (g.id !== groupId) return g;
+              const innerCols = Math.max(1, g.w);
+              const tiles = g.tiles.map((tile) =>
+                tile.id === tileId ? { ...tile, x: box.x, y: box.y } : tile,
+              );
+              const withBox = tiles.map((tile) => ({
+                id: tile.id,
+                tile,
+                ...getTileBox(tile),
+              }));
+              const compacted = compactWithPriority(withBox, innerCols, tileId);
+              return {
+                ...g,
+                tiles: compacted.map((it) => ({
+                  ...it.tile,
+                  x: it.x,
+                  y: it.y,
+                })),
+              };
+            }),
+          };
+        }),
+      );
+    },
+    [],
   );
 
   const handleAddGroup = (categoryId: string) => {
@@ -90,15 +205,51 @@ export function BoardView({
     setAddTileOpen(true);
   };
 
-  const exitEdit = () => {
-    setIsEditing(false);
-    router.refresh();
+  const exitEdit = async () => {
+    if (!dirtyRef.current) {
+      setIsEditing(false);
+      return;
+    }
+    try {
+      const cats = categories.map((c) => ({
+        id: c.id,
+        x: c.x,
+        y: c.y,
+        w: c.w,
+        h: c.h,
+      }));
+      const grps = categories.flatMap((c) =>
+        c.groups.map((g) => ({
+          id: g.id,
+          x: g.x,
+          y: g.y,
+          w: g.w,
+          h: g.h,
+        })),
+      );
+      const tls = categories.flatMap((c) =>
+        c.groups.flatMap((g) =>
+          g.tiles.map((tile) => ({ id: tile.id, x: tile.x, y: tile.y })),
+        ),
+      );
+      await syncBoardLayout(board.id, {
+        categories: cats,
+        groups: grps,
+        tiles: tls,
+      });
+      dirtyRef.current = false;
+      toast.success(t("board.saved"));
+    } catch {
+      toast.error(t("error.updateFailed"));
+    } finally {
+      setIsEditing(false);
+      router.refresh();
+    }
   };
 
   return (
     <EditModeProvider isEditing={canEdit && isEditing}>
       <div className="space-y-4">
-        {/* Header */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <DynamicIcon
@@ -150,8 +301,7 @@ export function BoardView({
           )}
         </div>
 
-        {/* Top-level grid canvas */}
-        {board.categories.length === 0 ? (
+        {categories.length === 0 ? (
           <div className="rounded-lg border bg-card p-12 text-center">
             <p className="mb-4 text-sm text-muted-foreground">
               {t("board.noCategoriesTitle")}
@@ -170,24 +320,32 @@ export function BoardView({
             showDots={canEdit && isEditing}
             className="w-full">
             {compactedCategories.map(({ id, category, x, y, w, h }) => (
-              <div
+              <DraggableItem
                 key={id}
-                style={gridItemStyle({ x, y, w, h })}
-                className="min-h-0">
+                box={{ x, y, w, h }}
+                canvasCols={cappedCols}
+                enabled={canEdit && isEditing}
+                canResize
+                minW={2}
+                minH={2}
+                onDragEnd={(b) => mutateCategory(id, b)}
+                onResizeEnd={(b) => mutateCategory(id, b)}>
                 <CategoryCard
                   category={category}
                   allGroups={allGroups}
                   onAddGroup={handleAddGroup}
                   onAddTile={handleAddTile}
+                  onMoveGroup={(gid, b) => mutateGroup(id, gid, b)}
+                  onResizeGroup={(gid, b) => mutateGroup(id, gid, b)}
+                  onMoveTile={(gid, tid, b) => mutateTile(id, gid, tid, b)}
                   innerCols={w}
                   innerRows={Math.max(1, h - 1)}
                 />
-              </div>
+              </DraggableItem>
             ))}
           </GridCanvas>
         )}
 
-        {/* Dialogs */}
         {canEdit && (
           <>
             <AddCategoryDialog

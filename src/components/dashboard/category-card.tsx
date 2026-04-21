@@ -15,13 +15,14 @@ import {
 } from "@/components/ui/context-menu";
 import { GridCanvas } from "./grid-canvas";
 import { GroupCard } from "./group-card";
+import { DraggableItem } from "./draggable-item";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { useEditMode } from "./edit-mode-context";
 import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { compactLayout, gridItemStyle, layoutRows } from "@/lib/grid";
+import { compactLayout, layoutRows, type GridBox } from "@/lib/grid";
 
 type TileMoveTarget = { id: string; name: string; categoryName: string };
 
@@ -30,8 +31,9 @@ export function CategoryCard({
   allGroups,
   onAddGroup,
   onAddTile,
-  dragHandle,
-  resizeHandle,
+  onMoveGroup,
+  onResizeGroup,
+  onMoveTile,
   innerCols,
   innerRows,
 }: {
@@ -39,8 +41,9 @@ export function CategoryCard({
   allGroups: TileMoveTarget[];
   onAddGroup: (categoryId: string) => void;
   onAddTile: (groupId: string) => void;
-  dragHandle?: React.ReactNode;
-  resizeHandle?: React.ReactNode;
+  onMoveGroup?: (groupId: string, box: GridBox) => void;
+  onResizeGroup?: (groupId: string, box: GridBox) => void;
+  onMoveTile?: (groupId: string, tileId: string, box: GridBox) => void;
   innerCols: number;
   innerRows: number;
 }) {
@@ -95,7 +98,6 @@ export function CategoryCard({
               borderLeftColor: category.color,
               borderLeftWidth: 4,
             }}>
-            {dragHandle}
             <div className="flex items-center gap-2 px-4 py-3">
               <DynamicIcon
                 name={category.icon}
@@ -124,18 +126,25 @@ export function CategoryCard({
               showDots={isEditing}
               className="flex-1 px-4 pb-4">
               {compactedGroups.map(({ id, group, x, y, w, h }) => (
-                <div
+                <DraggableItem
                   key={id}
-                  style={gridItemStyle({ x, y, w, h })}
-                  className="min-h-0">
+                  box={{ x, y, w, h }}
+                  canvasCols={cappedCols}
+                  enabled={isEditing}
+                  canResize
+                  minW={1}
+                  minH={2}
+                  onDragEnd={(b) => onMoveGroup?.(id, b)}
+                  onResizeEnd={(b) => onResizeGroup?.(id, b)}>
                   <GroupCard
                     group={group}
                     allGroups={allGroups}
                     onAddTile={onAddTile}
+                    onMoveTile={onMoveTile}
                     innerCols={w}
                     innerRows={Math.max(1, h - 1)}
                   />
-                </div>
+                </DraggableItem>
               ))}
               {category.groups.length === 0 && isEditing && (
                 <div
@@ -148,7 +157,6 @@ export function CategoryCard({
                 </div>
               )}
             </GridCanvas>
-            {resizeHandle}
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>

@@ -351,6 +351,7 @@ const en: Record<TranslationKey, string> = {
   "group.layout": "Layout",
   "group.layoutGrid": "Grid",
   "group.layoutList": "List",
+  "board.saved": "Board saved",
 };
 
 export default en;

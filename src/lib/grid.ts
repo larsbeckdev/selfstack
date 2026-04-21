@@ -53,7 +53,7 @@ export function compactLayout<T extends { id: string } & GridBox>(
   const placed: T[] = [];
   for (const raw of items) {
     const w = Math.max(1, Math.min(raw.w, cols));
-    let x = Math.max(0, Math.min(raw.x, cols - w));
+    const x = Math.max(0, Math.min(raw.x, cols - w));
     let y = Math.max(0, raw.y);
     // Push down until no collision
     while (placed.some((p) => boxesOverlap({ x, y, w, h: raw.h }, p))) {
@@ -75,4 +75,27 @@ export function gridItemStyle(box: GridBox): React.CSSProperties {
 /** Total rows used by a layout — useful for sizing the canvas if needed. */
 export function layoutRows(items: GridBox[]): number {
   return items.reduce((max, it) => Math.max(max, it.y + it.h), 0);
+}
+
+/**
+ * Compact with an optional priority id: the priority item is placed first
+ * (so other items get pushed to accommodate it). Preserves id-to-box stability.
+ */
+export function compactWithPriority<T extends { id: string } & GridBox>(
+  items: T[],
+  cols: number,
+  priorityId?: string,
+): T[] {
+  if (!priorityId) return compactLayout(items, cols);
+  const idx = items.findIndex((i) => i.id === priorityId);
+  if (idx < 0) return compactLayout(items, cols);
+  const reordered = [
+    items[idx],
+    ...items.slice(0, idx),
+    ...items.slice(idx + 1),
+  ];
+  const compacted = compactLayout(reordered, cols);
+  // Restore original order in the returned array for stable React keys.
+  const byId = new Map(compacted.map((i) => [i.id, i]));
+  return items.map((orig) => byId.get(orig.id) ?? orig);
 }

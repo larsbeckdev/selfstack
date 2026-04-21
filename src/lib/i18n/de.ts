@@ -353,6 +353,7 @@ const de = {
   "group.layout": "Layout",
   "group.layoutGrid": "Raster",
   "group.layoutList": "Liste",
+  "board.saved": "Board gespeichert",
 } as const;
 
 export type TranslationKey = keyof typeof de;
