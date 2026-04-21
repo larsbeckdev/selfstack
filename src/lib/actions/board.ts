@@ -16,7 +16,6 @@ async function revalidateBoard(boardId: string) {
 
 // ─── Board Access Helper ─────────────────────────────────────────────────────
 
-/** Returns the user's role on a board, or null if no access */
 async function getBoardRole(
   boardId: string,
   userId: string,
@@ -36,7 +35,6 @@ async function getBoardRole(
   return member.role as BoardRole;
 }
 
-/** Ensures user has at least `minRole` on the board. Returns user + role. */
 async function requireBoardAccess(
   boardId: string,
   minRole: "viewer" | "editor" | "owner",
@@ -52,7 +50,6 @@ async function requireBoardAccess(
   return { user, role };
 }
 
-/** Find board where user is owner OR member */
 function boardAccessWhere(userId: string) {
   return {
     OR: [{ userId }, { members: { some: { userId } } }],
@@ -83,7 +80,6 @@ const boardSchema = z.object({
   icon: z.string().default("layout-dashboard"),
   iconUrl: iconUrlSchema,
   isPublic: z.boolean().default(false),
-  columns: z.number().int().min(1).max(6).default(1).optional(),
 });
 
 export async function createBoard(data: z.infer<typeof boardSchema>) {
@@ -95,7 +91,6 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  // Ensure slug uniqueness by checking existing slugs
   let slug = baseSlug;
   let counter = 0;
   while (await db.board.findUnique({ where: { slug } })) {
@@ -132,7 +127,6 @@ export async function updateBoard(
   const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
 
-  // If slug is being changed, check uniqueness
   if (data.slug && data.slug !== board.slug) {
     const existing = await db.board.findUnique({
       where: { slug: data.slug },
@@ -181,13 +175,13 @@ export async function getBoardWithContents(boardId: string) {
     where: { id: boardId, ...boardAccessWhere(user.id) },
     include: {
       categories: {
-        orderBy: { order: "asc" },
+        orderBy: [{ y: "asc" }, { x: "asc" }],
         include: {
           groups: {
-            orderBy: { order: "asc" },
+            orderBy: [{ y: "asc" }, { x: "asc" }],
             include: {
               tiles: {
-                orderBy: { order: "asc" },
+                orderBy: [{ y: "asc" }, { x: "asc" }],
               },
             },
           },
@@ -203,13 +197,13 @@ export async function getPublicBoard(slug: string) {
     include: {
       user: { select: { name: true, image: true } },
       categories: {
-        orderBy: { order: "asc" },
+        orderBy: [{ y: "asc" }, { x: "asc" }],
         include: {
           groups: {
-            orderBy: { order: "asc" },
+            orderBy: [{ y: "asc" }, { x: "asc" }],
             include: {
               tiles: {
-                orderBy: { order: "asc" },
+                orderBy: [{ y: "asc" }, { x: "asc" }],
               },
             },
           },
@@ -226,7 +220,10 @@ const categorySchema = z.object({
   icon: z.string().default("folder"),
   iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1"),
-  columns: z.number().int().min(1).max(12).default(1).optional(),
+  x: z.number().int().min(0).default(0).optional(),
+  y: z.number().int().min(0).default(0).optional(),
+  w: z.number().int().min(1).max(48).default(12).optional(),
+  h: z.number().int().min(1).max(48).default(4).optional(),
   boardId: z.string(),
 });
 
@@ -236,16 +233,19 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
   const board = await db.board.findUnique({ where: { id: data.boardId } });
   if (!board) throw new Error("Board not found");
 
-  const maxOrder = await db.category.aggregate({
+  const maxY = await db.category.aggregate({
     where: { boardId: data.boardId },
-    _max: { order: true },
+    _max: { y: true, h: true },
   });
 
   const category = await db.category.create({
     data: {
       ...data,
       iconUrl: data.iconUrl || null,
-      order: (maxOrder._max.order ?? -1) + 1,
+      x: data.x ?? 0,
+      y: data.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      w: data.w ?? 12,
+      h: data.h ?? 4,
     },
   });
 
@@ -292,13 +292,12 @@ const groupSchema = z.object({
   name: z.string().min(1).max(100),
   icon: z.string().default("grid-3x3"),
   iconUrl: iconUrlSchema,
-  viewMode: z
-    .enum(["grid", "grid-sm", "grid-lg", "list"])
-    .default("grid")
-    .optional(),
-  columns: z.number().int().min(0).max(12).default(0).optional(),
-  w: z.number().int().min(1).max(12).default(2).optional(),
   bgColor: z.string().nullable().optional(),
+  layout: z.enum(["grid", "list"]).default("grid").optional(),
+  x: z.number().int().min(0).default(0).optional(),
+  y: z.number().int().min(0).default(0).optional(),
+  w: z.number().int().min(1).max(48).default(4).optional(),
+  h: z.number().int().min(1).max(48).default(4).optional(),
   categoryId: z.string(),
 });
 
@@ -310,16 +309,19 @@ export async function createGroup(data: z.infer<typeof groupSchema>) {
   if (!category) throw new Error("Category not found");
   await requireBoardAccess(category.boardId, "editor");
 
-  const maxOrder = await db.group.aggregate({
+  const maxY = await db.group.aggregate({
     where: { categoryId: data.categoryId },
-    _max: { order: true },
+    _max: { y: true, h: true },
   });
 
   const group = await db.group.create({
     data: {
       ...data,
       iconUrl: data.iconUrl || null,
-      order: (maxOrder._max.order ?? -1) + 1,
+      x: data.x ?? 0,
+      y: data.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      w: data.w ?? 4,
+      h: data.h ?? 4,
     },
   });
 
@@ -375,10 +377,9 @@ const tileSchema = z.object({
   url: z.string().url().optional().or(z.literal("")),
   description: z.string().max(500).optional(),
   statusCheck: z.boolean().default(false),
-  size: z
-    .enum(["small", "default", "large", "list"])
-    .default("default")
-    .optional(),
+  size: z.enum(["small", "default", "large"]).default("default").optional(),
+  x: z.number().int().min(0).default(0).optional(),
+  y: z.number().int().min(0).default(0).optional(),
   groupId: z.string(),
 });
 
@@ -390,9 +391,9 @@ export async function createTile(data: z.infer<typeof tileSchema>) {
   if (!group) throw new Error("Group not found");
   await requireBoardAccess(group.category.boardId, "editor");
 
-  const maxOrder = await db.tile.aggregate({
+  const maxY = await db.tile.aggregate({
     where: { groupId: data.groupId },
-    _max: { order: true },
+    _max: { y: true },
   });
 
   const tile = await db.tile.create({
@@ -403,7 +404,8 @@ export async function createTile(data: z.infer<typeof tileSchema>) {
       bgColor: data.bgColor || null,
       borderColor: data.borderColor || null,
       description: data.description || null,
-      order: (maxOrder._max.order ?? -1) + 1,
+      x: data.x ?? 0,
+      y: data.y ?? (maxY._max.y ?? -1) + 1,
     },
   });
 
@@ -453,124 +455,46 @@ export async function deleteTile(tileId: string) {
   refresh();
 }
 
-// ─── Reorder Actions ─────────────────────────────────────────────────────────
+// ─── Layout Sync ─────────────────────────────────────────────────────────────
 
-export async function reorderCategories(
+/** Batch layout sync: called on exit of edit mode. */
+export async function syncBoardLayout(
   boardId: string,
-  categoryIds: string[],
+  payload: {
+    categories?: { id: string; x: number; y: number; w: number; h: number }[];
+    groups?: { id: string; x: number; y: number; w: number; h: number }[];
+    tiles?: { id: string; x: number; y: number; groupId?: string }[];
+  },
 ) {
   await requireBoardAccess(boardId, "editor");
 
-  const board = await db.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new Error("Board not found");
-
-  await Promise.all(
-    categoryIds.map((id, index) =>
-      db.category.update({ where: { id }, data: { order: index } }),
-    ),
-  );
-
+  const ops: Promise<unknown>[] = [];
+  for (const c of payload.categories ?? []) {
+    ops.push(
+      db.category.update({
+        where: { id: c.id },
+        data: { x: c.x, y: c.y, w: c.w, h: c.h },
+      }),
+    );
+  }
+  for (const g of payload.groups ?? []) {
+    ops.push(
+      db.group.update({
+        where: { id: g.id },
+        data: { x: g.x, y: g.y, w: g.w, h: g.h },
+      }),
+    );
+  }
+  for (const t of payload.tiles ?? []) {
+    const data: { x: number; y: number; groupId?: string } = {
+      x: t.x,
+      y: t.y,
+    };
+    if (t.groupId) data.groupId = t.groupId;
+    ops.push(db.tile.update({ where: { id: t.id }, data }));
+  }
+  await Promise.all(ops);
   await revalidateBoard(boardId);
-  refresh();
-}
-
-export async function reorderGroups(categoryId: string, groupIds: string[]) {
-  const category = await db.category.findUnique({
-    where: { id: categoryId },
-    include: { board: true },
-  });
-  if (!category) throw new Error("Category not found");
-  await requireBoardAccess(category.boardId, "editor");
-
-  await Promise.all(
-    groupIds.map((id, index) =>
-      db.group.update({ where: { id }, data: { order: index } }),
-    ),
-  );
-
-  await revalidateBoard(category.boardId);
-  refresh();
-}
-
-export async function reorderTiles(groupId: string, tileIds: string[]) {
-  const group = await db.group.findUnique({
-    where: { id: groupId },
-    include: { category: true },
-  });
-  if (!group) throw new Error("Group not found");
-  await requireBoardAccess(group.category.boardId, "editor");
-
-  await Promise.all(
-    tileIds.map((id, index) =>
-      db.tile.update({ where: { id }, data: { order: index } }),
-    ),
-  );
-
-  await revalidateBoard(group.category.boardId);
-  refresh();
-}
-
-export async function moveTileToGroup(tileId: string, newGroupId: string) {
-  const tile = await db.tile.findUnique({
-    where: { id: tileId },
-    include: { group: { include: { category: true } } },
-  });
-  if (!tile) throw new Error("Tile not found");
-  await requireBoardAccess(tile.group.category.boardId, "editor");
-
-  const newGroup = await db.group.findUnique({
-    where: { id: newGroupId },
-    include: { category: true },
-  });
-  if (!newGroup) throw new Error("Target group not found");
-
-  const maxOrder = await db.tile.aggregate({
-    where: { groupId: newGroupId },
-    _max: { order: true },
-  });
-
-  await db.tile.update({
-    where: { id: tileId },
-    data: {
-      groupId: newGroupId,
-      order: (maxOrder._max.order ?? -1) + 1,
-    },
-  });
-
-  await revalidateBoard(newGroup.category.boardId);
-  refresh();
-}
-
-export async function moveGroupToCategory(
-  groupId: string,
-  newCategoryId: string,
-) {
-  const group = await db.group.findUnique({
-    where: { id: groupId },
-    include: { category: true },
-  });
-  if (!group) throw new Error("Group not found");
-  await requireBoardAccess(group.category.boardId, "editor");
-
-  const newCategory = await db.category.findUnique({
-    where: { id: newCategoryId },
-  });
-  if (!newCategory) throw new Error("Target category not found");
-
-  const maxOrder = await db.group.aggregate({
-    where: { categoryId: newCategoryId },
-    _max: { order: true },
-  });
-
-  await db.group.update({
-    where: { id: groupId },
-    data: {
-      categoryId: newCategoryId,
-      order: (maxOrder._max.order ?? -1) + 1,
-    },
-  });
-
-  await revalidateBoard(newCategory.boardId);
   refresh();
 }
 
@@ -584,9 +508,9 @@ export async function duplicateTile(tileId: string) {
   if (!tile) throw new Error("Tile not found");
   await requireBoardAccess(tile.group.category.boardId, "editor");
 
-  const maxOrder = await db.tile.aggregate({
+  const maxY = await db.tile.aggregate({
     where: { groupId: tile.groupId },
-    _max: { order: true },
+    _max: { y: true },
   });
 
   const copy = await db.tile.create({
@@ -600,7 +524,9 @@ export async function duplicateTile(tileId: string) {
       borderMatchesBg: tile.borderMatchesBg,
       url: tile.url,
       description: tile.description,
-      order: (maxOrder._max.order ?? -1) + 1,
+      size: tile.size,
+      x: 0,
+      y: (maxY._max.y ?? -1) + 1,
       groupId: tile.groupId,
     },
   });
@@ -613,14 +539,17 @@ export async function duplicateTile(tileId: string) {
 export async function duplicateGroup(groupId: string) {
   const group = await db.group.findUnique({
     where: { id: groupId },
-    include: { category: true, tiles: { orderBy: { order: "asc" } } },
+    include: {
+      category: true,
+      tiles: { orderBy: [{ y: "asc" }, { x: "asc" }] },
+    },
   });
   if (!group) throw new Error("Group not found");
   await requireBoardAccess(group.category.boardId, "editor");
 
-  const maxOrder = await db.group.aggregate({
+  const maxY = await db.group.aggregate({
     where: { categoryId: group.categoryId },
-    _max: { order: true },
+    _max: { y: true, h: true },
   });
 
   const copy = await db.group.create({
@@ -628,11 +557,15 @@ export async function duplicateGroup(groupId: string) {
       name: `${group.name} (Kopie)`,
       icon: group.icon,
       iconUrl: group.iconUrl,
-      viewMode: group.viewMode,
-      order: (maxOrder._max.order ?? -1) + 1,
+      bgColor: group.bgColor,
+      layout: group.layout,
+      x: 0,
+      y: (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      w: group.w,
+      h: group.h,
       categoryId: group.categoryId,
       tiles: {
-        create: group.tiles.map((tile, i) => ({
+        create: group.tiles.map((tile) => ({
           name: tile.name,
           icon: tile.icon,
           iconUrl: tile.iconUrl,
@@ -642,7 +575,9 @@ export async function duplicateGroup(groupId: string) {
           borderMatchesBg: tile.borderMatchesBg,
           url: tile.url,
           description: tile.description,
-          order: i,
+          size: tile.size,
+          x: tile.x,
+          y: tile.y,
         })),
       },
     },
@@ -658,17 +593,17 @@ export async function duplicateCategory(categoryId: string) {
     where: { id: categoryId },
     include: {
       groups: {
-        orderBy: { order: "asc" },
-        include: { tiles: { orderBy: { order: "asc" } } },
+        orderBy: [{ y: "asc" }, { x: "asc" }],
+        include: { tiles: { orderBy: [{ y: "asc" }, { x: "asc" }] } },
       },
     },
   });
   if (!category) throw new Error("Category not found");
   await requireBoardAccess(category.boardId, "editor");
 
-  const maxOrder = await db.category.aggregate({
+  const maxY = await db.category.aggregate({
     where: { boardId: category.boardId },
-    _max: { order: true },
+    _max: { y: true, h: true },
   });
 
   const copy = await db.category.create({
@@ -677,17 +612,24 @@ export async function duplicateCategory(categoryId: string) {
       icon: category.icon,
       iconUrl: category.iconUrl,
       color: category.color,
-      order: (maxOrder._max.order ?? -1) + 1,
+      x: 0,
+      y: (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      w: category.w,
+      h: category.h,
       boardId: category.boardId,
       groups: {
-        create: category.groups.map((group, gi) => ({
+        create: category.groups.map((group) => ({
           name: group.name,
           icon: group.icon,
           iconUrl: group.iconUrl,
-          viewMode: group.viewMode,
-          order: gi,
+          bgColor: group.bgColor,
+          layout: group.layout,
+          x: group.x,
+          y: group.y,
+          w: group.w,
+          h: group.h,
           tiles: {
-            create: group.tiles.map((tile, ti) => ({
+            create: group.tiles.map((tile) => ({
               name: tile.name,
               icon: tile.icon,
               iconUrl: tile.iconUrl,
@@ -697,7 +639,9 @@ export async function duplicateCategory(categoryId: string) {
               borderMatchesBg: tile.borderMatchesBg,
               url: tile.url,
               description: tile.description,
-              order: ti,
+              size: tile.size,
+              x: tile.x,
+              y: tile.y,
             })),
           },
         })),
@@ -718,11 +662,11 @@ export async function duplicateBoard(boardId: string) {
     where: { id: boardId },
     include: {
       categories: {
-        orderBy: { order: "asc" },
+        orderBy: [{ y: "asc" }, { x: "asc" }],
         include: {
           groups: {
-            orderBy: { order: "asc" },
-            include: { tiles: { orderBy: { order: "asc" } } },
+            orderBy: [{ y: "asc" }, { x: "asc" }],
+            include: { tiles: { orderBy: [{ y: "asc" }, { x: "asc" }] } },
           },
         },
       },
@@ -753,21 +697,28 @@ export async function duplicateBoard(boardId: string) {
       order: (maxOrder._max.order ?? -1) + 1,
       userId: user.id,
       categories: {
-        create: board.categories.map((cat, ci) => ({
+        create: board.categories.map((cat) => ({
           name: cat.name,
           icon: cat.icon,
           iconUrl: cat.iconUrl,
           color: cat.color,
-          order: ci,
+          x: cat.x,
+          y: cat.y,
+          w: cat.w,
+          h: cat.h,
           groups: {
-            create: cat.groups.map((group, gi) => ({
+            create: cat.groups.map((group) => ({
               name: group.name,
               icon: group.icon,
               iconUrl: group.iconUrl,
-              viewMode: group.viewMode,
-              order: gi,
+              bgColor: group.bgColor,
+              layout: group.layout,
+              x: group.x,
+              y: group.y,
+              w: group.w,
+              h: group.h,
               tiles: {
-                create: group.tiles.map((tile, ti) => ({
+                create: group.tiles.map((tile) => ({
                   name: tile.name,
                   icon: tile.icon,
                   iconUrl: tile.iconUrl,
@@ -777,7 +728,9 @@ export async function duplicateBoard(boardId: string) {
                   borderMatchesBg: tile.borderMatchesBg,
                   url: tile.url,
                   description: tile.description,
-                  order: ti,
+                  size: tile.size,
+                  x: tile.x,
+                  y: tile.y,
                 })),
               },
             })),
@@ -885,7 +838,6 @@ export async function removeBoardMember(memberId: string) {
   refresh();
 }
 
-/** Returns users that can be added to a board (not owner, not already member) */
 export async function getAvailableUsersForBoard(boardId: string) {
   await requireBoardAccess(boardId, "owner");
 
