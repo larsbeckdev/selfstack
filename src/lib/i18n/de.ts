@@ -346,6 +346,8 @@ const de = {
   "category.addTo": "Kategorie hinzufügen",
   "group.addTo": "Gruppe hinzufügen",
   "tile.addTo": "Kachel hinzufügen",
+  "widget.addTo": "Widget hinzufügen",
+  "common.comingSoon": "bald verfügbar",
   "group.emptyHint": "Keine Gruppen – füge eine hinzu",
   "tile.emptyHint": "Keine Kacheln – füge eine hinzu",
   "tile.moveTo": "Verschieben nach",
