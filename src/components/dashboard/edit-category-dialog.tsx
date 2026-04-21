@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
+import { ShadcnColorPicker } from "@/components/shadcn-color-picker";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -33,6 +34,9 @@ export function EditCategoryDialog({
     category.iconUrl ?? null,
   );
   const [color, setColor] = useState(category.color);
+  const [bgColor, setBgColor] = useState<string | null>(
+    category.bgColor ?? null,
+  );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -46,6 +50,7 @@ export function EditCategoryDialog({
         icon,
         iconUrl,
         color,
+        bgColor,
       });
       toast.success(t("category.updated"));
       router.refresh();
@@ -98,6 +103,10 @@ export function EditCategoryDialog({
                 className="flex-1"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>{t("category.bgColor")}</Label>
+            <ShadcnColorPicker value={bgColor} onChange={setBgColor} />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

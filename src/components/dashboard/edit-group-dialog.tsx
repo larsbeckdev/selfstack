@@ -14,13 +14,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
 import { ShadcnColorPicker } from "@/components/shadcn-color-picker";
 import { useTranslation } from "@/components/locale-provider";
@@ -38,9 +31,6 @@ export function EditGroupDialog({
   const [name, setName] = useState(group.name);
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
-  const [layout, setLayout] = useState<"grid" | "list">(
-    group.layout === "list" ? "list" : "grid",
-  );
   const [bgColor, setBgColor] = useState<string | null>(group.bgColor ?? null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -50,7 +40,7 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl, layout, bgColor });
+      await updateGroup(group.id, { name, icon, iconUrl, bgColor });
       toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
@@ -85,20 +75,6 @@ export function EditGroupDialog({
               iconUrl={iconUrl}
               onIconUrlChange={setIconUrl}
             />
-          </div>
-          <div className="space-y-2">
-            <Label>{t("group.layout")}</Label>
-            <Select
-              value={layout}
-              onValueChange={(v) => setLayout(v as "grid" | "list")}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="grid">{t("group.layoutGrid")}</SelectItem>
-                <SelectItem value="list">{t("group.layoutList")}</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <div className="space-y-2">
             <Label>{t("group.bgColor")}</Label>

@@ -178,8 +178,14 @@ export function GroupCard({
           ref={setNodeRef}
           className={cn(
             "rounded-lg transition-colors",
+            group.bgColor && "p-2",
             isOver && isEditing && "bg-primary/5 ring-1 ring-primary/20",
-          )}>
+          )}
+          style={
+            group.bgColor && !(isOver && isEditing)
+              ? { backgroundColor: group.bgColor }
+              : undefined
+          }>
           <SortableContext
             items={group.tiles.map((tile) => tile.id)}
             strategy={

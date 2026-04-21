@@ -104,7 +104,11 @@ export function CategoryCard({
 
   return (
     <>
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
+      <div
+        className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card"
+        style={
+          category.bgColor ? { backgroundColor: category.bgColor } : undefined
+        }>
         {/* header */}
         <div className="flex items-center gap-2.5 px-5 pt-4 pb-3">
           {isEditing && (
