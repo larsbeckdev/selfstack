@@ -344,6 +344,8 @@ const en: Record<TranslationKey, string> = {
   "category.addTo": "Add category",
   "group.addTo": "Add group",
   "tile.addTo": "Add tile",
+  "widget.addTo": "Add widget",
+  "common.comingSoon": "coming soon",
   "group.emptyHint": "No groups yet – add one",
   "tile.emptyHint": "No tiles yet – add one",
   "tile.moveTo": "Move to",
