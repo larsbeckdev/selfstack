@@ -9,6 +9,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
+import { LayoutModeToggle } from "@/components/layout/layout-mode-toggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +37,7 @@ export function AppHeader({ user }: { user: SessionUser }) {
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mx-2 !h-4 self-center" />
       <div className="flex-1" />
+      <LayoutModeToggle />
       <LanguageToggle />
       <ThemeToggle />
       <DropdownMenu>

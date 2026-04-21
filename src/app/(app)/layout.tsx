@@ -5,6 +5,8 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { SidebarInset } from "@/components/ui/sidebar";
 import { PersistedSidebarProvider } from "@/components/layout/persisted-sidebar-provider";
+import { LayoutModeProvider } from "@/components/layout/layout-mode-provider";
+import { LayoutModeMain } from "@/components/layout/layout-mode-toggle";
 
 export default async function AppLayout({
   children,
@@ -28,11 +30,13 @@ export default async function AppLayout({
 
   return (
     <PersistedSidebarProvider defaultOpen={user?.sidebarOpen ?? true}>
-      <AppSidebar user={session.user} boards={boards} />
-      <SidebarInset>
-        <AppHeader user={session.user} />
-        <main className="flex-1 p-6">{children}</main>
-      </SidebarInset>
+      <LayoutModeProvider>
+        <AppSidebar user={session.user} boards={boards} />
+        <SidebarInset>
+          <AppHeader user={session.user} />
+          <LayoutModeMain>{children}</LayoutModeMain>
+        </SidebarInset>
+      </LayoutModeProvider>
     </PersistedSidebarProvider>
   );
 }

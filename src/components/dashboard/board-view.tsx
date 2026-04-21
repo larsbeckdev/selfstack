@@ -19,8 +19,6 @@ import {
   LayoutGrid,
   Square,
   Sparkles,
-  Maximize2,
-  Minimize2,
   Move,
   Rows3,
 } from "lucide-react";
@@ -108,20 +106,6 @@ export function BoardView({
   const isOwner = !forceReadonly && boardRole === "owner";
 
   const [isEditing, setIsEditing] = useState(false);
-  const [containerMode, setContainerMode] = useState<"fullwidth" | "boxed">(
-    "fullwidth",
-  );
-  useEffect(() => {
-    const saved = window.localStorage.getItem("board.layoutMode");
-    if (saved === "boxed" || saved === "fullwidth") setContainerMode(saved);
-  }, []);
-  const toggleContainerMode = useCallback(() => {
-    setContainerMode((prev) => {
-      const next = prev === "fullwidth" ? "boxed" : "fullwidth";
-      window.localStorage.setItem("board.layoutMode", next);
-      return next;
-    });
-  }, []);
 
   // Position mode: "auto" (sortable flow) or "free" (snap-to-grid positioning)
   const [positionMode, setPositionMode] = useState<"auto" | "free">(
@@ -558,11 +542,7 @@ export function BoardView({
         onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}>
-        <div
-          className={cn(
-            "space-y-4",
-            containerMode === "boxed" && "mx-auto max-w-screen-xl",
-          )}>
+        <div className="space-y-4">
           {/* board header */}
           <div className="sticky top-14 z-20 flex flex-wrap items-center gap-3 border-b border-border/50 bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/75">
             <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -577,25 +557,6 @@ export function BoardView({
                 {board.name}
               </h1>
             </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={toggleContainerMode}>
-                  {containerMode === "fullwidth" ? (
-                    <Minimize2 className="size-4" />
-                  ) : (
-                    <Maximize2 className="size-4" />
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                {containerMode === "fullwidth"
-                  ? t("board.layoutBoxed")
-                  : t("board.layoutFullwidth")}
-              </TooltipContent>
-            </Tooltip>
             {canEdit && isEditing && (
               <Tooltip>
                 <TooltipTrigger asChild>
