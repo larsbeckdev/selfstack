@@ -208,8 +208,8 @@ export function CategoryCard({
                 type="button"
                 onClick={() => onAddGroup(category.id)}
                 className={cn(
-                  "flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border/60 py-8 text-sm text-muted-foreground transition-colors",
-                  "hover:border-primary/60 hover:bg-primary/5 hover:text-primary",
+                  "flex w-full items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-6 text-sm text-muted-foreground/80 transition-colors",
+                  "hover:border-border hover:bg-muted/40 hover:text-foreground",
                 )}>
                 <Plus className="size-4" />
                 {t("group.addTo")}

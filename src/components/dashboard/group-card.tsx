@@ -93,47 +93,34 @@ export function GroupCard({
     }
   };
 
-  const accent = group.bgColor;
-
   return (
     <>
-      <div
-        className={cn(
-          "relative overflow-hidden rounded-xl border border-border/50 bg-card shadow-sm transition-colors",
-          "flex flex-col",
-        )}>
+      <div className="flex flex-col">
         {/* header */}
-        <div className="flex items-center gap-2 border-b border-border/40 px-3 py-2">
+        <div className="flex items-center gap-2 pb-2">
           {isEditing && (
             <button
               type="button"
               {...(dragHandleProps ?? {})}
-              className="-ml-1 flex size-6 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing touch-none"
+              className="-ml-1 flex size-5 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground/50 hover:text-foreground active:cursor-grabbing touch-none"
               title={t("common.drag")}>
               <GripVertical className="size-3.5" />
             </button>
           )}
-          {accent && (
-            <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: accent }}
-              aria-hidden
-            />
-          )}
           <DynamicIcon
             name={group.icon}
             iconUrl={group.iconUrl}
-            className="size-4 shrink-0 text-muted-foreground"
+            className="size-3.5 shrink-0 text-muted-foreground/70"
           />
-          <h3 className="flex-1 truncate text-sm font-semibold">
+          <h3 className="flex-1 truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             {group.name}
           </h3>
           {isEditing && (
-            <div className="flex items-center">
+            <div className="-mr-1 flex items-center">
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-7"
+                className="size-6 text-muted-foreground"
                 onClick={handleToggleLayout}
                 title={
                   layout === "grid"
@@ -141,27 +128,27 @@ export function GroupCard({
                     : t("group.layoutGrid")
                 }>
                 {layout === "grid" ? (
-                  <Rows3 className="size-3.5" />
+                  <Rows3 className="size-3" />
                 ) : (
-                  <LayoutGrid className="size-3.5" />
+                  <LayoutGrid className="size-3" />
                 )}
               </Button>
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-7"
+                className="size-6 text-muted-foreground"
                 onClick={() => onAddTile(group.id)}
                 title={t("tile.addTo")}>
-                <Plus className="size-3.5" />
+                <Plus className="size-3" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="size-7"
+                    className="size-6 text-muted-foreground"
                     title={t("common.moreActions")}>
-                    <MoreHorizontal className="size-3.5" />
+                    <MoreHorizontal className="size-3" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -190,8 +177,8 @@ export function GroupCard({
         <div
           ref={setNodeRef}
           className={cn(
-            "flex-1 p-3 transition-colors",
-            isOver && isEditing && "bg-primary/5",
+            "rounded-lg transition-colors",
+            isOver && isEditing && "bg-primary/5 ring-1 ring-primary/20",
           )}>
           <SortableContext
             items={group.tiles.map((tile) => tile.id)}
@@ -241,8 +228,8 @@ export function GroupCard({
                 type="button"
                 onClick={() => onAddTile(group.id)}
                 className={cn(
-                  "flex w-full items-center justify-center gap-1.5 rounded-md border-2 border-dashed border-border/60 py-6 text-xs text-muted-foreground transition-colors",
-                  "hover:border-primary/60 hover:bg-primary/5 hover:text-primary",
+                  "flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/50 py-5 text-xs text-muted-foreground/80 transition-colors",
+                  "hover:border-border hover:bg-muted/40 hover:text-foreground",
                 )}>
                 <Plus className="size-3.5" />
                 {t("tile.addTo")}
