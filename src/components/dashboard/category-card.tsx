@@ -104,38 +104,24 @@ export function CategoryCard({
 
   return (
     <>
-      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm">
-        {/* colored top accent */}
-        <div
-          className="h-1 w-full shrink-0"
-          style={{ backgroundColor: category.color }}
-          aria-hidden
-        />
-
+      <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-border/50 bg-card">
         {/* header */}
-        <div className="flex items-center gap-3 px-4 py-3">
+        <div className="flex items-center gap-2.5 px-5 pt-4 pb-3">
           {isEditing && (
             <button
               type="button"
               {...(dragHandleProps ?? {})}
-              className="-ml-1 flex size-7 shrink-0 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing touch-none"
+              className="-ml-1.5 flex size-6 shrink-0 cursor-grab items-center justify-center rounded text-muted-foreground/60 hover:text-foreground active:cursor-grabbing touch-none"
               title={t("common.drag")}>
               <GripVertical className="size-4" />
             </button>
           )}
-          <div
-            className="flex size-9 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              backgroundColor: `${category.color}1f`,
-              color: category.color,
-            }}>
-            <DynamicIcon
-              name={category.icon}
-              iconUrl={category.iconUrl}
-              className="size-4"
-            />
-          </div>
-          <h2 className="flex-1 truncate text-base font-semibold">
+          <DynamicIcon
+            name={category.icon}
+            iconUrl={category.iconUrl}
+            className="size-4 shrink-0 text-muted-foreground"
+          />
+          <h2 className="flex-1 truncate text-sm font-semibold tracking-tight">
             {category.name}
           </h2>
           {isEditing && (
@@ -201,7 +187,7 @@ export function CategoryCard({
         </div>
 
         {/* body: stacked groups */}
-        <div className="flex-1 space-y-3 px-3 pb-3">
+        <div className="flex-1 space-y-5 px-5 pb-5">
           <SortableContext
             items={category.groups.map((g) => g.id)}
             strategy={verticalListSortingStrategy}>
