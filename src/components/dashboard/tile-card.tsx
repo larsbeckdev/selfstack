@@ -199,9 +199,8 @@ export function TileCard({
 
   // ── Grid mode: positional card ────────────────────────────────────────
   const cardClasses = cn(
-    "relative flex h-full w-full flex-col items-center justify-center rounded-xl border border-border/40 bg-card p-2 text-center transition-all",
-    "shadow-sm overflow-hidden",
-    href && "hover:brightness-105 hover:shadow-md hover:border-border",
+    "relative flex h-full w-full flex-col items-center justify-center rounded-xl border border-border/50 bg-card p-2 text-center transition-colors overflow-hidden",
+    href && "hover:bg-muted/40 hover:border-border",
     isEditing && "cursor-grab active:cursor-grabbing hover:border-primary/50",
   );
 
