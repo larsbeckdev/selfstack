@@ -4,11 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { updateGroup } from "@/lib/actions/board";
 import type { Group } from "@/generated/prisma/client";
-import {
-  GROUP_LAYOUTS,
-  getGroupLayout,
-  type GroupLayout,
-} from "@/lib/group-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,9 +38,7 @@ export function EditGroupDialog({
   const [name, setName] = useState(group.name);
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
-  const [layout, setLayout] = useState<GroupLayout>(
-    getGroupLayout(group as Group & { layout?: string | null }),
-  );
+  const [w, setW] = useState((group as Group & { w?: number }).w ?? 2);
   const [bgColor, setBgColor] = useState<string | null>(
     (group as Group & { bgColor?: string | null }).bgColor ?? null,
   );
@@ -57,7 +50,7 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl, layout, bgColor });
+      await updateGroup(group.id, { name, icon, iconUrl, w, bgColor });
       toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
@@ -94,17 +87,15 @@ export function EditGroupDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>{t("group.layout")}</Label>
-            <Select
-              value={layout}
-              onValueChange={(v) => setLayout(v as GroupLayout)}>
+            <Label>{t("group.width")}</Label>
+            <Select value={String(w)} onValueChange={(v) => setW(Number(v))}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {GROUP_LAYOUTS.map((l) => (
-                  <SelectItem key={l} value={l}>
-                    {t(`group.layout.${l}`)}
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}
                   </SelectItem>
                 ))}
               </SelectContent>
