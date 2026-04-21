@@ -38,10 +38,10 @@ export function EditGroupDialog({
   const [name, setName] = useState(group.name);
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
-  const [w, setW] = useState((group as Group & { w?: number }).w ?? 2);
-  const [bgColor, setBgColor] = useState<string | null>(
-    (group as Group & { bgColor?: string | null }).bgColor ?? null,
+  const [layout, setLayout] = useState<"grid" | "list">(
+    group.layout === "list" ? "list" : "grid",
   );
+  const [bgColor, setBgColor] = useState<string | null>(group.bgColor ?? null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -50,7 +50,7 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl, w, bgColor });
+      await updateGroup(group.id, { name, icon, iconUrl, layout, bgColor });
       toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
@@ -87,17 +87,16 @@ export function EditGroupDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>{t("group.width")}</Label>
-            <Select value={String(w)} onValueChange={(v) => setW(Number(v))}>
+            <Label>{t("group.layout")}</Label>
+            <Select
+              value={layout}
+              onValueChange={(v) => setLayout(v as "grid" | "list")}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}
-                  </SelectItem>
-                ))}
+                <SelectItem value="grid">{t("group.layoutGrid")}</SelectItem>
+                <SelectItem value="list">{t("group.layoutList")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

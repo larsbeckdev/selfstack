@@ -335,6 +335,22 @@ const en: Record<TranslationKey, string> = {
   "media.deleteTitle": "Delete file?",
   "media.deleteDesc":
     '"{name}" will be permanently deleted. Icons using this file will no longer display.',
+
+  // Grid system (board redesign)
+  "common.done": "Done",
+  "board.slug": "Slug",
+  "board.noCategoriesTitle":
+    "This board is empty. Add a category to get started.",
+  "category.addTo": "Add category",
+  "group.addTo": "Add group",
+  "tile.addTo": "Add tile",
+  "group.emptyHint": "No groups yet – add one",
+  "tile.emptyHint": "No tiles yet – add one",
+  "tile.moveTo": "Move to",
+  "tile.moved": "Tile moved",
+  "group.layout": "Layout",
+  "group.layoutGrid": "Grid",
+  "group.layoutList": "List",
 };
 
 export default en;

@@ -35,20 +35,19 @@ export function EditBoardDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const [name, setName] = useState(board.name);
   const [slug, setSlug] = useState(board.slug);
   const [icon, setIcon] = useState(board.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(board.iconUrl ?? null);
-  const [loading, setLoading] = useState(false);
-  const { t } = useTranslation();
+  const [saving, setSaving] = useState(false);
 
   const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !slugValid) return;
-
-    setLoading(true);
+    setSaving(true);
     try {
       const updated = await updateBoard(board.id, {
         name,
@@ -69,7 +68,7 @@ export function EditBoardDialog({
           : t("error.updateFailed");
       toast.error(msg);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -79,31 +78,30 @@ export function EditBoardDialog({
         <DialogHeader>
           <DialogTitle>{t("board.edit")}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="edit-board-name">{t("common.name")}</Label>
             <Input
               id="edit-board-name"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (slug === slugify(board.name)) {
+                  setSlug(slugify(e.target.value));
+                }
+              }}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="edit-board-slug">{t("board.linkSlug")}</Label>
-            <div className="flex items-center gap-0">
-              <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
-                /board/
-              </span>
-              <Input
-                id="edit-board-slug"
-                value={slug}
-                onChange={(e) => setSlug(slugify(e.target.value))}
-                className="rounded-l-none"
-                required
-              />
-            </div>
-            {slug && !slugValid && (
+            <Label htmlFor="edit-board-slug">{t("board.slug")}</Label>
+            <Input
+              id="edit-board-slug"
+              value={slug}
+              onChange={(e) => setSlug(e.target.value)}
+              required
+            />
+            {!slugValid && slug.length > 0 && (
               <p className="text-xs text-destructive">
                 {t("board.slugInvalid")}
               </p>
@@ -119,8 +117,8 @@ export function EditBoardDialog({
             />
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={loading || !slugValid}>
-              {loading ? t("common.saving") : t("common.save")}
+            <Button type="submit" disabled={saving || !slugValid}>
+              {saving ? t("common.saving") : t("common.save")}
             </Button>
           </DialogFooter>
         </form>

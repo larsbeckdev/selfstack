@@ -2,230 +2,179 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  rectSortingStrategy,
-} from "@dnd-kit/sortable";
-import {
-  GripVertical,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  Copy,
-  ChevronDown,
-  ChevronRight,
-  Plus,
-} from "lucide-react";
+import { Plus, Pencil, Trash2, Copy as CopyIcon } from "lucide-react";
 import type { CategoryWithGroups } from "@/types";
-import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { SortableGroup } from "./sortable-group";
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { GridCanvas } from "./grid-canvas";
+import { GroupCard } from "./group-card";
 import { EditCategoryDialog } from "./edit-category-dialog";
-import { AddGroupDialog } from "./add-group-dialog";
-import { AddTileDialog } from "./add-tile-dialog";
 import { useEditMode } from "./edit-mode-context";
-import { useBoardColumnsContext } from "./board-columns-context";
+import { deleteCategory, duplicateCategory } from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { compactLayout, gridItemStyle, layoutRows } from "@/lib/grid";
+
+type TileMoveTarget = { id: string; name: string; categoryName: string };
 
 export function CategoryCard({
   category,
-  isDragOverlay = false,
-  dragHandleProps,
+  allGroups,
+  onAddGroup,
+  onAddTile,
+  dragHandle,
+  resizeHandle,
+  innerCols,
+  innerRows,
 }: {
   category: CategoryWithGroups;
-  isDragOverlay?: boolean;
-  dragHandleProps?: Record<string, unknown>;
+  allGroups: TileMoveTarget[];
+  onAddGroup: (categoryId: string) => void;
+  onAddTile: (groupId: string) => void;
+  dragHandle?: React.ReactNode;
+  resizeHandle?: React.ReactNode;
+  innerCols: number;
+  innerRows: number;
 }) {
-  const [open, setOpen] = useState(true);
-  const [editOpen, setEditOpen] = useState(false);
-  const [addGroupOpen, setAddGroupOpen] = useState(false);
-  const [addTileOpen, setAddTileOpen] = useState(false);
   const isEditing = useEditMode();
+  const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
-  const { columns: boardColumns } = useBoardColumnsContext();
+
+  const handleDuplicate = async () => {
+    try {
+      await duplicateCategory(category.id);
+      toast.success(t("category.duplicated"));
+      router.refresh();
+    } catch {
+      toast.error(t("error.duplicateFailed"));
+    }
+  };
 
   const handleDelete = async () => {
     try {
       await deleteCategory(category.id);
-      router.refresh();
       toast.success(t("category.deleted"));
+      router.refresh();
     } catch {
       toast.error(t("error.deleteFailed"));
     }
   };
 
+  const cappedCols = Math.max(1, innerCols);
+  // Clamp group widths and heights to the available canvas, then compact.
+  const groupsWithBox = category.groups.map((group) => ({
+    id: group.id,
+    group,
+    x: group.x,
+    y: group.y,
+    w: Math.min(group.w, cappedCols),
+    h: Math.max(1, group.h),
+  }));
+  const compactedGroups = compactLayout(groupsWithBox, cappedCols);
+  const neededRows = layoutRows(compactedGroups);
+
   return (
     <>
-      <Collapsible open={open} onOpenChange={setOpen}>
-        <div className="rounded-lg border bg-card shadow-sm">
-          <div className="flex items-center gap-2 px-4 py-3">
-            {isEditing && dragHandleProps && (
-              <button
-                className="cursor-grab touch-none text-muted-foreground hover:text-foreground"
-                {...dragHandleProps}>
-                <GripVertical className="size-4" />
-              </button>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <div
+            className={cn(
+              "relative flex h-full w-full flex-col overflow-hidden rounded-lg border bg-card",
+              isEditing && "ring-1 ring-border/60",
             )}
-
-            <CollapsibleTrigger asChild>
-              <button className="text-muted-foreground hover:text-foreground">
-                {open ? (
-                  <ChevronDown className="size-4" />
-                ) : (
-                  <ChevronRight className="size-4" />
-                )}
-              </button>
-            </CollapsibleTrigger>
-
-            <div
-              className="flex size-6 items-center justify-center rounded"
-              style={{ backgroundColor: category.color + "18" }}>
+            style={{
+              borderLeftColor: category.color,
+              borderLeftWidth: 4,
+            }}>
+            {dragHandle}
+            <div className="flex items-center gap-2 px-4 py-3">
               <DynamicIcon
                 name={category.icon}
                 iconUrl={category.iconUrl}
-                className="size-3.5"
+                className="size-4"
                 style={{ color: category.color }}
               />
+              <h2 className="flex-1 truncate text-sm font-semibold">
+                {category.name}
+              </h2>
+              {isEditing && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-7"
+                  onClick={() => onAddGroup(category.id)}
+                  title={t("group.addTo")}>
+                  <Plus className="size-4" />
+                </Button>
+              )}
             </div>
-            <h2 className="flex-1 text-sm font-semibold">{category.name}</h2>
-            <span className="text-xs text-muted-foreground">
-              {category.groups.length} {t("category.groups")}
-            </span>
 
-            {!isDragOverlay && isEditing && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="size-7">
-                    <MoreHorizontal className="size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                    <Pencil className="mr-2 size-3.5" />
-                    {t("common.edit")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={async () => {
-                      try {
-                        await duplicateCategory(category.id);
-                        router.refresh();
-                        toast.success(t("category.duplicated"));
-                      } catch {
-                        toast.error(t("error.duplicateFailed"));
-                      }
-                    }}>
-                    <Copy className="mr-2 size-3.5" />
-                    {t("common.duplicate")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={handleDelete}
-                    className="text-destructive">
-                    <Trash2 className="mr-2 size-3.5" />
-                    {t("common.delete")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-
-          <CollapsibleContent>
-            <div
-              className="mx-4 mb-4 h-px"
-              style={{ backgroundColor: category.color + "30" }}
-            />
-            <SortableContext
-              items={category.groups.map((g) => g.id)}
-              strategy={
-                boardColumns > 1
-                  ? rectSortingStrategy
-                  : verticalListSortingStrategy
-              }>
-              <div
-                className={[
-                  boardColumns > 1
-                    ? "grid gap-4 px-4 pb-4"
-                    : "space-y-4 px-4 pb-4",
-                  isEditing
-                    ? "bg-edit-grid rounded-b-lg border-t border-dashed border-border/40 pt-4"
-                    : "",
-                ].join(" ")}
-                style={
-                  boardColumns > 1
-                    ? {
-                        gridTemplateColumns: `repeat(${boardColumns}, minmax(0, 1fr))`,
-                        gridAutoRows: "minmax(0, auto)",
-                      }
-                    : undefined
-                }>
-                {category.groups.map((group) => (
-                  <SortableGroup
-                    key={group.id}
+            <GridCanvas
+              cols={cappedCols}
+              rows={Math.max(innerRows, neededRows, 1)}
+              showDots={isEditing}
+              className="flex-1 px-4 pb-4">
+              {compactedGroups.map(({ id, group, x, y, w, h }) => (
+                <div
+                  key={id}
+                  style={gridItemStyle({ x, y, w, h })}
+                  className="min-h-0">
+                  <GroupCard
                     group={group}
-                    categoryId={category.id}
-                    boardColumns={boardColumns}
+                    allGroups={allGroups}
+                    onAddTile={onAddTile}
+                    innerCols={w}
+                    innerRows={Math.max(1, h - 1)}
                   />
-                ))}
-                {category.groups.length === 0 && (
-                  <p className="py-4 text-center text-xs text-muted-foreground">
-                    {t("category.noGroups")}
-                  </p>
-                )}
-              </div>
-            </SortableContext>
-
-            {isEditing && !isDragOverlay && (
-              <div className="flex items-center gap-2 px-4 pb-4">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setAddGroupOpen(true)}>
-                  <Plus className="mr-1 size-3.5" />
-                  {t("category.addGroup")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setAddTileOpen(true)}
-                  disabled={category.groups.length === 0}>
-                  <Plus className="mr-1 size-3.5" />
-                  {t("category.addTile")}
-                </Button>
-              </div>
-            )}
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-
+                </div>
+              ))}
+              {category.groups.length === 0 && isEditing && (
+                <div
+                  className="flex items-center justify-center text-xs text-muted-foreground"
+                  style={{
+                    gridColumn: `1 / span ${cappedCols}`,
+                    gridRow: `1 / span ${Math.max(1, innerRows)}`,
+                  }}>
+                  {t("group.emptyHint")}
+                </div>
+              )}
+            </GridCanvas>
+            {resizeHandle}
+          </div>
+        </ContextMenuTrigger>
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => onAddGroup(category.id)}>
+            <Plus className="mr-2 size-4" />
+            {t("group.addTo")}
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => setEditOpen(true)}>
+            <Pencil className="mr-2 size-4" />
+            {t("common.edit")}
+          </ContextMenuItem>
+          <ContextMenuItem onClick={handleDuplicate}>
+            <CopyIcon className="mr-2 size-4" />
+            {t("common.duplicate")}
+          </ContextMenuItem>
+          <ContextMenuSeparator />
+          <ContextMenuItem className="text-destructive" onClick={handleDelete}>
+            <Trash2 className="mr-2 size-4" />
+            {t("common.delete")}
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
       <EditCategoryDialog
         category={category}
         open={editOpen}
         onOpenChange={setEditOpen}
-      />
-      <AddGroupDialog
-        categories={[category]}
-        defaultCategoryId={category.id}
-        open={addGroupOpen}
-        onOpenChange={setAddGroupOpen}
-      />
-      <AddTileDialog
-        categories={[category]}
-        open={addTileOpen}
-        onOpenChange={setAddTileOpen}
       />
     </>
   );

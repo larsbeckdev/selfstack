@@ -89,9 +89,7 @@ export function AddTileDialog({
   const [url, setUrl] = useState("");
   const [description, setDescription] = useState("");
   const [statusCheck, setStatusCheck] = useState(false);
-  const [size, setSize] = useState<"small" | "default" | "large" | "list">(
-    "default",
-  );
+  const [size, setSize] = useState<"small" | "default" | "large">("default");
   const [groupId, setGroupId] = useState(
     defaultGroupId ?? allGroups[0]?.id ?? "",
   );
@@ -280,7 +278,6 @@ export function AddTileDialog({
                 <SelectItem value="small">{t("tile.sizeSmall")}</SelectItem>
                 <SelectItem value="default">{t("tile.sizeDefault")}</SelectItem>
                 <SelectItem value="large">{t("tile.sizeLarge")}</SelectItem>
-                <SelectItem value="list">{t("tile.sizeList")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

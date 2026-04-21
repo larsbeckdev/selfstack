@@ -337,6 +337,22 @@ const de = {
   "media.deleteTitle": "Datei löschen?",
   "media.deleteDesc":
     '"{name}" wird unwiderruflich gelöscht. Icons, die diese Datei verwenden, werden danach nicht mehr angezeigt.',
+
+  // Grid system (board redesign)
+  "common.done": "Fertig",
+  "board.slug": "Slug",
+  "board.noCategoriesTitle":
+    "Dieses Board ist noch leer. Füge eine Kategorie hinzu, um zu starten.",
+  "category.addTo": "Kategorie hinzufügen",
+  "group.addTo": "Gruppe hinzufügen",
+  "tile.addTo": "Kachel hinzufügen",
+  "group.emptyHint": "Keine Gruppen – füge eine hinzu",
+  "tile.emptyHint": "Keine Kacheln – füge eine hinzu",
+  "tile.moveTo": "Verschieben nach",
+  "tile.moved": "Kachel verschoben",
+  "group.layout": "Layout",
+  "group.layoutGrid": "Raster",
+  "group.layoutList": "Liste",
 } as const;
 
 export type TranslationKey = keyof typeof de;

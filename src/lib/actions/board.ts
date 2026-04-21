@@ -228,24 +228,25 @@ const categorySchema = z.object({
 });
 
 export async function createCategory(data: z.infer<typeof categorySchema>) {
-  await requireBoardAccess(data.boardId, "editor");
+  const parsed = categorySchema.parse(data);
+  await requireBoardAccess(parsed.boardId, "editor");
 
-  const board = await db.board.findUnique({ where: { id: data.boardId } });
+  const board = await db.board.findUnique({ where: { id: parsed.boardId } });
   if (!board) throw new Error("Board not found");
 
   const maxY = await db.category.aggregate({
-    where: { boardId: data.boardId },
+    where: { boardId: parsed.boardId },
     _max: { y: true, h: true },
   });
 
   const category = await db.category.create({
     data: {
-      ...data,
-      iconUrl: data.iconUrl || null,
-      x: data.x ?? 0,
-      y: data.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
-      w: data.w ?? 12,
-      h: data.h ?? 4,
+      ...parsed,
+      iconUrl: parsed.iconUrl || null,
+      x: parsed.x ?? 0,
+      y: parsed.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      w: parsed.w ?? 12,
+      h: parsed.h ?? 4,
     },
   });
 
@@ -302,26 +303,27 @@ const groupSchema = z.object({
 });
 
 export async function createGroup(data: z.infer<typeof groupSchema>) {
+  const parsed = groupSchema.parse(data);
   const category = await db.category.findUnique({
-    where: { id: data.categoryId },
+    where: { id: parsed.categoryId },
     include: { board: true },
   });
   if (!category) throw new Error("Category not found");
   await requireBoardAccess(category.boardId, "editor");
 
   const maxY = await db.group.aggregate({
-    where: { categoryId: data.categoryId },
+    where: { categoryId: parsed.categoryId },
     _max: { y: true, h: true },
   });
 
   const group = await db.group.create({
     data: {
-      ...data,
-      iconUrl: data.iconUrl || null,
-      x: data.x ?? 0,
-      y: data.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
-      w: data.w ?? 4,
-      h: data.h ?? 4,
+      ...parsed,
+      iconUrl: parsed.iconUrl || null,
+      x: parsed.x ?? 0,
+      y: parsed.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      w: parsed.w ?? 4,
+      h: parsed.h ?? 4,
     },
   });
 
@@ -384,28 +386,29 @@ const tileSchema = z.object({
 });
 
 export async function createTile(data: z.infer<typeof tileSchema>) {
+  const parsed = tileSchema.parse(data);
   const group = await db.group.findUnique({
-    where: { id: data.groupId },
+    where: { id: parsed.groupId },
     include: { category: true },
   });
   if (!group) throw new Error("Group not found");
   await requireBoardAccess(group.category.boardId, "editor");
 
   const maxY = await db.tile.aggregate({
-    where: { groupId: data.groupId },
+    where: { groupId: parsed.groupId },
     _max: { y: true },
   });
 
   const tile = await db.tile.create({
     data: {
-      ...data,
-      url: data.url || null,
-      iconUrl: data.iconUrl || null,
-      bgColor: data.bgColor || null,
-      borderColor: data.borderColor || null,
-      description: data.description || null,
-      x: data.x ?? 0,
-      y: data.y ?? (maxY._max.y ?? -1) + 1,
+      ...parsed,
+      url: parsed.url || null,
+      iconUrl: parsed.iconUrl || null,
+      bgColor: parsed.bgColor || null,
+      borderColor: parsed.borderColor || null,
+      description: parsed.description || null,
+      x: parsed.x ?? 0,
+      y: parsed.y ?? (maxY._max.y ?? -1) + 1,
     },
   });
 
@@ -495,6 +498,69 @@ export async function syncBoardLayout(
   }
   await Promise.all(ops);
   await revalidateBoard(boardId);
+  refresh();
+}
+
+/** Move a tile to another group (position reset to 0,0 by default). */
+export async function moveTileToGroup(
+  tileId: string,
+  newGroupId: string,
+  x = 0,
+  y = 0,
+) {
+  const tile = await db.tile.findUnique({
+    where: { id: tileId },
+    include: { group: { include: { category: true } } },
+  });
+  if (!tile) throw new Error("Tile not found");
+  await requireBoardAccess(tile.group.category.boardId, "editor");
+
+  const target = await db.group.findUnique({
+    where: { id: newGroupId },
+    include: { category: true },
+  });
+  if (!target) throw new Error("Target group not found");
+  if (target.category.boardId !== tile.group.category.boardId) {
+    throw new Error("Cannot move tile across boards");
+  }
+
+  await db.tile.update({
+    where: { id: tileId },
+    data: { groupId: newGroupId, x, y },
+  });
+
+  await revalidateBoard(tile.group.category.boardId);
+  refresh();
+}
+
+/** Move a group to another category (position reset to 0,0 by default). */
+export async function moveGroupToCategory(
+  groupId: string,
+  newCategoryId: string,
+  x = 0,
+  y = 0,
+) {
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    include: { category: true },
+  });
+  if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
+
+  const target = await db.category.findUnique({
+    where: { id: newCategoryId },
+  });
+  if (!target) throw new Error("Target category not found");
+  if (target.boardId !== group.category.boardId) {
+    throw new Error("Cannot move group across boards");
+  }
+
+  await db.group.update({
+    where: { id: groupId },
+    data: { categoryId: newCategoryId, x, y },
+  });
+
+  await revalidateBoard(group.category.boardId);
   refresh();
 }
 

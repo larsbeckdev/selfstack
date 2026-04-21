@@ -49,3 +49,4 @@ prisma/*.db
 
 # sensitive files
 cookies.txt
+build.log

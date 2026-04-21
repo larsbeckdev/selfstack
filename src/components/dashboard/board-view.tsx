@@ -1,129 +1,223 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Plus, Lock, Unlock, Settings } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Pencil, Plus, Settings2, Check } from "lucide-react";
 import type { BoardRole, BoardWithContents } from "@/types";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { BoardDndContext } from "@/components/dashboard/board-dnd-context";
-import { EditModeProvider } from "@/components/dashboard/edit-mode-context";
-import { AddCategoryDialog } from "@/components/dashboard/add-category-dialog";
-import { BoardSettingsDialog } from "@/components/dashboard/board-settings-dialog";
-import { BoardColumnsProvider } from "@/components/dashboard/board-columns-context";
-import { useBoardColumns } from "@/hooks/use-board-columns";
+import { DynamicIcon } from "@/components/dynamic-icon";
+import { GridCanvas } from "./grid-canvas";
+import { CategoryCard } from "./category-card";
+import { EditModeProvider } from "./edit-mode-context";
+import { AddCategoryDialog } from "./add-category-dialog";
+import { AddGroupDialog } from "./add-group-dialog";
+import { AddTileDialog } from "./add-tile-dialog";
+import { BoardSettingsDialog } from "./board-settings-dialog";
+import { useGridViewport } from "@/hooks/use-grid-viewport";
 import { useTranslation } from "@/components/locale-provider";
-import { useRouter, useSearchParams } from "next/navigation";
+import { compactLayout, gridItemStyle, layoutRows } from "@/lib/grid";
 
 export function BoardView({
   board,
-  boardRole = "owner",
+  boardRole = "viewer",
+  forceReadonly = false,
 }: {
   board: BoardWithContents;
   boardRole?: BoardRole;
+  /** If true, disables all edit affordances regardless of role. */
+  forceReadonly?: boolean;
 }) {
-  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { t } = useTranslation();
-  const { columns: boardColumns, isMobile } = useBoardColumns();
+  const { cols: viewportCols } = useGridViewport();
 
-  // Auto-open settings when ?settings=true is in the URL
-  useEffect(() => {
-    if (searchParams.get("settings") === "true") {
-      setSettingsOpen(true);
-      router.replace(`/board/${board.slug}`, { scroll: false });
-    }
-  }, [searchParams, board.slug, router]);
+  const canEdit =
+    !forceReadonly && (boardRole === "owner" || boardRole === "editor");
+  const isOwner = !forceReadonly && boardRole === "owner";
 
-  const canEdit = boardRole === "owner" || boardRole === "editor";
+  const [isEditing, setIsEditing] = useState(false);
+  const [addCategoryOpen, setAddCategoryOpen] = useState(false);
+  const [addGroupOpen, setAddGroupOpen] = useState(false);
+  const [addTileOpen, setAddTileOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [targetCategoryId, setTargetCategoryId] = useState<string | undefined>(
+    undefined,
+  );
+  const [targetGroupId, setTargetGroupId] = useState<string | undefined>(
+    undefined,
+  );
+
+  const cappedCols = Math.max(1, viewportCols);
+
+  // Compact categories at the viewport level (width clamped).
+  const categoriesWithBox = useMemo(
+    () =>
+      board.categories.map((cat) => ({
+        id: cat.id,
+        category: cat,
+        x: cat.x,
+        y: cat.y,
+        w: Math.min(cat.w, cappedCols),
+        h: Math.max(1, cat.h),
+      })),
+    [board.categories, cappedCols],
+  );
+  const compactedCategories = useMemo(
+    () => compactLayout(categoriesWithBox, cappedCols),
+    [categoriesWithBox, cappedCols],
+  );
+  const totalRows = layoutRows(compactedCategories);
+
+  // Flat list of all groups — used for the "move tile" submenu.
+  const allGroups = useMemo(
+    () =>
+      board.categories.flatMap((c) =>
+        c.groups.map((g) => ({
+          id: g.id,
+          name: g.name,
+          categoryName: c.name,
+        })),
+      ),
+    [board.categories],
+  );
+
+  const handleAddGroup = (categoryId: string) => {
+    setTargetCategoryId(categoryId);
+    setAddGroupOpen(true);
+  };
+  const handleAddTile = (groupId: string) => {
+    setTargetGroupId(groupId);
+    setAddTileOpen(true);
+  };
+
+  const exitEdit = () => {
+    setIsEditing(false);
+    router.refresh();
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold tracking-tight">{board.name}</h1>
+    <EditModeProvider isEditing={canEdit && isEditing}>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <DynamicIcon
+              name={board.icon}
+              iconUrl={board.iconUrl}
+              className="size-5"
+            />
           </div>
-          <p className="text-sm text-muted-foreground">
-            {board.categories.length} {t("public.categories")}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Board Settings (gear icon) */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSettingsOpen(true)}>
-                <Settings className="size-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t("board.settings")}</p>
-            </TooltipContent>
-          </Tooltip>
-
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate text-2xl font-bold tracking-tight">
+              {board.name}
+            </h1>
+          </div>
           {canEdit && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant={isEditing ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsEditing(!isEditing)}>
-                  {isEditing ? (
-                    <Unlock className="sm:mr-2 size-3.5" />
-                  ) : (
-                    <Lock className="sm:mr-2 size-3.5" />
-                  )}
-                  <span className="hidden sm:inline">
-                    {isEditing ? t("common.edit") : t("common.locked")}
-                  </span>
+            <div className="flex items-center gap-2">
+              {isEditing ? (
+                <Button size="sm" onClick={exitEdit} variant="default">
+                  <Check className="mr-2 size-4" />
+                  {t("common.done")}
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>
-                  {isEditing
-                    ? t("board.editModeActive")
-                    : t("board.editModeLocked")}
-                </p>
-              </TooltipContent>
-            </Tooltip>
-          )}
-
-          {isEditing && canEdit && (
-            <Button size="sm" onClick={() => setAddCategoryOpen(true)}>
-              <Plus className="sm:mr-2 size-4" />
-              <span className="hidden sm:inline">{t("board.addCategory")}</span>
-            </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsEditing(true)}>
+                  <Pencil className="mr-2 size-4" />
+                  {t("board.editMode")}
+                </Button>
+              )}
+              {isEditing && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAddCategoryOpen(true)}>
+                  <Plus className="mr-2 size-4" />
+                  {t("category.addTo")}
+                </Button>
+              )}
+              {isOwner && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setSettingsOpen(true)}
+                  title={t("board.settings")}>
+                  <Settings2 className="size-4" />
+                </Button>
+              )}
+            </div>
           )}
         </div>
+
+        {/* Top-level grid canvas */}
+        {board.categories.length === 0 ? (
+          <div className="rounded-lg border bg-card p-12 text-center">
+            <p className="mb-4 text-sm text-muted-foreground">
+              {t("board.noCategoriesTitle")}
+            </p>
+            {canEdit && (
+              <Button onClick={() => setAddCategoryOpen(true)}>
+                <Plus className="mr-2 size-4" />
+                {t("category.addTo")}
+              </Button>
+            )}
+          </div>
+        ) : (
+          <GridCanvas
+            cols={cappedCols}
+            rows={Math.max(totalRows, 1)}
+            showDots={canEdit && isEditing}
+            className="w-full">
+            {compactedCategories.map(({ id, category, x, y, w, h }) => (
+              <div
+                key={id}
+                style={gridItemStyle({ x, y, w, h })}
+                className="min-h-0">
+                <CategoryCard
+                  category={category}
+                  allGroups={allGroups}
+                  onAddGroup={handleAddGroup}
+                  onAddTile={handleAddTile}
+                  innerCols={w}
+                  innerRows={Math.max(1, h - 1)}
+                />
+              </div>
+            ))}
+          </GridCanvas>
+        )}
+
+        {/* Dialogs */}
+        {canEdit && (
+          <>
+            <AddCategoryDialog
+              boardId={board.id}
+              open={addCategoryOpen}
+              onOpenChange={setAddCategoryOpen}
+            />
+            <AddGroupDialog
+              categories={board.categories}
+              defaultCategoryId={targetCategoryId}
+              open={addGroupOpen}
+              onOpenChange={setAddGroupOpen}
+            />
+            <AddTileDialog
+              categories={board.categories}
+              defaultGroupId={targetGroupId}
+              open={addTileOpen}
+              onOpenChange={setAddTileOpen}
+            />
+          </>
+        )}
+        {isOwner && (
+          <BoardSettingsDialog
+            board={board}
+            boardRole={boardRole}
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+          />
+        )}
       </div>
-
-      <EditModeProvider isEditing={isEditing}>
-        <BoardColumnsProvider value={{ columns: boardColumns, isMobile }}>
-          <BoardDndContext board={board} />
-        </BoardColumnsProvider>
-      </EditModeProvider>
-
-      <AddCategoryDialog
-        boardId={board.id}
-        open={addCategoryOpen}
-        onOpenChange={setAddCategoryOpen}
-      />
-      <BoardSettingsDialog
-        board={board}
-        boardRole={boardRole}
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-      />
-    </div>
+    </EditModeProvider>
   );
 }

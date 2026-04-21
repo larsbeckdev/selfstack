@@ -84,8 +84,8 @@ export function EditTileDialog({
   const [url, setUrl] = useState(tile.url ?? "");
   const [description, setDescription] = useState(tile.description ?? "");
   const [statusCheck, setStatusCheck] = useState(tile.statusCheck);
-  const [size, setSize] = useState<"small" | "default" | "large" | "list">(
-    (tile.size as "small" | "default" | "large" | "list") ?? "default",
+  const [size, setSize] = useState<"small" | "default" | "large">(
+    (tile.size as "small" | "default" | "large") ?? "default",
   );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -233,7 +233,6 @@ export function EditTileDialog({
                 <SelectItem value="small">{t("tile.sizeSmall")}</SelectItem>
                 <SelectItem value="default">{t("tile.sizeDefault")}</SelectItem>
                 <SelectItem value="large">{t("tile.sizeLarge")}</SelectItem>
-                <SelectItem value="list">{t("tile.sizeList")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
