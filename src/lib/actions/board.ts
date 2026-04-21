@@ -298,10 +298,6 @@ const groupSchema = z.object({
     .optional(),
   columns: z.number().int().min(0).max(12).default(0).optional(),
   w: z.number().int().min(1).max(12).default(2).optional(),
-  layout: z
-    .enum(["cols-1", "cols-2", "cols-3", "auto", "list"])
-    .default("auto")
-    .optional(),
   bgColor: z.string().nullable().optional(),
   categoryId: z.string(),
 });
