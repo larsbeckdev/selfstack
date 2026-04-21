@@ -76,7 +76,6 @@ export function getTilePlacement(
   // Individual size "list" is a full-row row inside cols-N grids.
   if (size === "list") return { colSpan: cols, asList: true };
 
-  const rawSpan =
-    size === "small" ? 1 : size === "default" ? 2 : /* large */ 4;
+  const rawSpan = size === "small" ? 1 : size === "default" ? 2 : /* large */ 4;
   return { colSpan: Math.min(rawSpan, cols), asList: false };
 }

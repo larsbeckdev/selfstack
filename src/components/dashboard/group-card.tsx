@@ -18,7 +18,11 @@ import {
 } from "lucide-react";
 import type { CategoryWithGroups, GroupWithTiles } from "@/types";
 import { deleteGroup, duplicateGroup } from "@/lib/actions/board";
-import { getTileSize } from "@/lib/tile-size";
+import {
+  getGroupLayout,
+  getLayoutColumns,
+  AUTO_GRID_MIN_PX,
+} from "@/lib/group-layout";
 import { getShadcnSurface } from "@/lib/shadcn-palette";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
@@ -36,7 +40,7 @@ import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
 type GroupWithBg = GroupWithTiles & {
-  w?: number;
+  layout?: string | null;
   bgColor?: string | null;
 };
 
@@ -55,8 +59,9 @@ export function GroupCard({
   const router = useRouter();
   const { t } = useTranslation();
 
-  // Sub-grid width: number of columns inside the group.
-  const groupCols = Math.max(1, (group as GroupWithBg).w ?? 2);
+  // Layout template controls the group's internal tile grid.
+  const layout = getGroupLayout(group as GroupWithBg);
+  const layoutCols = getLayoutColumns(layout);
 
   const surface = getShadcnSurface((group as GroupWithBg).bgColor);
   // Use CSS variables + class-based dark mode so the correct shade is
@@ -69,10 +74,27 @@ export function GroupCard({
       } as React.CSSProperties)
     : undefined;
 
-  // Render as vertical list when there are tiles and ALL of them are sized "list".
-  const allList =
-    group.tiles.length > 0 &&
-    group.tiles.every((tile) => getTileSize(tile) === "list");
+  const isListLayout = layout === "list";
+
+  // Layout -> className (tailwind) for everything except "auto" which
+  // needs inline minmax() because that isn't a standard utility.
+  const gridClass = isListLayout
+    ? "flex flex-col divide-y divide-border/30"
+    : layout === "cols-1"
+      ? "grid grid-cols-1"
+      : layout === "cols-2"
+        ? "grid grid-cols-1 md:grid-cols-2"
+        : layout === "cols-3"
+          ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid"; // auto
+
+  const gridStyle: React.CSSProperties | undefined =
+    layout === "auto"
+      ? {
+          gridTemplateColumns: `repeat(auto-fill, minmax(${AUTO_GRID_MIN_PX}px, 1fr))`,
+          gridAutoRows: "minmax(0, auto)",
+        }
+      : undefined;
 
   const { setNodeRef: setDroppableRef } = useDroppable({
     id: `group-droppable-${group.id}`,
@@ -152,33 +174,26 @@ export function GroupCard({
         <SortableContext
           items={group.tiles.map((t) => t.id)}
           strategy={
-            allList ? verticalListSortingStrategy : rectSortingStrategy
+            isListLayout ? verticalListSortingStrategy : rectSortingStrategy
           }>
           <div
             ref={setDroppableRef}
             className={[
-              allList
-                ? "flex flex-col divide-y divide-border/30 px-3 pb-3"
-                : "grid gap-3 px-3 pb-3",
+              gridClass,
+              isListLayout ? "" : "gap-3",
+              "px-3 pb-3",
               isEditing && group.tiles.length === 0 ? "min-h-[48px]" : "",
               isEditing
                 ? "bg-edit-grid rounded-b-md border-t border-dashed border-border/40 pt-3"
                 : "",
             ].join(" ")}
-            style={
-              !allList
-                ? {
-                    gridTemplateColumns: `repeat(${groupCols}, minmax(0, 1fr))`,
-                    gridAutoRows: "minmax(0, auto)",
-                  }
-                : undefined
-            }>
+            style={gridStyle}>
             {group.tiles.map((tile) => (
               <SortableTile
                 key={tile.id}
                 tile={tile}
                 groupId={group.id}
-                groupCols={groupCols}
+                layout={layout}
               />
             ))}
             {group.tiles.length === 0 && (
