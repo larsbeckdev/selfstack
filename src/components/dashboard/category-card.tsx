@@ -125,23 +125,23 @@ export function CategoryCard({
             {category.name}
           </h2>
           {isEditing && (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center">
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-8"
+                className="size-7 text-muted-foreground"
                 onClick={() => onAddGroup(category.id)}
                 title={t("group.addTo")}>
-                <Plus className="size-4" />
+                <Plus className="size-3.5" />
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="size-8"
+                    className="size-7 text-muted-foreground"
                     title={t("common.moreActions")}>
-                    <MoreHorizontal className="size-4" />
+                    <MoreHorizontal className="size-3.5" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
