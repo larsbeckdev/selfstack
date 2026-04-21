@@ -21,9 +21,6 @@ import {
   getThemePreference,
 } from "@/lib/actions/settings";
 
-const THEME_STORAGE_KEY = "selfstack-theme-preset";
-const CUSTOM_COLORS_KEY = "selfstack-custom-colors";
-
 function applyThemeColors(colors: Record<string, string>) {
   const root = document.documentElement;
   for (const [key, value] of Object.entries(colors)) {
@@ -207,23 +204,8 @@ export function ThemeCustomizer() {
     () => true,
     () => false,
   );
-  const [activePreset, setActivePreset] = useState<string>(() => {
-    if (typeof window === "undefined") return "default";
-    const saved = localStorage.getItem(THEME_STORAGE_KEY);
-    return saved && saved in themePresets ? saved : "default";
-  });
-  const [customColors, setCustomColors] = useState<Record<string, string>>(
-    () => {
-      if (typeof window === "undefined") return {};
-      const savedCustom = localStorage.getItem(CUSTOM_COLORS_KEY);
-      if (savedCustom) {
-        try {
-          return JSON.parse(savedCustom);
-        } catch {}
-      }
-      return {};
-    },
-  );
+  const [activePreset, setActivePreset] = useState<string>("default");
+  const [customColors, setCustomColors] = useState<Record<string, string>>({});
 
   // Load theme from DB on mount
   useEffect(() => {
@@ -231,13 +213,11 @@ export function ThemeCustomizer() {
       .then(({ themePreset, customColors: dbColors }) => {
         if (themePreset && themePreset in themePresets) {
           setActivePreset(themePreset);
-          localStorage.setItem(THEME_STORAGE_KEY, themePreset);
         }
         if (dbColors) {
           try {
             const parsed = JSON.parse(dbColors);
             setCustomColors(parsed);
-            localStorage.setItem(CUSTOM_COLORS_KEY, dbColors);
           } catch {}
         }
       })
@@ -272,8 +252,6 @@ export function ThemeCustomizer() {
   const selectPreset = (key: string) => {
     setActivePreset(key);
     setCustomColors({});
-    localStorage.setItem(THEME_STORAGE_KEY, key);
-    localStorage.removeItem(CUSTOM_COLORS_KEY);
     notifyThemeChange();
     saveThemePreference(key, null).catch(() => {});
     toast.success(`Theme "${themePresets[key].label}" aktiviert`);
@@ -283,7 +261,6 @@ export function ThemeCustomizer() {
     const next = { ...customColors, [varName]: value };
     setCustomColors(next);
     const serialized = JSON.stringify(next);
-    localStorage.setItem(CUSTOM_COLORS_KEY, serialized);
     applyThemeColors({ [varName]: value });
     notifyThemeChange();
     saveThemePreference(activePreset, serialized).catch(() => {});
@@ -291,7 +268,6 @@ export function ThemeCustomizer() {
 
   const resetCustomColors = () => {
     setCustomColors({});
-    localStorage.removeItem(CUSTOM_COLORS_KEY);
     applyCurrentTheme();
     notifyThemeChange();
     saveThemePreference(activePreset, null).catch(() => {});

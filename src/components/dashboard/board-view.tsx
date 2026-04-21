@@ -53,6 +53,11 @@ import type {
 import type { Tile } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -572,60 +577,82 @@ export function BoardView({
                 {board.name}
               </h1>
             </div>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={toggleContainerMode}
-              title={
-                containerMode === "fullwidth"
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={toggleContainerMode}>
+                  {containerMode === "fullwidth" ? (
+                    <Minimize2 className="size-4" />
+                  ) : (
+                    <Maximize2 className="size-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {containerMode === "fullwidth"
                   ? t("board.layoutBoxed")
-                  : t("board.layoutFullwidth")
-              }>
-              {containerMode === "fullwidth" ? (
-                <Minimize2 className="size-4" />
-              ) : (
-                <Maximize2 className="size-4" />
-              )}
-            </Button>
+                  : t("board.layoutFullwidth")}
+              </TooltipContent>
+            </Tooltip>
             {canEdit && isEditing && (
-              <Button
-                size="icon"
-                variant={positionMode === "free" ? "default" : "ghost"}
-                onClick={togglePositionMode}
-                title={
-                  positionMode === "free"
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant={positionMode === "free" ? "default" : "ghost"}
+                    onClick={togglePositionMode}>
+                    {positionMode === "free" ? (
+                      <Rows3 className="size-4" />
+                    ) : (
+                      <Move className="size-4" />
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {positionMode === "free"
                     ? t("board.positionAuto")
-                    : t("board.positionFree")
-                }>
-                {positionMode === "free" ? (
-                  <Rows3 className="size-4" />
-                ) : (
-                  <Move className="size-4" />
-                )}
-              </Button>
+                    : t("board.positionFree")}
+                </TooltipContent>
+              </Tooltip>
             )}
             {canEdit && (
               <div className="flex items-center gap-2">
                 {isEditing ? (
-                  <Button
-                    size="sm"
-                    onClick={() => setIsEditing(false)}
-                    variant="default"
-                    title={t("common.done")}>
-                    <Check className="size-4 sm:mr-2" />
-                    <span className="hidden sm:inline">{t("common.done")}</span>
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        onClick={() => setIsEditing(false)}
+                        variant="default">
+                        <Check className="size-4 sm:mr-2" />
+                        <span className="hidden sm:inline">
+                          {t("common.done")}
+                        </span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="sm:hidden">
+                      {t("common.done")}
+                    </TooltipContent>
+                  </Tooltip>
                 ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsEditing(true)}
-                    title={t("board.editMode")}>
-                    <Pencil className="size-4 sm:mr-2" />
-                    <span className="hidden sm:inline">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setIsEditing(true)}>
+                        <Pencil className="size-4 sm:mr-2" />
+                        <span className="hidden sm:inline">
+                          {t("board.editMode")}
+                        </span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="sm:hidden">
                       {t("board.editMode")}
-                    </span>
-                  </Button>
+                    </TooltipContent>
+                  </Tooltip>
                 )}
                 {isEditing && (
                   <DropdownMenu>

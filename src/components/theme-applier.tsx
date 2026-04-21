@@ -4,9 +4,6 @@ import { useEffect, useCallback, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { themePresets } from "@/lib/theme-presets";
 
-const THEME_STORAGE_KEY = "selfstack-theme-preset";
-const CUSTOM_COLORS_KEY = "selfstack-custom-colors";
-
 function applyThemeColors(colors: Record<string, string>) {
   const root = document.documentElement;
   for (const [key, value] of Object.entries(colors)) {
@@ -51,9 +48,17 @@ function clearThemeColors() {
 
 /**
  * Global component that applies the saved theme preset colors on every page.
- * Must be mounted in the root layout so it runs on all routes.
+ * Values come from the server-rendered layout (DB-backed). A same-tab custom
+ * event (`selfstack-theme-change`) lets the theme customizer trigger a refresh
+ * when the user picks a new preset / tweaks colors.
  */
-export function ThemeApplier() {
+export function ThemeApplier({
+  preset = "default",
+  customColors = null,
+}: {
+  preset?: string;
+  customColors?: string | null;
+}) {
   const { resolvedTheme } = useTheme();
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -64,17 +69,15 @@ export function ThemeApplier() {
   const applyTheme = useCallback(() => {
     if (!mounted) return;
 
-    const presetKey = localStorage.getItem(THEME_STORAGE_KEY) ?? "default";
-    const customRaw = localStorage.getItem(CUSTOM_COLORS_KEY);
     let custom: Record<string, string> = {};
-    if (customRaw) {
+    if (customColors) {
       try {
-        custom = JSON.parse(customRaw);
+        custom = JSON.parse(customColors);
       } catch {}
     }
 
-    const preset = themePresets[presetKey];
-    if (!preset || presetKey === "default") {
+    const presetData = themePresets[preset];
+    if (!presetData || preset === "default") {
       clearThemeColors();
       if (Object.keys(custom).length > 0) {
         applyThemeColors(custom);
@@ -83,28 +86,20 @@ export function ThemeApplier() {
     }
 
     const mode = resolvedTheme === "dark" ? "dark" : "light";
-    const colors = { ...preset.colors[mode], ...custom };
+    const colors = { ...presetData.colors[mode], ...custom };
     applyThemeColors(colors);
-  }, [resolvedTheme, mounted]);
+  }, [resolvedTheme, mounted, preset, customColors]);
 
   useEffect(() => {
     applyTheme();
   }, [applyTheme]);
 
-  // Listen for storage changes (cross-tab) and custom event (same-tab)
+  // Let the theme customizer notify us when it applies a new preset/custom
+  // color directly to the DOM (same tab). No storage events needed.
   useEffect(() => {
-    const handler = (e: StorageEvent) => {
-      if (e.key === THEME_STORAGE_KEY || e.key === CUSTOM_COLORS_KEY) {
-        applyTheme();
-      }
-    };
-    const customHandler = () => applyTheme();
-    window.addEventListener("storage", handler);
-    window.addEventListener("selfstack-theme-change", customHandler);
-    return () => {
-      window.removeEventListener("storage", handler);
-      window.removeEventListener("selfstack-theme-change", customHandler);
-    };
+    const handler = () => applyTheme();
+    window.addEventListener("selfstack-theme-change", handler);
+    return () => window.removeEventListener("selfstack-theme-change", handler);
   }, [applyTheme]);
 
   return null;

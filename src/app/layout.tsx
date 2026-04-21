@@ -23,6 +23,8 @@ export default async function RootLayout({
 }>) {
   let locale: Locale = "de";
   let theme = "system";
+  let themePreset = "default";
+  let customColors: string | null = null;
   let hasSession = false;
   try {
     const session = await getSession();
@@ -31,7 +33,12 @@ export default async function RootLayout({
       const { db } = await import("@/lib/db");
       const u = await db.user.findUnique({
         where: { id: session.user.id },
-        select: { locale: true, theme: true },
+        select: {
+          locale: true,
+          theme: true,
+          themePreset: true,
+          customColors: true,
+        },
       });
       if (u?.locale && (u.locale === "de" || u.locale === "en")) {
         locale = u.locale;
@@ -39,6 +46,8 @@ export default async function RootLayout({
       if (u?.theme && ["light", "dark", "system"].includes(u.theme)) {
         theme = u.theme;
       }
+      if (u?.themePreset) themePreset = u.themePreset;
+      if (u?.customColors) customColors = u.customColors;
     } else {
       const cookieStore = await cookies();
       const cookieLocale = cookieStore.get("selfstack-locale")?.value;
@@ -53,11 +62,11 @@ export default async function RootLayout({
   return (
     <html lang={locale} className="h-full antialiased" suppressHydrationWarning>
       <head>
-        <ThemeInitScript />
+        <ThemeInitScript preset={themePreset} customColors={customColors} />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <ThemeProvider defaultTheme={theme}>
-          <ThemeApplier />
+          <ThemeApplier preset={themePreset} customColors={customColors} />
           {hasSession && <ThemeSyncer initialTheme={theme} />}
           <LocaleProvider locale={locale}>
             {children}
