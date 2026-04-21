@@ -78,6 +78,7 @@ model Category {
   icon    String  @default("folder")
   iconUrl String?
   color   String  @default("#6366f1")
+  bgColor String?
   /// Position on the board grid (in grid units, 1u = 72px).
   x       Int     @default(0)
   y       Int     @default(0)
