@@ -17,7 +17,7 @@ export default async function BoardPage({
       where: { slug, isPublic: true },
       select: { id: true },
     });
-    if (publicBoard) redirect(`/b/${slug}`);
+    if (publicBoard) redirect(`/${slug}`);
     redirect(`/login?redirect=/board/${slug}`);
   }
 
@@ -55,7 +55,7 @@ export default async function BoardPage({
       where: { slug, isPublic: true },
       select: { id: true },
     });
-    if (publicBoard) redirect(`/b/${slug}`);
+    if (publicBoard) redirect(`/${slug}`);
     notFound();
   }
 

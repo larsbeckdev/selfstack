@@ -95,7 +95,7 @@ export default async function PublicBoardsPage() {
                     size="sm"
                     className="w-full"
                     asChild>
-                    <Link href={`/b/${board.slug}`}>
+                    <Link href={`/${board.slug}`}>
                       View Board
                       <ArrowRight className="ml-2 size-4" />
                     </Link>

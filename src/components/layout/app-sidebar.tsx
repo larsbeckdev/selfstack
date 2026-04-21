@@ -53,7 +53,7 @@ export function AppSidebar({
   const { t } = useTranslation();
 
   const copyBoardLink = async (board: Board) => {
-    const path = board.isPublic ? `/b/${board.slug}` : `/board/${board.slug}`;
+    const path = board.isPublic ? `/${board.slug}` : `/board/${board.slug}`;
     const url = `${window.location.origin}${path}`;
     const ok = await copyToClipboard(url);
     if (ok) toast.success(t("common.linkCopied"));
