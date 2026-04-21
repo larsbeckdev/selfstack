@@ -296,7 +296,7 @@ const groupSchema = z.object({
   icon: z.string().default("grid-3x3"),
   iconUrl: iconUrlSchema,
   bgColor: z.string().nullable().optional(),
-  layout: z.enum(["grid", "list"]).default("grid").optional(),
+  layout: z.enum(["grid", "list", "snap"]).default("grid").optional(),
   x: z.number().int().min(0).default(0).optional(),
   y: z.number().int().min(0).default(0).optional(),
   w: z.number().int().min(1).max(48).default(4).optional(),
@@ -1036,5 +1036,23 @@ export async function setCategoryPosition(
   await requireBoardAccess(category.boardId, "editor");
   await db.category.update({ where: { id: categoryId }, data: { x, y } });
   await revalidateBoard(category.boardId);
+  refresh();
+}
+
+export async function setTilePosition(
+  tileId: string,
+  x: number,
+  y: number,
+) {
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
+    throw new Error("Invalid position");
+  const tile = await db.tile.findUnique({
+    where: { id: tileId },
+    include: { group: { include: { category: true } } },
+  });
+  if (!tile) throw new Error("Tile not found");
+  await requireBoardAccess(tile.group.category.boardId, "editor");
+  await db.tile.update({ where: { id: tileId }, data: { x, y } });
+  await revalidateBoard(tile.group.category.boardId);
   refresh();
 }

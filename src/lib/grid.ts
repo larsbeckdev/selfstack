@@ -17,12 +17,14 @@ export function getTileSize(tile: Pick<Tile, "size">): TileSize {
 }
 
 /** Grid/list layout of a group's tile list. */
-export type GroupLayoutMode = "grid" | "list";
+export type GroupLayoutMode = "grid" | "list" | "snap";
 
 export function getGroupLayout(group: {
   layout?: string | null;
 }): GroupLayoutMode {
-  return group.layout === "list" ? "list" : "grid";
+  if (group.layout === "list") return "list";
+  if (group.layout === "snap") return "snap";
+  return "grid";
 }
 
 /** Fixed number of columns inside every group's grid layout. */
