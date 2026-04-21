@@ -142,7 +142,7 @@ export function GroupCard({
                 cols={Math.max(1, innerCols)}
                 rows={Math.max(innerRows, neededTileRows, 1)}
                 showDots={isEditing}
-                className="flex-1 p-2">
+                className="flex-1">
                 {compactedTiles.map(({ id, tile, x, y, w, h }) => (
                   <DraggableItem
                     key={id}

@@ -230,9 +230,7 @@ export function TileCard({
             </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               {otherGroups.map((g) => (
-                <DropdownMenuItem
-                  key={g.id}
-                  onClick={() => handleMove(g.id)}>
+                <DropdownMenuItem key={g.id} onClick={() => handleMove(g.id)}>
                   <span className="text-muted-foreground">
                     {g.categoryName} /
                   </span>
@@ -243,19 +241,14 @@ export function TileCard({
           </DropdownMenuSub>
         )}
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          variant="destructive"
-          onClick={handleDelete}>
+        <DropdownMenuItem variant="destructive" onClick={handleDelete}>
           <Trash2 className="mr-2 size-4" />
           {t("common.delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   ) : tile.statusCheck ? (
-    <TileStatusIndicator
-      tileId={tile.id}
-      className="absolute right-1 top-1"
-    />
+    <TileStatusIndicator tileId={tile.id} className="absolute right-1 top-1" />
   ) : null;
 
   const inner = (

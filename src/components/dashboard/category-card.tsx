@@ -109,8 +109,7 @@ export function CategoryCard({
           <div
             className={cn(
               "group/card relative flex h-full w-full flex-col overflow-hidden rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm transition-shadow",
-              isEditing &&
-                "hover:shadow-md hover:ring-1 hover:ring-primary/40",
+              isEditing && "hover:shadow-md hover:ring-1 hover:ring-primary/40",
               isDragging && "ring-2 ring-primary shadow-2xl",
               isResizing && "ring-2 ring-primary shadow-lg",
             )}>
@@ -156,7 +155,7 @@ export function CategoryCard({
               cols={cappedCols}
               rows={Math.max(innerRows, neededRows, 1)}
               showDots={isEditing}
-              className="flex-1 px-4 pb-4 pt-3">
+              className="flex-1 pb-2">
               {compactedGroups.map(({ id, group, x, y, w, h }) => (
                 <DraggableItem
                   key={id}

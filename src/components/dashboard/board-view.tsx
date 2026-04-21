@@ -398,8 +398,7 @@ export function BoardView({
           <GridCanvas
             cols={cappedCols}
             rows={Math.max(totalRows, 1)}
-            showDots={canEdit && isEditing}
-            className="w-full">
+            showDots={canEdit && isEditing}>
             {compactedCategories.map(({ id, category, x, y, w, h }) => (
               <DraggableItem
                 key={id}
