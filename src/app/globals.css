@@ -159,7 +159,7 @@
 @utility grid-canvas-dots {
   background-image: radial-gradient(
     circle,
-    color-mix(in oklab, var(--foreground) 38%, transparent) 1.75px,
+    color-mix(in oklab, var(--foreground) 45%, transparent) 1.75px,
     transparent 2px
   );
   background-size: calc(var(--grid-u) + var(--grid-gap)) calc(var(--grid-u) + var(--grid-gap));
