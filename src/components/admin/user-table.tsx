@@ -104,6 +104,34 @@ export function UserTable({ users }: { users: UserRow[] }) {
   const [shownPassword, setShownPassword] = useState("");
   const [shownUserName, setShownUserName] = useState("");
 
+  // Boards dialog (admin viewing a user's boards)
+  type UserBoard = {
+    id: string;
+    name: string;
+    slug: string;
+    icon: string;
+    iconUrl: string | null;
+    isPublic: boolean;
+    organization: { id: string; name: string; slug: string } | null;
+  };
+  const [boardsUser, setBoardsUser] = useState<UserRow | null>(null);
+  const [userBoards, setUserBoards] = useState<UserBoard[]>([]);
+  const [boardsLoading, setBoardsLoading] = useState(false);
+
+  const openBoards = async (user: UserRow) => {
+    setBoardsUser(user);
+    setUserBoards([]);
+    setBoardsLoading(true);
+    try {
+      const list = await getUserBoards(user.id);
+      setUserBoards(list);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setBoardsLoading(false);
+    }
+  };
+
   const resetForm = () => {
     setNewName("");
     setNewUsername("");
@@ -367,7 +395,17 @@ export function UserTable({ users }: { users: UserRow[] }) {
                           : t("admin.roleUser")}
                     </Badge>
                   </TableCell>
-                  <TableCell>{user._count.boards}</TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto px-2 py-1"
+                      onClick={() => openBoards(user)}
+                      disabled={user._count.boards === 0}>
+                      <LayoutDashboard className="mr-1 size-3" />
+                      {user._count.boards}
+                    </Button>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(user.createdAt).toLocaleDateString(
                       locale === "en" ? "en-US" : "de-DE",
