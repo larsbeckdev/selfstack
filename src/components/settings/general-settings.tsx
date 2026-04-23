@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 export function GeneralSettings({ user }: { user: SessionUser }) {
   const [name, setName] = useState(user.name);
+  const [username, setUsername] = useState(user.username);
   const [email, setEmail] = useState(user.email);
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
@@ -27,7 +28,7 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
     e.preventDefault();
     setLoading(true);
     try {
-      await updateProfile({ name, email });
+      await updateProfile({ name, username, email });
       toast.success(t("settings.profileUpdated"));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("error.updateFailed"));
@@ -52,6 +53,25 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
               onChange={(e) => setName(e.target.value)}
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="settings-username">{t("common.username")}</Label>
+            <Input
+              id="settings-username"
+              value={username}
+              onChange={(e) =>
+                setUsername(
+                  e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9-]/g, "")
+                    .slice(0, 40),
+                )
+              }
+              required
+            />
+            <p className="text-xs text-muted-foreground">
+              {t("admin.usernameHelp")}
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="settings-email">{t("common.email")}</Label>

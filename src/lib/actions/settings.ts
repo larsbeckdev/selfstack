@@ -17,6 +17,14 @@ import {
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).max(100),
+  username: z
+    .string()
+    .min(2)
+    .max(40)
+    .regex(
+      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+    ),
   email: z.string().email(),
   image: z.string().url().optional().or(z.literal("")),
 });
@@ -30,20 +38,62 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
   const { user } = await requireAuth();
   const parsed = updateProfileSchema.parse(data);
 
-  if (parsed.email !== user.email) {
+  const dbUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { email: true, username: true, role: true },
+  });
+  if (!dbUser) throw new Error("User not found");
+
+  if (parsed.email !== dbUser.email) {
     const existing = await db.user.findUnique({
       where: { email: parsed.email },
     });
     if (existing) throw new Error("E-Mail wird bereits verwendet");
   }
 
-  await db.user.update({
-    where: { id: user.id },
-    data: {
-      name: parsed.name,
-      email: parsed.email,
-      image: parsed.image || null,
-    },
+  const usernameChanged = parsed.username !== dbUser.username;
+  if (usernameChanged) {
+    const existing = await db.user.findUnique({
+      where: { username: parsed.username },
+    });
+    if (existing) throw new Error("Username wird bereits verwendet");
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        name: parsed.name,
+        username: parsed.username,
+        email: parsed.email,
+        image: parsed.image || null,
+      },
+    });
+
+    // Cascade-rename board slugs that started with the old username/.
+    // Admin-owned system boards (no "/" in slug) stay untouched.
+    if (usernameChanged && dbUser.role !== "admin" && dbUser.username) {
+      const oldPrefix = `${dbUser.username}/`;
+      const boards = await tx.board.findMany({
+        where: { userId: user.id, slug: { startsWith: oldPrefix } },
+        select: { id: true, slug: true },
+      });
+      for (const b of boards) {
+        const tail = b.slug.slice(oldPrefix.length);
+        let newSlug = `${parsed.username}/${tail}`;
+        let n = 0;
+        while (
+          await tx.board.findFirst({
+            where: { slug: newSlug, NOT: { id: b.id } },
+            select: { id: true },
+          })
+        ) {
+          n++;
+          newSlug = `${parsed.username}/${tail}-${n}`;
+        }
+        await tx.board.update({ where: { id: b.id }, data: { slug: newSlug } });
+      }
+    }
   });
 
   revalidatePath("/settings");
