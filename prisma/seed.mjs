@@ -13,6 +13,7 @@ async function main() {
     update: {},
     create: {
       email: "admin@selfstack.local",
+      username: "admin",
       name: "Admin",
       password: hashedPassword,
       role: "admin",
