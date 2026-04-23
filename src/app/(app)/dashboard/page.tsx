@@ -18,13 +18,27 @@ export default async function DashboardPage() {
   if (!session) redirect("/login");
   const t = await getTranslator();
 
+  const role = session.user.role;
   const boards = await db.board.findMany({
-    where: { userId: session.user.id },
+    where: {
+      OR: [
+        { userId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+        role === "editor"
+          ? { orgId: { not: null } }
+          : {
+              organization: {
+                is: { members: { some: { userId: session.user.id } } },
+              },
+            },
+      ],
+    },
     orderBy: { order: "asc" },
     include: {
       _count: {
         select: { categories: true },
       },
+      organization: { select: { id: true, name: true, slug: true } },
     },
   });
 
