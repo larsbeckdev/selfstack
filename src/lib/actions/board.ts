@@ -32,9 +32,14 @@ async function getBoardRole(
 ): Promise<BoardRole | null> {
   const board = await db.board.findUnique({
     where: { id: boardId },
-    select: { userId: true },
+    select: { userId: true, orgId: true },
   });
   if (!board) return null;
+
+  // Global admin: full access everywhere.
+  if (globalRole === "admin") return "owner";
+
+  // Owner (creator) has full access.
   if (board.userId === userId) return "owner";
 
   const member = await db.boardMember.findUnique({
@@ -43,9 +48,8 @@ async function getBoardRole(
   });
   if (member) return member.role as BoardRole;
 
-  // Global roles elevate access on any existing board
-  if (globalRole === "admin") return "owner";
-  if (globalRole === "editor") return "editor";
+  // Global editor can edit any ORG board, but not private user boards.
+  if (globalRole === "editor" && board.orgId) return "editor";
   return null;
 }
 
@@ -65,8 +69,19 @@ async function requireBoardAccess(
 }
 
 function boardAccessWhere(userId: string, globalRole?: string) {
-  // Editors/admins can access all boards
-  if (globalRole === "admin" || globalRole === "editor") return {};
+  // Global admin: all boards.
+  if (globalRole === "admin") return {};
+  // Global editor: own, member-of, and every org board.
+  if (globalRole === "editor") {
+    return {
+      OR: [
+        { userId },
+        { members: { some: { userId } } },
+        { orgId: { not: null } },
+      ],
+    };
+  }
+  // Regular user: own + explicitly shared.
   return {
     OR: [{ userId }, { members: { some: { userId } } }],
   };
