@@ -36,13 +36,19 @@ export function EditBoardDialog({
 }) {
   const router = useRouter();
   const { t } = useTranslation();
+  const slashIndex = board.slug.indexOf("/");
+  const ownerPrefix = slashIndex >= 0 ? board.slug.slice(0, slashIndex) : "";
+  const initialTail =
+    slashIndex >= 0 ? board.slug.slice(slashIndex + 1) : board.slug;
+
   const [name, setName] = useState(board.name);
-  const [slug, setSlug] = useState(board.slug);
+  const [slugTail, setSlugTail] = useState(initialTail);
+  const slug = ownerPrefix ? `${ownerPrefix}/${slugTail}` : slugTail;
   const [icon, setIcon] = useState(board.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(board.iconUrl ?? null);
   const [saving, setSaving] = useState(false);
 
-  const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+  const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugTail);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,8 +92,8 @@ export function EditBoardDialog({
               value={name}
               onChange={(e) => {
                 setName(e.target.value);
-                if (slug === slugify(board.name)) {
-                  setSlug(slugify(e.target.value));
+                if (slugTail === slugify(board.name)) {
+                  setSlugTail(slugify(e.target.value));
                 }
               }}
               required
@@ -95,13 +101,19 @@ export function EditBoardDialog({
           </div>
           <div className="space-y-2">
             <Label htmlFor="edit-board-slug">{t("board.slug")}</Label>
-            <Input
-              id="edit-board-slug"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              required
-            />
-            {!slugValid && slug.length > 0 && (
+            <div className="flex items-center gap-0">
+              <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
+                /board/{ownerPrefix ? `${ownerPrefix}/` : ""}
+              </span>
+              <Input
+                id="edit-board-slug"
+                value={slugTail}
+                onChange={(e) => setSlugTail(slugify(e.target.value))}
+                className="rounded-l-none"
+                required
+              />
+            </div>
+            {!slugValid && slugTail.length > 0 && (
               <p className="text-xs text-destructive">
                 {t("board.slugInvalid")}
               </p>

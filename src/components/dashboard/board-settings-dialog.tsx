@@ -133,8 +133,14 @@ function GeneralTab({
   router: ReturnType<typeof useRouter>;
   onClose: () => void;
 }) {
+  const slashIndex = board.slug.indexOf("/");
+  const ownerPrefix = slashIndex >= 0 ? board.slug.slice(0, slashIndex) : "";
+  const initialTail =
+    slashIndex >= 0 ? board.slug.slice(slashIndex + 1) : board.slug;
+
   const [name, setName] = useState(board.name);
-  const [slug, setSlug] = useState(board.slug);
+  const [slugTail, setSlugTail] = useState(initialTail);
+  const slug = ownerPrefix ? `${ownerPrefix}/${slugTail}` : slugTail;
   const [icon, setIcon] = useState(board.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(board.iconUrl ?? null);
   const [isPublic, setIsPublic] = useState(board.isPublic);
@@ -160,7 +166,7 @@ function GeneralTab({
     };
   }, []);
 
-  const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
+  const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slugTail);
 
   const handleSave = async () => {
     if (!name.trim() || !slugValid) return;
@@ -261,16 +267,16 @@ function GeneralTab({
             <Label htmlFor="settings-board-slug">{t("board.linkSlug")}</Label>
             <div className="flex items-center gap-0">
               <span className="flex h-8 items-center rounded-l-lg border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
-                /board/
+                /board/{ownerPrefix ? `${ownerPrefix}/` : ""}
               </span>
               <Input
                 id="settings-board-slug"
-                value={slug}
-                onChange={(e) => setSlug(slugify(e.target.value))}
+                value={slugTail}
+                onChange={(e) => setSlugTail(slugify(e.target.value))}
                 className="rounded-l-none"
               />
             </div>
-            {slug && !slugValid && (
+            {slugTail && !slugValid && (
               <p className="text-xs text-destructive">
                 {t("board.slugInvalid")}
               </p>
