@@ -1,34 +1,27 @@
 import { PointerSensor } from "@dnd-kit/core";
 import type { PointerEvent } from "react";
 
-// Selector for elements that should never start a drag when clicked.
-const INTERACTIVE_SELECTOR = [
-  "button",
-  "a",
+// Selector for inner controls that should never start a drag. Keep this small:
+// the PointerSensor's activation distance already prevents plain clicks from
+// turning into drags. We only need to explicitly block UI controls where a
+// `pointerdown` is the start of a semantically different interaction (e.g.
+// opening an inline menu on a tile action button).
+const NO_DND_SELECTOR = [
+  "[data-no-dnd]",
+  "[data-radix-popper-content-wrapper]",
+  '[role="menu"]',
+  '[role="menuitem"]',
+  '[role="listbox"]',
+  '[role="combobox"]',
+  '[role="dialog"]',
+  '[role="alertdialog"]',
   "input",
   "textarea",
   "select",
-  "label",
-  '[role="button"]',
-  '[role="menuitem"]',
-  '[role="menu"]',
-  '[role="option"]',
-  '[role="combobox"]',
-  '[role="listbox"]',
-  '[role="slider"]',
-  '[role="switch"]',
-  '[role="tab"]',
-  '[role="checkbox"]',
-  '[role="radio"]',
-  '[role="dialog"]',
-  '[role="alertdialog"]',
-  "[data-no-dnd]",
-  "[data-radix-popper-content-wrapper]",
 ].join(",");
 
 function isAnyOverlayOpen(): boolean {
   if (typeof document === "undefined") return false;
-  // Any open Radix dialog / alertdialog blocks new drag activation.
   return !!document.querySelector(
     '[role="dialog"][data-state="open"], [role="alertdialog"][data-state="open"]',
   );
@@ -36,13 +29,13 @@ function isAnyOverlayOpen(): boolean {
 
 /**
  * PointerSensor that refuses to activate when:
- *  - the pointerdown happened on an interactive element (buttons, inputs,
- *    popovers, dialog content, etc.), or
- *  - any Radix Dialog / AlertDialog is currently open.
+ *  - any Radix Dialog / AlertDialog is currently open, or
+ *  - the pointerdown happened inside an explicit `data-no-dnd` region, an
+ *    input-like control, or an open Radix menu / popover surface.
  *
- * This prevents clicks on inline buttons (e.g. the edit/color button on a
- * tile) from starting a drag, and prevents background items from being
- * dragged while a modal is open.
+ * Links and buttons are intentionally NOT blocked — the sensor's distance
+ * activation constraint (configured via useSensor options) already makes a
+ * plain click behave like a click and a pointer drag behave like a drag.
  */
 export class SafePointerSensor extends PointerSensor {
   static activators = [
@@ -55,7 +48,7 @@ export class SafePointerSensor extends PointerSensor {
 
         const target = event.target as HTMLElement | null;
         if (target && typeof target.closest === "function") {
-          if (target.closest(INTERACTIVE_SELECTOR)) return false;
+          if (target.closest(NO_DND_SELECTOR)) return false;
         }
 
         return true;
