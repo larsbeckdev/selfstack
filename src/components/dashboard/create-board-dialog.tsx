@@ -51,7 +51,8 @@ export function CreateBoardDialog({
     (async () => {
       try {
         const list = await getOrganizations();
-        if (!cancelled) setOrgs(list.map((o) => ({ id: o.id, name: o.name, slug: o.slug })));
+        if (!cancelled)
+          setOrgs(list.map((o) => ({ id: o.id, name: o.name, slug: o.slug })));
       } catch {
         // Silent: admin UI elsewhere will surface org errors.
       }
@@ -68,9 +69,7 @@ export function CreateBoardDialog({
     setLoading(true);
     try {
       const orgId =
-        isAdmin && ownerKey !== "personal" && ownerKey !== "system"
-          ? ownerKey
-          : null;
+        isAdmin && ownerKey !== "system" ? ownerKey : null;
       await createBoard({
         name,
         icon,
@@ -82,7 +81,7 @@ export function CreateBoardDialog({
       setOpen(false);
       setName("");
       setIcon("layout-dashboard");
-      setOwnerKey("");
+      setOwnerKey("system");
     } catch {
       toast.error(t("error.createFailed"));
     } finally {
@@ -117,9 +116,7 @@ export function CreateBoardDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">{t("org.ownerUser")}</SelectItem>
-                  <SelectItem value="system">
-                    {t("org.ownerSystem")}
-                  </SelectItem>
+                  <SelectItem value="system">{t("org.ownerSystem")}</SelectItem>
                   {orgs.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
                       @{o.slug} — {o.name}
