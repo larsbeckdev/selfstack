@@ -82,6 +82,67 @@ export function AppSidebar({
     else toast.error(t("common.copyFailed"));
   };
 
+  // Partition boards: personal (mine, no org), per-org, and system (admin boards without org, not mine).
+  const personal = boards.filter((b) => !b.orgId && b.userId === user.id);
+  const system = boards.filter((b) => !b.orgId && b.userId !== user.id);
+  const orgsMap = new Map<
+    string,
+    { name: string; slug: string; boards: SidebarBoard[] }
+  >();
+  for (const b of boards) {
+    if (!b.organization) continue;
+    const entry = orgsMap.get(b.organization.id);
+    if (entry) entry.boards.push(b);
+    else
+      orgsMap.set(b.organization.id, {
+        name: b.organization.name,
+        slug: b.organization.slug,
+        boards: [b],
+      });
+  }
+  const orgGroups = [...orgsMap.values()].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
+
+  const renderBoardItem = (board: SidebarBoard) => (
+    <SidebarMenuItem key={board.id}>
+      <SidebarMenuButton asChild isActive={pathname === `/board/${board.slug}`}>
+        <Link href={`/board/${board.slug}`}>
+          <DynamicIcon
+            name={board.icon}
+            iconUrl={board.iconUrl}
+            className="size-4"
+          />
+          <span>{board.name}</span>
+        </Link>
+      </SidebarMenuButton>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <SidebarMenuAction showOnHover>
+            <MoreHorizontal className="size-4" />
+          </SidebarMenuAction>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="start" className="min-w-48">
+          <DropdownMenuItem onClick={() => router.push(`/board/${board.slug}`)}>
+            <ExternalLink className="mr-2 size-4" />
+            {t("common.open")}
+          </DropdownMenuItem>
+          {board.isPublic && (
+            <DropdownMenuItem onClick={() => copyBoardLink(board)}>
+              <Copy className="mr-2 size-4" />
+              {t("common.copy")} {t("common.link").toLowerCase()}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuItem
+            onClick={() => router.push(`/board/${board.slug}?settings=true`)}>
+            <Settings2 className="mr-2 size-4" />
+            {t("nav.settings")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </SidebarMenuItem>
+  );
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -116,52 +177,7 @@ export function AppSidebar({
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {boards.map((board) => (
-                <SidebarMenuItem key={board.id}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === `/board/${board.slug}`}>
-                    <Link href={`/board/${board.slug}`}>
-                      <DynamicIcon
-                        name={board.icon}
-                        iconUrl={board.iconUrl}
-                        className="size-4"
-                      />
-                      <span>{board.name}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <SidebarMenuAction showOnHover>
-                        <MoreHorizontal className="size-4" />
-                      </SidebarMenuAction>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      side="right"
-                      align="start"
-                      className="min-w-48">
-                      <DropdownMenuItem
-                        onClick={() => router.push(`/board/${board.slug}`)}>
-                        <ExternalLink className="mr-2 size-4" />
-                        {t("common.open")}
-                      </DropdownMenuItem>
-                      {board.isPublic && (
-                        <DropdownMenuItem onClick={() => copyBoardLink(board)}>
-                          <Copy className="mr-2 size-4" />
-                          {t("common.copy")} {t("common.link").toLowerCase()}
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() =>
-                          router.push(`/board/${board.slug}?settings=true`)
-                        }>
-                        <Settings2 className="mr-2 size-4" />
-                        {t("nav.settings")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </SidebarMenuItem>
-              ))}
+              {personal.map(renderBoardItem)}
               {boards.length === 0 && (
                 <p className="px-2 py-1.5 text-xs text-muted-foreground">
                   {t("nav.noBoards")}
@@ -170,6 +186,24 @@ export function AppSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {orgGroups.map((org) => (
+          <SidebarGroup key={org.slug}>
+            <SidebarGroupLabel>{org.name}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{org.boards.map(renderBoardItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+
+        {system.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>{t("org.ownerSystem")}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>{system.map(renderBoardItem)}</SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarSeparator />
 
