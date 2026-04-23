@@ -236,6 +236,41 @@ export async function seedDemoData(): Promise<void> {
               },
             ],
           },
+          {
+            name: "Docs",
+            icon: "book-open",
+            layout: "list",
+            tiles: [
+              {
+                name: "MDN Web Docs",
+                icon: "book",
+                color: "#000000",
+                url: "https://developer.mozilla.org",
+                description: "Referenz für Web-Standards",
+              },
+              {
+                name: "Next.js Docs",
+                icon: "file-text",
+                color: "#000000",
+                url: "https://nextjs.org/docs",
+                description: "App Router & Server Components",
+              },
+              {
+                name: "Prisma Docs",
+                icon: "database",
+                color: "#2d3748",
+                url: "https://www.prisma.io/docs",
+                description: "ORM & Schema Reference",
+              },
+              {
+                name: "Tailwind CSS",
+                icon: "palette",
+                color: "#38bdf8",
+                url: "https://tailwindcss.com",
+                description: "Utility-first CSS",
+              },
+            ],
+          },
         ],
       },
       {
@@ -260,6 +295,12 @@ export async function seedDemoData(): Promise<void> {
                 color: "#f46800",
                 url: "https://grafana.com",
               },
+              {
+                name: "Uptime Kuma",
+                icon: "bell",
+                color: "#5cdd8b",
+                url: "https://uptime.kuma.pet",
+              },
             ],
           },
           {
@@ -277,6 +318,144 @@ export async function seedDemoData(): Promise<void> {
                 icon: "message-circle",
                 color: "#5865f2",
                 url: "https://discord.com",
+              },
+              {
+                name: "Mattermost",
+                icon: "messages-square",
+                color: "#1e325c",
+                url: "https://mattermost.com",
+              },
+            ],
+          },
+          {
+            name: "Datenbanken",
+            icon: "database",
+            tiles: [
+              {
+                name: "PostgreSQL",
+                icon: "database",
+                color: "#336791",
+                url: "https://www.postgresql.org",
+              },
+              {
+                name: "Redis",
+                icon: "zap",
+                color: "#dc382d",
+                url: "https://redis.io",
+              },
+              {
+                name: "MongoDB",
+                icon: "leaf",
+                color: "#13aa52",
+                url: "https://www.mongodb.com",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Lernen",
+        icon: "graduation-cap",
+        color: "#f59e0b",
+        groups: [
+          {
+            name: "Kurse",
+            icon: "book-open",
+            layout: "list",
+            tiles: [
+              {
+                name: "Frontend Masters",
+                icon: "monitor",
+                color: "#c50000",
+                url: "https://frontendmasters.com",
+                description: "Video-Kurse für Webentwicklung",
+              },
+              {
+                name: "egghead.io",
+                icon: "play-circle",
+                color: "#252526",
+                url: "https://egghead.io",
+                description: "Kurze Screencasts",
+              },
+              {
+                name: "Coursera",
+                icon: "graduation-cap",
+                color: "#0056d2",
+                url: "https://coursera.org",
+                description: "Universitätskurse online",
+              },
+            ],
+          },
+          {
+            name: "Bücher",
+            icon: "book",
+            tiles: [
+              {
+                name: "O'Reilly",
+                icon: "book",
+                color: "#d3002d",
+                url: "https://www.oreilly.com",
+              },
+              {
+                name: "Manning",
+                icon: "book",
+                color: "#8e5b9e",
+                url: "https://www.manning.com",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Inspiration",
+        icon: "sparkles",
+        color: "#ec4899",
+        groups: [
+          {
+            name: "Design",
+            icon: "palette",
+            tiles: [
+              {
+                name: "Dribbble",
+                icon: "dribbble",
+                color: "#ea4c89",
+                url: "https://dribbble.com",
+              },
+              {
+                name: "Behance",
+                icon: "image",
+                color: "#1769ff",
+                url: "https://behance.net",
+              },
+              {
+                name: "Awwwards",
+                icon: "award",
+                color: "#000000",
+                url: "https://awwwards.com",
+              },
+            ],
+          },
+          {
+            name: "Community",
+            icon: "users",
+            tiles: [
+              {
+                name: "Hacker News",
+                icon: "newspaper",
+                color: "#ff6600",
+                url: "https://news.ycombinator.com",
+              },
+              {
+                name: "Lobsters",
+                icon: "message-square",
+                color: "#ac130d",
+                url: "https://lobste.rs",
+              },
+              {
+                name: "Dev.to",
+                icon: "code",
+                color: "#0a0a0a",
+                url: "https://dev.to",
               },
             ],
           },
@@ -374,6 +553,34 @@ export async function seedDemoData(): Promise<void> {
                 icon: "figma",
                 color: "#f24e1e",
                 url: "https://figma.com",
+              },
+            ],
+          },
+          {
+            name: "Runbooks",
+            icon: "clipboard-list",
+            layout: "list",
+            tiles: [
+              {
+                name: "Onboarding",
+                icon: "user-plus",
+                color: "#10b981",
+                url: "https://example.com/onboarding",
+                description: "Schritt-für-Schritt Einarbeitung",
+              },
+              {
+                name: "Incident Response",
+                icon: "alert-triangle",
+                color: "#ef4444",
+                url: "https://example.com/incidents",
+                description: "Was tun bei Ausfällen",
+              },
+              {
+                name: "Release-Checkliste",
+                icon: "check-square",
+                color: "#6366f1",
+                url: "https://example.com/release",
+                description: "Vor jedem Deploy prüfen",
               },
             ],
           },
