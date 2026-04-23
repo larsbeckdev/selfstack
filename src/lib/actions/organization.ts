@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth, requireAdmin } from "@/lib/auth";
+import { assertNotDemo } from "@/lib/demo";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
 
@@ -118,6 +119,7 @@ export async function createOrganization(
   data: z.infer<typeof orgSchema>,
 ): Promise<{ id: string; slug: string }> {
   await requireAdmin();
+  assertNotDemo();
   const parsed = orgSchema.parse(data);
 
   const existing = await db.organization.findUnique({
@@ -145,6 +147,7 @@ export async function updateOrganization(
   data: Partial<z.infer<typeof orgSchema>>,
 ) {
   await requireAdmin();
+  assertNotDemo();
 
   const org = await db.organization.findUnique({ where: { id: orgId } });
   if (!org) throw new Error("Organisation nicht gefunden");
@@ -207,6 +210,7 @@ export async function updateOrganization(
 
 export async function deleteOrganization(orgId: string) {
   await requireAdmin();
+  assertNotDemo();
   await db.organization.delete({ where: { id: orgId } });
   revalidatePath("/admin/organizations");
   revalidatePath("/dashboard");
@@ -220,6 +224,7 @@ export async function addOrgMember(
   role: OrgRole,
 ) {
   await requireAdmin();
+  assertNotDemo();
   if (!ORG_ROLES.includes(role)) throw new Error("Invalid role");
   await db.organizationMember.upsert({
     where: { orgId_userId: { orgId, userId } },
@@ -235,6 +240,7 @@ export async function updateOrgMemberRole(
   role: OrgRole,
 ) {
   await requireAdmin();
+  assertNotDemo();
   if (!ORG_ROLES.includes(role)) throw new Error("Invalid role");
   await db.organizationMember.update({
     where: { orgId_userId: { orgId, userId } },
@@ -245,6 +251,7 @@ export async function updateOrgMemberRole(
 
 export async function removeOrgMember(orgId: string, userId: string) {
   await requireAdmin();
+  assertNotDemo();
   await db.organizationMember.delete({
     where: { orgId_userId: { orgId, userId } },
   });
