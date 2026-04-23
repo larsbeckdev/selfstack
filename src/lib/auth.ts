@@ -57,6 +57,7 @@ export async function getSession() {
       user: {
         id: session.user.id,
         email: session.user.email,
+        username: session.user.username,
         name: session.user.name,
         image: session.user.image,
         role: session.user.role,
