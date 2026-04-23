@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
-import { ColorPicker } from "@/components/ui/color-picker";
+import { ColorFields } from "@/components/ui/color-fields";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -33,9 +33,14 @@ export function EditCategoryDialog({
   const [iconUrl, setIconUrl] = useState<string | null>(
     category.iconUrl ?? null,
   );
-  const [color, setColor] = useState(category.color);
   const [bgColor, setBgColor] = useState<string | null>(
     category.bgColor ?? null,
+  );
+  const [borderColor, setBorderColor] = useState<string | null>(
+    category.borderColor ?? null,
+  );
+  const [borderMatchesBg, setBorderMatchesBg] = useState(
+    category.borderMatchesBg,
   );
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -49,8 +54,9 @@ export function EditCategoryDialog({
         name,
         icon,
         iconUrl,
-        color,
         bgColor,
+        borderColor: borderMatchesBg ? bgColor : borderColor,
+        borderMatchesBg,
       });
       toast.success(t("category.updated"));
       router.refresh();
@@ -87,18 +93,15 @@ export function EditCategoryDialog({
               onIconUrlChange={setIconUrl}
             />
           </div>
-          <div className="space-y-2">
-            <Label>{t("common.color")}</Label>
-            <ColorPicker
-              value={color}
-              onChange={(v) => setColor(v ?? "#6366f1")}
-              allowNone={false}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>{t("category.bgColor")}</Label>
-            <ColorPicker value={bgColor} onChange={setBgColor} />
-          </div>
+          <ColorFields
+            bgColor={bgColor}
+            setBgColor={setBgColor}
+            borderColor={borderColor}
+            setBorderColor={setBorderColor}
+            borderMatchesBg={borderMatchesBg}
+            setBorderMatchesBg={setBorderMatchesBg}
+            idPrefix="edit-cat"
+          />
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading ? t("common.saving") : t("common.save")}

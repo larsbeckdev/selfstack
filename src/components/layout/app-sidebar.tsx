@@ -65,7 +65,14 @@ export function AppSidebar({
 
   const copyBoardLink = async (board: Board) => {
     const path = `/board/${board.slug}`;
-    const url = `${window.location.origin}${path}`;
+    let origin = "";
+    try {
+      const { getAppUrl } = await import("@/lib/actions/settings");
+      origin = await getAppUrl();
+    } catch {
+      origin = typeof window !== "undefined" ? window.location.origin : "";
+    }
+    const url = `${origin}${path}`;
     const ok = await copyToClipboard(url);
     if (ok) toast.success(t("common.linkCopied"));
     else toast.error(t("common.copyFailed"));

@@ -231,12 +231,22 @@ export function GroupCard({
           className={cn(
             "rounded-lg transition-colors",
             group.bgColor && "p-2",
+            (group.borderColor || group.borderMatchesBg) && "border p-2",
             isOver && isEditing && "bg-primary/5 ring-1 ring-primary/20",
           )}
           style={
-            group.bgColor && !(isOver && isEditing)
-              ? { backgroundColor: withAlpha(group.bgColor, 0.18) }
-              : undefined
+            isOver && isEditing
+              ? undefined
+              : {
+                  ...(group.bgColor
+                    ? { backgroundColor: withAlpha(group.bgColor, 0.18) }
+                    : {}),
+                  ...(group.borderMatchesBg && group.bgColor
+                    ? { borderColor: withAlpha(group.bgColor, 0.35) }
+                    : group.borderColor
+                      ? { borderColor: group.borderColor }
+                      : {}),
+                }
           }>
           {layout === "snap" ? (
             <div

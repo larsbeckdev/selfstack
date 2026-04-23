@@ -103,6 +103,7 @@ export function TileCard({
       <div
         className={cn(
           "flex h-full items-center gap-3 rounded-lg border border-border/40 bg-card px-3 py-2 transition-colors",
+          "hover:ring-2 hover:ring-primary/60",
           href && "hover:bg-accent/50 hover:border-border",
           isEditing && "cursor-grab active:cursor-grabbing",
         )}
@@ -179,9 +180,9 @@ export function TileCard({
   // ── Grid mode: positional card ────────────────────────────────────────
   const cardClasses = cn(
     "relative flex h-full w-full flex-col items-center justify-center rounded-xl border border-border/50 bg-card p-2 text-center transition-all overflow-hidden",
-    href && "hover:bg-muted/40 hover:ring-2 hover:ring-primary/60",
-    isEditing &&
-      "cursor-grab active:cursor-grabbing hover:ring-2 hover:ring-primary/60",
+    "hover:ring-2 hover:ring-primary/60",
+    href && "hover:bg-muted/40",
+    isEditing && "cursor-grab active:cursor-grabbing",
   );
 
   const cardStyle: React.CSSProperties = {

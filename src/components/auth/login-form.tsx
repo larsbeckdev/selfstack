@@ -3,7 +3,12 @@
 import { useActionState } from "react";
 import Link from "next/link";
 import { Layers } from "lucide-react";
-import { login, type AuthState } from "@/lib/actions/auth";
+import {
+  login,
+  loginVerify2FA,
+  cancelPendingLogin,
+  type AuthState,
+} from "@/lib/actions/auth";
 import { useTranslation } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +33,10 @@ export function LoginForm({
     {},
   );
   const { t } = useTranslation();
+
+  if (state.requires2FA) {
+    return <TwoFactorStep />;
+  }
 
   return (
     <Card>
@@ -86,6 +95,65 @@ export function LoginForm({
               </Link>
             </p>
           )}
+        </CardFooter>
+      </form>
+    </Card>
+  );
+}
+
+function TwoFactorStep() {
+  const { t } = useTranslation();
+  const [state, formAction, pending] = useActionState<AuthState, FormData>(
+    loginVerify2FA,
+    {},
+  );
+
+  return (
+    <Card>
+      <CardHeader className="text-center">
+        <div className="flex justify-center mb-2">
+          <Layers className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+        </div>
+        <CardTitle className="text-xl sm:text-2xl">
+          {t("auth.twoFactorTitle")}
+        </CardTitle>
+        <CardDescription className="text-xs sm:text-sm">
+          {t("auth.twoFactorDesc")}
+        </CardDescription>
+      </CardHeader>
+      <form action={formAction}>
+        <CardContent className="space-y-4 pb-6">
+          {state.error && (
+            <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+              {state.error}
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="token">{t("auth.twoFactorCode")}</Label>
+            <Input
+              id="token"
+              name="token"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              placeholder="123456"
+              required
+              autoFocus
+            />
+          </div>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          <Button type="submit" className="w-full" disabled={pending}>
+            {pending ? t("auth.verifying") : t("auth.verify")}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => cancelPendingLogin()}>
+            {t("common.cancel")}
+          </Button>
         </CardFooter>
       </form>
     </Card>

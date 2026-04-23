@@ -226,11 +226,28 @@ export function ColorPickerPanel({
   const [hsv, setHsv] = React.useState<Hsv>(() => rgbToHsv(parsed.rgb));
   const [alpha, setAlpha] = React.useState(parsed.a);
   const [format, setFormat] = React.useState<PickerFormat>("hex");
+  // Remember what we last emitted so that our own prop-echo doesn't reset
+  // the hue (rgb→hsv loses hue when s=0 or v=0).
+  const lastEmittedRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
     const next = parseHex(value);
     if (!next) return;
-    setHsv(rgbToHsv(next.rgb));
+    // If this value is what we just emitted (or equivalent), skip the sync.
+    if (
+      lastEmittedRef.current &&
+      lastEmittedRef.current.toLowerCase() === value.toLowerCase()
+    ) {
+      return;
+    }
+    const nextHsv = rgbToHsv(next.rgb);
+    // Preserve the current hue if the incoming color is achromatic
+    // (s=0 or v=0), otherwise the hue slider would snap to 0.
+    if (nextHsv.s === 0 || nextHsv.v === 0) {
+      setHsv((prev) => ({ ...nextHsv, h: prev.h }));
+    } else {
+      setHsv(nextHsv);
+    }
     setAlpha(next.a);
   }, [value]);
 
@@ -241,7 +258,9 @@ export function ColorPickerPanel({
   const emit = React.useCallback(
     (nextHsv: Hsv, nextAlpha: number) => {
       const nextRgb = hsvToRgb(nextHsv);
-      onChange?.(rgbToHex(nextRgb, nextAlpha));
+      const nextHex = rgbToHex(nextRgb, nextAlpha);
+      lastEmittedRef.current = nextHex;
+      onChange?.(nextHex);
     },
     [onChange],
   );
@@ -278,9 +297,12 @@ export function ColorPickerPanel({
       const parsedColor = parseHex(result.sRGBHex);
       if (!parsedColor) return;
       const nextHsv = rgbToHsv(parsedColor.rgb);
-      setHsv(nextHsv);
+      // Preserve previous hue for achromatic picks.
+      const finalHsv =
+        nextHsv.s === 0 || nextHsv.v === 0 ? { ...nextHsv, h: hsv.h } : nextHsv;
+      setHsv(finalHsv);
       setAlpha(1);
-      emit(nextHsv, 1);
+      emit(finalHsv, 1);
     } catch {
       // cancelled
     }

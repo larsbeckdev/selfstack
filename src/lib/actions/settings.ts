@@ -9,6 +9,8 @@ import {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   generatePassword,
+  sendTestEmail,
+  loadSmtpConfig,
 } from "@/lib/email";
 
 // ─── User Settings Actions ──────────────────────────────────────────────────
@@ -69,6 +71,80 @@ export async function changePassword(
 export async function deleteAccount() {
   const { user } = await requireAuth();
   await db.user.delete({ where: { id: user.id } });
+}
+
+// ─── Two-Factor (TOTP) ──────────────────────────────────────────────────────
+
+export async function getTwoFactorStatus(): Promise<{ enabled: boolean }> {
+  const { user } = await requireAuth();
+  const u = await db.user.findUnique({
+    where: { id: user.id },
+    select: { twoFactorEnabled: true },
+  });
+  return { enabled: !!u?.twoFactorEnabled };
+}
+
+/**
+ * Generate a fresh enrollment secret + QR code. The secret is stored on
+ * the user row but NOT yet activated — `twoFactorEnabled` stays false
+ * until the user confirms with a valid token.
+ */
+export async function beginTwoFactorEnrollment(): Promise<{
+  secret: string;
+  qrCode: string;
+}> {
+  const { generateTotpSecret, renderQrCodeDataUrl } =
+    await import("@/lib/totp");
+  const { user } = await requireAuth();
+  const secret = generateTotpSecret();
+  const dbUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { email: true },
+  });
+  if (!dbUser) throw new Error("User not found");
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { twoFactorSecret: secret, twoFactorEnabled: false },
+  });
+
+  const qrCode = await renderQrCodeDataUrl(dbUser.email, secret);
+  return { secret, qrCode };
+}
+
+export async function confirmTwoFactorEnrollment(token: string) {
+  const { verifyTotp } = await import("@/lib/totp");
+  const { user } = await requireAuth();
+  const dbUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { twoFactorSecret: true, twoFactorEnabled: true },
+  });
+  if (!dbUser?.twoFactorSecret) {
+    throw new Error("Keine laufende 2FA-Einrichtung");
+  }
+  if (!verifyTotp(dbUser.twoFactorSecret, token)) {
+    throw new Error("Ungültiger Code");
+  }
+  await db.user.update({
+    where: { id: user.id },
+    data: { twoFactorEnabled: true },
+  });
+  revalidatePath("/settings");
+}
+
+export async function disableTwoFactor(password: string) {
+  const { user } = await requireAuth();
+  const dbUser = await db.user.findUnique({ where: { id: user.id } });
+  if (!dbUser) throw new Error("User not found");
+
+  const ok = await bcrypt.compare(password, dbUser.password);
+  if (!ok) throw new Error("Passwort ist falsch");
+
+  await db.user.update({
+    where: { id: user.id },
+    data: { twoFactorEnabled: false, twoFactorSecret: null },
+  });
+  revalidatePath("/settings");
 }
 
 // ─── Admin User Management ──────────────────────────────────────────────────
@@ -328,4 +404,112 @@ export async function getAppUrl(): Promise<string> {
     /\/$/,
     "",
   );
+}
+
+// ─── SMTP Settings ──────────────────────────────────────────────────────────
+
+export type SmtpSettings = {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  from: string;
+  hasPassword: boolean;
+};
+
+const SMTP_KEY_MAP = {
+  host: "smtp_host",
+  port: "smtp_port",
+  secure: "smtp_secure",
+  user: "smtp_user",
+  pass: "smtp_pass",
+  from: "smtp_from",
+} as const;
+
+export async function getSmtpSettings(): Promise<SmtpSettings> {
+  await requireAdmin();
+  const cfg = await loadSmtpConfig();
+  return {
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.secure,
+    user: cfg.user,
+    from: cfg.from,
+    hasPassword: cfg.pass.length > 0,
+  };
+}
+
+const smtpInputSchema = z.object({
+  host: z.string().trim().max(255),
+  port: z.number().int().min(1).max(65535),
+  secure: z.boolean(),
+  user: z.string().trim().max(255),
+  password: z.string().max(1024).optional(),
+  clearPassword: z.boolean().optional(),
+  from: z.string().trim().max(255),
+});
+
+export async function updateSmtpSettings(
+  input: z.infer<typeof smtpInputSchema>,
+) {
+  await requireAdmin();
+  const parsed = smtpInputSchema.parse(input);
+
+  const writes: Array<Promise<unknown>> = [
+    db.systemSetting.upsert({
+      where: { key: SMTP_KEY_MAP.host },
+      update: { value: parsed.host },
+      create: { key: SMTP_KEY_MAP.host, value: parsed.host },
+    }),
+    db.systemSetting.upsert({
+      where: { key: SMTP_KEY_MAP.port },
+      update: { value: String(parsed.port) },
+      create: { key: SMTP_KEY_MAP.port, value: String(parsed.port) },
+    }),
+    db.systemSetting.upsert({
+      where: { key: SMTP_KEY_MAP.secure },
+      update: { value: parsed.secure ? "true" : "false" },
+      create: {
+        key: SMTP_KEY_MAP.secure,
+        value: parsed.secure ? "true" : "false",
+      },
+    }),
+    db.systemSetting.upsert({
+      where: { key: SMTP_KEY_MAP.user },
+      update: { value: parsed.user },
+      create: { key: SMTP_KEY_MAP.user, value: parsed.user },
+    }),
+    db.systemSetting.upsert({
+      where: { key: SMTP_KEY_MAP.from },
+      update: { value: parsed.from },
+      create: { key: SMTP_KEY_MAP.from, value: parsed.from },
+    }),
+  ];
+
+  if (parsed.clearPassword) {
+    writes.push(
+      db.systemSetting.upsert({
+        where: { key: SMTP_KEY_MAP.pass },
+        update: { value: "" },
+        create: { key: SMTP_KEY_MAP.pass, value: "" },
+      }),
+    );
+  } else if (parsed.password && parsed.password.length > 0) {
+    writes.push(
+      db.systemSetting.upsert({
+        where: { key: SMTP_KEY_MAP.pass },
+        update: { value: parsed.password },
+        create: { key: SMTP_KEY_MAP.pass, value: parsed.password },
+      }),
+    );
+  }
+
+  await Promise.all(writes);
+  revalidatePath("/admin", "layout");
+}
+
+export async function sendTestSmtpEmail(to: string) {
+  await requireAdmin();
+  const parsed = z.string().email().parse(to);
+  await sendTestEmail(parsed);
 }

@@ -109,11 +109,16 @@ export function CategoryCard({
           "flex h-full flex-col overflow-hidden rounded-2xl border border-border/50",
           !category.bgColor && "bg-card",
         )}
-        style={
-          category.bgColor
+        style={{
+          ...(category.bgColor
             ? { backgroundColor: withAlpha(category.bgColor, 0.18) }
-            : undefined
-        }>
+            : {}),
+          ...(category.borderMatchesBg && category.bgColor
+            ? { borderColor: withAlpha(category.bgColor, 0.35) }
+            : category.borderColor
+              ? { borderColor: category.borderColor }
+              : {}),
+        }}>
         {/* header */}
         <div className="flex items-center gap-2.5 px-3 pt-3 pb-2 md:px-5 md:pt-4 md:pb-3">
           {isEditing && (
@@ -199,7 +204,10 @@ export function CategoryCard({
         <div className="flex-1 px-3 pb-3 md:px-5 md:pb-5">
           <div
             data-category-grid
-            className="relative grid gap-4"
+            className={cn(
+              "relative grid gap-4 rounded-lg transition-colors",
+              isEditing && isGroupDragging && "bg-edit-grid p-2",
+            )}
             style={{
               gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
               gridAutoRows: "min-content",
@@ -208,7 +216,7 @@ export function CategoryCard({
               <FreeGroupDropGrid
                 categoryId={category.id}
                 rows={
-                  Math.max(...category.groups.map((g) => (g.y ?? 0) + 1), 0) + 3
+                  Math.max(...category.groups.map((g) => (g.y ?? 0) + 1), 0) + 1
                 }
               />
             )}

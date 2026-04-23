@@ -238,9 +238,12 @@ export function IconPicker({
                       <button
                         key={storedValue}
                         type="button"
+                        style={
+                          isSelfhst
+                            ? { backgroundColor: "rgba(148,163,184,0.25)" }
+                            : undefined
+                        }
                         className={`flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
-                          isSelfhst ? "bg-muted/40" : ""
-                        } ${
                           selected
                             ? "bg-accent text-foreground ring-1 ring-primary"
                             : ""

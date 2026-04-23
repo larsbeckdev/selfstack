@@ -11,18 +11,22 @@ import {
   Pencil,
   Eye,
   Copy,
+  RotateCcw,
 } from "lucide-react";
 import type { Board } from "@/generated/prisma/client";
 import type { BoardMemberWithUser, BoardRole } from "@/types";
 import {
   updateBoard,
   deleteBoard,
+  resetBoardColors,
   getBoardMembers,
   addBoardMember,
   updateBoardMemberRole,
   removeBoardMember,
   getAvailableUsersForBoard,
 } from "@/lib/actions/board";
+import { getAppUrl } from "@/lib/actions/settings";
+import { copyToClipboard } from "@/lib/clipboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,7 +140,25 @@ function GeneralTab({
   const [isPublic, setIsPublic] = useState(board.isPublic);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [origin, setOrigin] = useState<string>("");
   const { t } = useTranslation();
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = await getAppUrl();
+        if (!cancelled) setOrigin(url);
+      } catch {
+        if (!cancelled && typeof window !== "undefined") {
+          setOrigin(window.location.origin);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const slugValid = /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 
@@ -182,10 +204,16 @@ function GeneralTab({
     }
   };
 
-  const copyLink = () => {
-    const url = `${window.location.origin}/board/${board.slug}`;
-    navigator.clipboard.writeText(url);
-    toast.success(t("common.linkCopied"));
+  const copyLink = async () => {
+    const base =
+      origin || (typeof window !== "undefined" ? window.location.origin : "");
+    const url = `${base}/board/${board.slug}`;
+    const ok = await copyToClipboard(url);
+    if (ok) {
+      toast.success(t("common.linkCopied"));
+    } else {
+      toast.error(t("error.copyFailed"));
+    }
   };
 
   const handleDelete = async () => {
@@ -197,6 +225,16 @@ function GeneralTab({
       router.push("/dashboard");
     } catch {
       toast.error(t("error.deleteFailed"));
+    }
+  };
+
+  const handleResetColors = async () => {
+    try {
+      await resetBoardColors(board.id);
+      router.refresh();
+      toast.success(t("board.resetColorsDone"));
+    } catch {
+      toast.error(t("error.updateFailed"));
     }
   };
 
@@ -222,7 +260,7 @@ function GeneralTab({
           <div className="space-y-2">
             <Label htmlFor="settings-board-slug">{t("board.linkSlug")}</Label>
             <div className="flex items-center gap-0">
-              <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
+              <span className="flex h-8 items-center rounded-l-lg border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
                 /board/
               </span>
               <Input
@@ -288,13 +326,49 @@ function GeneralTab({
       <div className="flex items-center gap-2 rounded-lg border p-4">
         <Input
           readOnly
-          value={`${typeof window !== "undefined" ? window.location.origin : ""}/board/${board.slug}`}
+          value={`${origin || (typeof window !== "undefined" ? window.location.origin : "")}/board/${board.slug}`}
           className="text-xs"
         />
         <Button variant="outline" size="sm" onClick={copyLink}>
           <Copy className="mr-2 size-3.5" />
           {t("common.copy")}
         </Button>
+      </div>
+
+      {/* Reset Colors */}
+      <div className="rounded-lg border p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">{t("board.resetColors")}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("board.resetColorsDesc")}
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <RotateCcw className="mr-2 size-3.5" />
+                {t("colorPicker.reset")}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t("board.resetColorsConfirmTitle")}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("board.resetColorsConfirmDesc")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetColors}>
+                  {t("colorPicker.reset")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
       {/* Delete */}

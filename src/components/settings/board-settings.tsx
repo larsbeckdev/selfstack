@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Globe, Lock, Trash2, Copy, Pencil } from "lucide-react";
 import type { Board } from "@/generated/prisma/client";
 import { updateBoard, deleteBoard } from "@/lib/actions/board";
+import { getAppUrl } from "@/lib/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -85,7 +86,13 @@ function BoardSettingsRow({ board }: { board: Board }) {
   };
 
   const copyPublicLink = async () => {
-    const url = `${window.location.origin}/board/${board.slug}`;
+    let origin = "";
+    try {
+      origin = await getAppUrl();
+    } catch {
+      origin = typeof window !== "undefined" ? window.location.origin : "";
+    }
+    const url = `${origin}/board/${board.slug}`;
     const ok = await copyToClipboard(url);
     if (ok) toast.success(t("common.linkCopied"));
     else toast.error(t("common.copyFailed"));

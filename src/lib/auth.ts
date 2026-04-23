@@ -93,3 +93,48 @@ export async function requireAdmin() {
   }
   return data;
 }
+
+// ─── 2FA pending-login cookie ────────────────────────────────────────────────
+// Short-lived signed cookie holding the user id between password step and
+// TOTP step. Never grants access to protected data; only allows completing
+// the login handshake.
+
+const PENDING_COOKIE = "selfstack-2fa-pending";
+const PENDING_DURATION = 5 * 60 * 1000; // 5 minutes
+
+export async function createPendingTwoFactor(userId: string) {
+  const token = await new SignJWT({ userId, kind: "2fa-pending" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("5m")
+    .setIssuedAt()
+    .sign(secret);
+
+  const cookieStore = await cookies();
+  cookieStore.set(PENDING_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.SECURE_COOKIES === "true",
+    sameSite: "lax",
+    expires: new Date(Date.now() + PENDING_DURATION),
+    path: "/",
+  });
+}
+
+export async function readPendingTwoFactor(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(PENDING_COOKIE)?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.kind !== "2fa-pending" || typeof payload.userId !== "string") {
+      return null;
+    }
+    return payload.userId;
+  } catch {
+    return null;
+  }
+}
+
+export async function clearPendingTwoFactor() {
+  const cookieStore = await cookies();
+  cookieStore.delete(PENDING_COOKIE);
+}

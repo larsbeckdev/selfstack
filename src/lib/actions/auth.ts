@@ -4,7 +4,13 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { createSession, deleteSession } from "@/lib/auth";
+import {
+  createSession,
+  deleteSession,
+  createPendingTwoFactor,
+  readPendingTwoFactor,
+  clearPendingTwoFactor,
+} from "@/lib/auth";
 import { isRegistrationEnabled } from "@/lib/actions/settings";
 
 const loginSchema = z.object({
@@ -35,6 +41,7 @@ const registerSchema = z
 export type AuthState = {
   error?: string;
   fieldErrors?: Record<string, string[]>;
+  requires2FA?: boolean;
 };
 
 export async function login(
@@ -59,6 +66,11 @@ export async function login(
     return { error: "Ungültige Anmeldedaten" };
   }
 
+  if (user.twoFactorEnabled && user.twoFactorSecret) {
+    await createPendingTwoFactor(user.id);
+    return { requires2FA: true };
+  }
+
   await createSession(user.id);
 
   if (user.mustChangePassword) {
@@ -66,6 +78,45 @@ export async function login(
   }
 
   redirect("/dashboard");
+}
+
+export async function loginVerify2FA(
+  _prevState: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const token = String(formData.get("token") ?? "").trim();
+  if (!/^\d{6}$/.test(token)) {
+    return { error: "Code muss 6 Ziffern haben" };
+  }
+
+  const userId = await readPendingTwoFactor();
+  if (!userId) {
+    return { error: "Sitzung abgelaufen, bitte erneut anmelden" };
+  }
+
+  const user = await db.user.findUnique({ where: { id: userId } });
+  if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+    await clearPendingTwoFactor();
+    return { error: "2FA nicht aktiv" };
+  }
+
+  const { verifyTotp } = await import("@/lib/totp");
+  if (!verifyTotp(user.twoFactorSecret, token)) {
+    return { error: "Ungültiger Code" };
+  }
+
+  await clearPendingTwoFactor();
+  await createSession(user.id);
+
+  if (user.mustChangePassword) {
+    redirect("/change-password");
+  }
+  redirect("/dashboard");
+}
+
+export async function cancelPendingLogin() {
+  await clearPendingTwoFactor();
+  redirect("/login");
 }
 
 export async function register(

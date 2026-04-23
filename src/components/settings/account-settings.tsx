@@ -30,8 +30,15 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { TwoFactorCard } from "@/components/settings/two-factor-card";
 
-export function AccountSettings({ user }: { user: SessionUser }) {
+export function AccountSettings({
+  user,
+  twoFactorEnabled,
+}: {
+  user: SessionUser;
+  twoFactorEnabled: boolean;
+}) {
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -101,6 +108,8 @@ export function AccountSettings({ user }: { user: SessionUser }) {
           </CardFooter>
         </form>
       </Card>
+
+      <TwoFactorCard initialEnabled={twoFactorEnabled} />
 
       <Card className="border-destructive/50">
         <CardHeader>

@@ -104,13 +104,14 @@ function GroupDropCell({
       style={{
         gridColumn: `${x + 1}`,
         gridRow: `${y + 1}`,
+        minHeight: 72,
         zIndex: 1,
       }}
       className={cn(
         "pointer-events-auto rounded-md border border-dashed transition-colors",
         isOver
           ? "border-primary/60 bg-primary/10"
-          : "border-border/30 bg-muted/20",
+          : "border-border/40 bg-background/60",
       )}
     />
   );

@@ -25,39 +25,9 @@ import {
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
 import { ColorPicker } from "@/components/ui/color-picker";
+import { ColorFields } from "@/components/ui/color-fields";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
-
-function ColorInput({
-  id,
-  label,
-  value,
-  onChange,
-  disabled,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="space-y-1">
-      <Label htmlFor={id} className="text-xs">
-        {label}
-      </Label>
-      <div className={disabled ? "pointer-events-none opacity-50" : undefined}>
-        <ColorPicker
-          value={value}
-          onChange={(v) => onChange(v ?? "")}
-          allowNone={false}
-          size="sm"
-          label={label}
-        />
-      </div>
-    </div>
-  );
-}
 
 export function AddTileDialog({
   categories,
@@ -77,8 +47,8 @@ export function AddTileDialog({
   const [icon, setIcon] = useState("square");
   const [iconUrl, setIconUrl] = useState<string | null>(null);
   const [color, setColor] = useState("#6366f1");
-  const [bgColor, setBgColor] = useState("");
-  const [borderColor, setBorderColor] = useState("");
+  const [bgColor, setBgColor] = useState<string | null>(null);
+  const [borderColor, setBorderColor] = useState<string | null>(null);
   const [borderMatchesBg, setBorderMatchesBg] = useState(false);
   const [url, setUrl] = useState("");
   const [description, setDescription] = useState("");
@@ -109,10 +79,10 @@ export function AddTileDialog({
         icon,
         iconUrl,
         color,
-        bgColor: bgColor || undefined,
+        bgColor: bgColor ?? null,
         borderColor: borderMatchesBg
-          ? bgColor || undefined
-          : borderColor || undefined,
+          ? (bgColor ?? null)
+          : (borderColor ?? null),
         borderMatchesBg,
         url: url || undefined,
         description: description || undefined,
@@ -127,8 +97,8 @@ export function AddTileDialog({
       setIcon("square");
       setIconUrl(null);
       setColor("#6366f1");
-      setBgColor("");
-      setBorderColor("");
+      setBgColor(null);
+      setBorderColor(null);
       setBorderMatchesBg(false);
       setUrl("");
       setDescription("");
@@ -188,45 +158,24 @@ export function AddTileDialog({
 
           {/* Colors */}
           <div className="space-y-3">
-            <Label>{t("tile.colors")}</Label>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <ColorInput
-                id="tile-color"
-                label={t("tile.colorIcon")}
+            <div className="space-y-2">
+              <Label htmlFor="tile-color">{t("tile.colorIcon")}</Label>
+              <ColorPicker
                 value={color}
-                onChange={setColor}
-              />
-              <ColorInput
-                id="tile-bg"
-                label={t("tile.colorBg")}
-                value={bgColor || color + "18"}
-                onChange={(v) => setBgColor(v)}
-              />
-              <ColorInput
-                id="tile-border"
-                label={t("tile.colorBorder")}
-                value={
-                  borderMatchesBg
-                    ? bgColor || color + "40"
-                    : borderColor || color + "40"
-                }
-                onChange={(v) => setBorderColor(v)}
-                disabled={borderMatchesBg}
+                onChange={(v) => setColor(v ?? "#6366f1")}
+                allowNone={false}
+                label={t("tile.colorIcon")}
               />
             </div>
-            <div className="flex items-center gap-2">
-              <Switch
-                id="border-match"
-                checked={borderMatchesBg}
-                onCheckedChange={(checked) => {
-                  setBorderMatchesBg(checked);
-                  if (checked && bgColor) setBorderColor(bgColor);
-                }}
-              />
-              <Label htmlFor="border-match" className="text-xs">
-                {t("tile.borderMatchesBg")}
-              </Label>
-            </div>
+            <ColorFields
+              bgColor={bgColor}
+              setBgColor={setBgColor}
+              borderColor={borderColor}
+              setBorderColor={setBorderColor}
+              borderMatchesBg={borderMatchesBg}
+              setBorderMatchesBg={setBorderMatchesBg}
+              idPrefix="tile"
+            />
           </div>
 
           <div className="space-y-2">

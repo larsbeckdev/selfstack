@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { IconPicker } from "@/components/icon-picker";
+import { ColorFields } from "@/components/ui/color-fields";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -41,6 +42,9 @@ export function AddGroupDialog({
   const [categoryId, setCategoryId] = useState(
     defaultCategoryId ?? categories[0]?.id ?? "",
   );
+  const [bgColor, setBgColor] = useState<string | null>(null);
+  const [borderColor, setBorderColor] = useState<string | null>(null);
+  const [borderMatchesBg, setBorderMatchesBg] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -57,12 +61,22 @@ export function AddGroupDialog({
 
     setLoading(true);
     try {
-      await createGroup({ name, icon, categoryId });
+      await createGroup({
+        name,
+        icon,
+        categoryId,
+        bgColor,
+        borderColor: borderMatchesBg ? bgColor : borderColor,
+        borderMatchesBg,
+      });
       toast.success(t("group.created"));
       router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("grid-3x3");
+      setBgColor(null);
+      setBorderColor(null);
+      setBorderMatchesBg(false);
     } catch {
       toast.error(t("error.createFailed"));
     } finally {
@@ -109,6 +123,15 @@ export function AddGroupDialog({
             <Label>{t("tile.icon")}</Label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
+          <ColorFields
+            bgColor={bgColor}
+            setBgColor={setBgColor}
+            borderColor={borderColor}
+            setBorderColor={setBorderColor}
+            borderMatchesBg={borderMatchesBg}
+            setBorderMatchesBg={setBorderMatchesBg}
+            idPrefix="grp"
+          />
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading ? t("common.creating") : t("common.create")}

@@ -25,7 +25,12 @@ function PublicShellInner({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-svh flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
+        <div
+          className={
+            containerMode === "boxed"
+              ? "mx-auto flex h-14 w-full max-w-screen-xl items-center justify-between px-4"
+              : "flex h-14 w-full items-center justify-between px-4"
+          }>
           <Link href="/board" className="flex items-center gap-2 font-semibold">
             <Layers className="size-5 text-primary" />
             <div className="flex flex-col leading-tight">

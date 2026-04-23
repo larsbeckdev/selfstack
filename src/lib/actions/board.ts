@@ -4,7 +4,15 @@ import { revalidatePath, refresh } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
-import { CATEGORY_COLS, getCategoryWidth } from "@/lib/grid";
+import {
+  CATEGORY_COLS,
+  getCategoryInnerCols,
+  getCategoryWidth,
+  getGroupTileCols,
+  getGroupWidth,
+  getTileSize,
+  TILE_SPANS,
+} from "@/lib/grid";
 import type { BoardRole } from "@/types";
 
 async function revalidateBoard(boardId: string) {
@@ -180,6 +188,31 @@ export async function deleteBoard(boardId: string) {
   refresh();
 }
 
+export async function resetBoardColors(boardId: string) {
+  await requireBoardAccess(boardId, "editor");
+
+  const board = await db.board.findUnique({ where: { id: boardId } });
+  if (!board) throw new Error("Board not found");
+
+  await db.$transaction([
+    db.category.updateMany({
+      where: { boardId },
+      data: { bgColor: null, borderColor: null, borderMatchesBg: false },
+    }),
+    db.group.updateMany({
+      where: { category: { boardId } },
+      data: { bgColor: null, borderColor: null, borderMatchesBg: false },
+    }),
+    db.tile.updateMany({
+      where: { group: { category: { boardId } } },
+      data: { bgColor: null, borderColor: null, borderMatchesBg: false },
+    }),
+  ]);
+
+  revalidatePath(`/board/${board.slug}`);
+  refresh();
+}
+
 export async function getBoards() {
   const { user } = await requireAuth();
   return db.board.findMany({
@@ -238,8 +271,10 @@ const categorySchema = z.object({
   name: z.string().min(1).max(100),
   icon: z.string().default("folder"),
   iconUrl: iconUrlSchema,
-  color: z.string().default("#6366f1"),
+  color: z.string().default("#6366f1").optional(),
   bgColor: z.string().nullable().optional(),
+  borderColor: z.string().nullable().optional(),
+  borderMatchesBg: z.boolean().default(false).optional(),
   x: z.number().int().min(0).default(0).optional(),
   y: z.number().int().min(0).default(0).optional(),
   w: z.number().int().min(1).max(48).default(6).optional(),
@@ -314,6 +349,8 @@ const groupSchema = z.object({
   icon: z.string().default("grid-3x3"),
   iconUrl: iconUrlSchema,
   bgColor: z.string().nullable().optional(),
+  borderColor: z.string().nullable().optional(),
+  borderMatchesBg: z.boolean().default(false).optional(),
   layout: z.enum(["list", "snap"]).default("snap").optional(),
   x: z.number().int().min(0).default(0).optional(),
   y: z.number().int().min(0).default(0).optional(),
@@ -358,7 +395,7 @@ export async function updateGroup(
 ) {
   const group = await db.group.findUnique({
     where: { id: groupId },
-    include: { category: true },
+    include: { category: true, tiles: true },
   });
   if (!group) throw new Error("Group not found");
   await requireBoardAccess(group.category.boardId, "editor");
@@ -367,6 +404,50 @@ export async function updateGroup(
     where: { id: groupId },
     data,
   });
+
+  // When switching from list → snap, tile x/y may overlap because list mode
+  // ignores positions. Reflow tiles into non-overlapping slots, preserving
+  // their current order.
+  if (data.layout === "snap" && group.layout !== "snap") {
+    const catCols = getCategoryInnerCols(getCategoryWidth(group.category.w));
+    const tileCols = getGroupTileCols(catCols, getGroupWidth(updated.w));
+
+    type Placed = { x: number; y: number; w: number; h: number };
+    const placed: Placed[] = [];
+    const overlaps = (a: Placed, b: Placed) =>
+      a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+
+    // Keep current order (y asc, x asc) to remain stable.
+    const ordered = [...group.tiles].sort(
+      (a, b) => (a.y ?? 0) - (b.y ?? 0) || (a.x ?? 0) - (b.x ?? 0),
+    );
+
+    for (const tile of ordered) {
+      const span = TILE_SPANS[getTileSize(tile)];
+      const w = Math.min(span.w, tileCols);
+      const h = span.h;
+      // Scan top-to-bottom, left-to-right for the first free slot.
+      let fx = 0;
+      let fy = 0;
+      outer: for (let y = 0; y < 10000; y++) {
+        for (let x = 0; x <= tileCols - w; x++) {
+          const candidate: Placed = { x, y, w, h };
+          if (!placed.some((p) => overlaps(candidate, p))) {
+            fx = x;
+            fy = y;
+            break outer;
+          }
+        }
+      }
+      placed.push({ x: fx, y: fy, w, h });
+      if ((tile.x ?? 0) !== fx || (tile.y ?? 0) !== fy) {
+        await db.tile.update({
+          where: { id: tile.id },
+          data: { x: fx, y: fy },
+        });
+      }
+    }
+  }
 
   await revalidateBoard(group.category.boardId);
   refresh();
@@ -594,10 +675,49 @@ export async function duplicateTile(tileId: string) {
   if (!tile) throw new Error("Tile not found");
   await requireBoardAccess(tile.group.category.boardId, "editor");
 
-  const maxY = await db.tile.aggregate({
+  const siblings = await db.tile.findMany({
     where: { groupId: tile.groupId },
-    _max: { y: true },
+    select: { id: true, x: true, y: true, size: true },
   });
+
+  const catCols = getCategoryInnerCols(getCategoryWidth(tile.group.category.w));
+  const tileCols = getGroupTileCols(catCols, getGroupWidth(tile.group.w));
+  const srcSpan = TILE_SPANS[getTileSize(tile)];
+
+  const overlapsAt = (x: number, y: number) => {
+    for (const o of siblings) {
+      const oSpan = TILE_SPANS[getTileSize(o)];
+      const ox = o.x ?? 0;
+      const oy = o.y ?? 0;
+      if (
+        x < ox + oSpan.w &&
+        x + srcSpan.w > ox &&
+        y < oy + oSpan.h &&
+        y + srcSpan.h > oy
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  const startX = Math.max(0, Math.min(tile.x ?? 0, tileCols - srcSpan.w));
+  const startY = (tile.y ?? 0) + srcSpan.h;
+
+  let newX = startX;
+  let newY = startY;
+  // Scan downward, row by row, left-to-right. Skip the source tile itself.
+  outer: for (let y = startY; y < startY + 1000; y++) {
+    for (let x = 0; x <= tileCols - srcSpan.w; x++) {
+      // First row: prefer to stay in same column as source, then fallback to scan
+      const cx = y === startY && x === 0 ? startX : x;
+      if (!overlapsAt(cx, y)) {
+        newX = cx;
+        newY = y;
+        break outer;
+      }
+    }
+  }
 
   const copy = await db.tile.create({
     data: {
@@ -611,8 +731,8 @@ export async function duplicateTile(tileId: string) {
       url: tile.url,
       description: tile.description,
       size: tile.size,
-      x: 0,
-      y: (maxY._max.y ?? -1) + 1,
+      x: newX,
+      y: newY,
       groupId: tile.groupId,
     },
   });
@@ -644,6 +764,8 @@ export async function duplicateGroup(groupId: string) {
       icon: group.icon,
       iconUrl: group.iconUrl,
       bgColor: group.bgColor,
+      borderColor: group.borderColor,
+      borderMatchesBg: group.borderMatchesBg,
       layout: group.layout,
       x: 0,
       y: (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
@@ -699,10 +821,13 @@ export async function duplicateCategory(categoryId: string) {
     x: c.x,
     y: c.y,
     w: getCategoryWidth(c.w),
-    h: Math.max(1, c.h || 1),
+    // Categories occupy a single row in the board grid (gridRow: y+1). The
+    // stored `h` is unrelated to visual placement, so always treat as 1 for
+    // collision math.
+    h: 1,
   }));
   const origW = getCategoryWidth(category.w);
-  const origH = Math.max(1, category.h || 1);
+  const origH = 1;
   existing.push({ x: category.x, y: category.y, w: origW, h: origH });
   const newW = origW;
   const newH = origH;
@@ -721,6 +846,7 @@ export async function duplicateCategory(categoryId: string) {
     { x: category.x + origW, y: category.y }, // right
     { x: category.x - newW, y: category.y }, // left
     { x: category.x, y: category.y + origH }, // below
+    { x: category.x, y: category.y - origH }, // above
   ];
   const hit = preferred.find((p) => fits(p.x, p.y));
   if (hit) {
@@ -744,6 +870,9 @@ export async function duplicateCategory(categoryId: string) {
       icon: category.icon,
       iconUrl: category.iconUrl,
       color: category.color,
+      bgColor: category.bgColor,
+      borderColor: category.borderColor,
+      borderMatchesBg: category.borderMatchesBg,
       x: nextX,
       y: nextY,
       w: origW,
@@ -755,6 +884,8 @@ export async function duplicateCategory(categoryId: string) {
           icon: group.icon,
           iconUrl: group.iconUrl,
           bgColor: group.bgColor,
+          borderColor: group.borderColor,
+          borderMatchesBg: group.borderMatchesBg,
           layout: group.layout,
           x: group.x,
           y: group.y,

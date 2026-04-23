@@ -23,6 +23,8 @@ model User {
   customColors       String?
   theme              String   @default("system") // light | dark | system
   sidebarOpen        Boolean  @default(true)
+  twoFactorEnabled   Boolean  @default(false)
+  twoFactorSecret    String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -78,37 +80,41 @@ model BoardMember {
 }
 
 model Category {
-  id      String  @id @default(cuid())
-  name    String
-  icon    String  @default("folder")
-  iconUrl String?
-  color   String  @default("#6366f1")
-  bgColor String?
+  id              String  @id @default(cuid())
+  name            String
+  icon            String  @default("folder")
+  iconUrl         String?
+  color           String  @default("#6366f1")
+  bgColor         String?
+  borderColor     String?
+  borderMatchesBg Boolean @default(false)
   /// Position on the board grid (in grid units, 1u = 72px).
-  x       Int     @default(0)
-  y       Int     @default(0)
-  w       Int     @default(12)
-  h       Int     @default(4)
-  boardId String
+  x               Int     @default(0)
+  y               Int     @default(0)
+  w               Int     @default(12)
+  h               Int     @default(4)
+  boardId         String
 
   board  Board   @relation(fields: [boardId], references: [id], onDelete: Cascade)
   groups Group[]
 }
 
 model Group {
-  id         String  @id @default(cuid())
-  name       String
-  icon       String  @default("grid-3x3")
-  iconUrl    String?
-  bgColor    String?
+  id              String  @id @default(cuid())
+  name            String
+  icon            String  @default("grid-3x3")
+  iconUrl         String?
+  bgColor         String?
+  borderColor     String?
+  borderMatchesBg Boolean @default(false)
   /// "grid" | "list"
-  layout     String  @default("grid")
+  layout          String  @default("grid")
   /// Position inside the parent category grid.
-  x          Int     @default(0)
-  y          Int     @default(0)
-  w          Int     @default(4)
-  h          Int     @default(4)
-  categoryId String
+  x               Int     @default(0)
+  y               Int     @default(0)
+  w               Int     @default(4)
+  h               Int     @default(4)
+  categoryId      String
 
   category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   tiles    Tile[]

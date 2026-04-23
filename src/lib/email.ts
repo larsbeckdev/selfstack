@@ -1,20 +1,74 @@
-import nodemailer from "nodemailer";
+import nodemailer, { type Transporter } from "nodemailer";
+import { db } from "@/lib/db";
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || "localhost",
-  port: Number(process.env.SMTP_PORT || 587),
-  secure: process.env.SMTP_SECURE === "true",
-  ...(process.env.SMTP_USER && process.env.SMTP_PASS
-    ? {
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      }
-    : {}),
-});
+export type SmtpConfig = {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  pass: string;
+  from: string;
+};
 
-const FROM = process.env.SMTP_FROM || "Selfstack <noreply@selfstack.local>";
+const SMTP_KEYS = {
+  host: "smtp_host",
+  port: "smtp_port",
+  secure: "smtp_secure",
+  user: "smtp_user",
+  pass: "smtp_pass",
+  from: "smtp_from",
+} as const;
+
+async function readSetting(key: string): Promise<string | null> {
+  const row = await db.systemSetting.findUnique({ where: { key } });
+  return row?.value ?? null;
+}
+
+/**
+ * Load SMTP configuration from the database, falling back to environment
+ * variables (legacy deployments). Includes the password — server-only.
+ */
+export async function loadSmtpConfig(): Promise<SmtpConfig> {
+  const [host, port, secure, user, pass, from] = await Promise.all([
+    readSetting(SMTP_KEYS.host),
+    readSetting(SMTP_KEYS.port),
+    readSetting(SMTP_KEYS.secure),
+    readSetting(SMTP_KEYS.user),
+    readSetting(SMTP_KEYS.pass),
+    readSetting(SMTP_KEYS.from),
+  ]);
+
+  return {
+    host: host || process.env.SMTP_HOST || "localhost",
+    port: Number(port ?? process.env.SMTP_PORT ?? 587),
+    secure: (secure ?? process.env.SMTP_SECURE) === "true",
+    user: user || process.env.SMTP_USER || "",
+    pass: pass || process.env.SMTP_PASS || "",
+    from:
+      from || process.env.SMTP_FROM || "Selfstack <noreply@selfstack.local>",
+  };
+}
+
+async function getTransporter(): Promise<{
+  transporter: Transporter;
+  from: string;
+}> {
+  const cfg = await loadSmtpConfig();
+  const transporter = nodemailer.createTransport({
+    host: cfg.host,
+    port: cfg.port,
+    secure: cfg.secure,
+    ...(cfg.user && cfg.pass
+      ? { auth: { user: cfg.user, pass: cfg.pass } }
+      : {}),
+  });
+  return { transporter, from: cfg.from };
+}
+
+export async function verifySmtpConfig(): Promise<void> {
+  const { transporter } = await getTransporter();
+  await transporter.verify();
+}
 
 function baseLayout(content: string): string {
   return `<!DOCTYPE html>
@@ -78,8 +132,9 @@ export async function sendWelcomeEmail(
     <p class="muted">Falls du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.</p>
   `);
 
+  const { transporter, from } = await getTransporter();
   await transporter.sendMail({
-    from: FROM,
+    from,
     to,
     subject: "Dein Selfstack-Konto wurde erstellt",
     html,
@@ -105,8 +160,9 @@ export async function sendPasswordResetEmail(
     </p>
   `);
 
+  const { transporter, from } = await getTransporter();
   await transporter.sendMail({
-    from: FROM,
+    from,
     to,
     subject: "Dein Selfstack-Passwort wurde zurückgesetzt",
     html,
@@ -127,4 +183,18 @@ export function generatePassword(length = 12): string {
   const array = new Uint8Array(length);
   crypto.getRandomValues(array);
   return Array.from(array, (b) => chars[b % chars.length]).join("");
+}
+
+export async function sendTestEmail(to: string): Promise<void> {
+  const { transporter, from } = await getTransporter();
+  const html = baseLayout(`
+    <p>Dies ist eine <strong>Test-E-Mail</strong> von Selfstack.</p>
+    <p class="muted">Wenn du diese Nachricht erhältst, ist die SMTP-Konfiguration korrekt.</p>
+  `);
+  await transporter.sendMail({
+    from,
+    to,
+    subject: "Selfstack SMTP-Test",
+    html,
+  });
 }

@@ -148,6 +148,8 @@ const en: Record<TranslationKey, string> = {
   "group.tileCount": "Tiles",
   "group.width": "Width (columns)",
   "group.bgColor": "Background color",
+  "group.borderColor": "Border color",
+  "group.borderMatchesBg": "Border = Background",
   "group.noTiles": "No tiles",
   "group.changeViewFailed": "Failed to change view",
   "group.namePlaceholder": "e.g. Frontend",
@@ -240,6 +242,27 @@ const en: Record<TranslationKey, string> = {
     "This action cannot be undone. All your boards, categories, groups and tiles will be deleted.",
   "settings.deleteConfirm": "Delete permanently",
   "settings.changing": "Changing...",
+  "settings.currentPasswordRequired": "Current password required",
+  "settings.twoFactor": "Two-factor authentication",
+  "settings.twoFactorDesc":
+    "Extra protection at sign-in using a one-time code from your authenticator app.",
+  "settings.twoFactorActive":
+    "2FA is enabled. Confirm current password to disable.",
+  "settings.twoFactorInactive": "2FA is currently disabled.",
+  "settings.twoFactorEnable": "Enable 2FA",
+  "settings.twoFactorDisable": "Disable 2FA",
+  "settings.twoFactorSetupDesc":
+    "Scan the QR code with an authenticator app (e.g. Google Authenticator, 1Password, Aegis) or enter the code manually.",
+  "settings.twoFactorManualCode": "Manual code",
+  "settings.twoFactorConfirm": "Confirm code",
+  "settings.twoFactorEnabled": "2FA enabled",
+  "settings.twoFactorDisabled": "2FA disabled",
+  "auth.twoFactorTitle": "Two-factor authentication",
+  "auth.twoFactorDesc": "Enter the 6-digit code from your authenticator app.",
+  "auth.twoFactorCode": "Code",
+  "auth.twoFactorCodeInvalid": "Code must be 6 digits",
+  "auth.verify": "Verify",
+  "auth.verifying": "Verifying…",
 
   // Admin
   "admin.title": "Administration",
@@ -257,6 +280,29 @@ const en: Record<TranslationKey, string> = {
   "admin.appUrlDesc":
     "Public base URL of the app (used in outgoing emails for login links).",
   "admin.appUrlSaved": "App URL saved",
+  "admin.smtpTitle": "SMTP / Email",
+  "admin.smtpDesc":
+    "SMTP server for outgoing email (password reset, account creation).",
+  "admin.smtpHost": "Host",
+  "admin.smtpPort": "Port",
+  "admin.smtpPortInvalid": "Port must be between 1 and 65535",
+  "admin.smtpSecure": "TLS (secure)",
+  "admin.smtpSecureDesc":
+    "Enable for port 465 (implicit TLS). Leave off for 587/STARTTLS.",
+  "admin.smtpUser": "User",
+  "admin.smtpPassword": "Password",
+  "admin.smtpPasswordSet": "•••••• (stored, leave empty to keep)",
+  "admin.smtpPasswordEmpty": "No password set",
+  "admin.smtpClearPassword": "Remove stored password",
+  "admin.smtpFrom": "From address",
+  "admin.smtpSaved": "SMTP settings saved",
+  "admin.smtpTest": "Send test email",
+  "admin.smtpTestDesc":
+    "Sends a test message to the given address using the currently stored configuration.",
+  "admin.smtpTestEmailRequired": "Please provide a recipient address",
+  "admin.smtpSendTest": "Send test",
+  "admin.smtpTesting": "Sending…",
+  "admin.smtpTestSent": "Test email sent",
   "admin.userManagement": "User Management",
   "admin.usersRegistered": "users registered",
   "admin.createUser": "Create user",
@@ -317,6 +363,7 @@ const en: Record<TranslationKey, string> = {
   "error.deleteFailed": "Deletion failed",
   "error.duplicateFailed": "Duplication failed",
   "error.changeFailed": "Change failed",
+  "error.copyFailed": "Copy failed",
 
   // Media
   "media.loadFailed": "Failed to load media",
@@ -369,6 +416,17 @@ const en: Record<TranslationKey, string> = {
   "board.saved": "Board saved",
   "category.width": "Width",
   "category.bgColor": "Background color",
+  "category.borderColor": "Border color",
+  "category.borderMatchesBg": "Border = Background",
+  "colorPicker.none": "No color",
+  "colorPicker.reset": "Reset colors",
+  "board.resetColors": "Reset all colors",
+  "board.resetColorsDesc":
+    "Removes all custom background and border colors from categories, groups and tiles on this board.",
+  "board.resetColorsConfirmTitle": "Reset all colors?",
+  "board.resetColorsConfirmDesc":
+    "All custom colors on this board will be removed. This action cannot be undone.",
+  "board.resetColorsDone": "Colors reset",
   "board.layoutFullwidth": "Full width",
   "board.layoutBoxed": "Boxed",
   "board.positionFree": "Free positioning (snap grid)",

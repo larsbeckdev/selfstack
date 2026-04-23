@@ -15,7 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
-import { ColorPicker } from "@/components/ui/color-picker";
+import { ColorFields } from "@/components/ui/color-fields";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -32,6 +32,10 @@ export function EditGroupDialog({
   const [icon, setIcon] = useState(group.icon);
   const [iconUrl, setIconUrl] = useState<string | null>(group.iconUrl ?? null);
   const [bgColor, setBgColor] = useState<string | null>(group.bgColor ?? null);
+  const [borderColor, setBorderColor] = useState<string | null>(
+    group.borderColor ?? null,
+  );
+  const [borderMatchesBg, setBorderMatchesBg] = useState(group.borderMatchesBg);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -40,7 +44,14 @@ export function EditGroupDialog({
     e.preventDefault();
     setLoading(true);
     try {
-      await updateGroup(group.id, { name, icon, iconUrl, bgColor });
+      await updateGroup(group.id, {
+        name,
+        icon,
+        iconUrl,
+        bgColor,
+        borderColor: borderMatchesBg ? bgColor : borderColor,
+        borderMatchesBg,
+      });
       toast.success(t("group.updated"));
       router.refresh();
       onOpenChange(false);
@@ -76,10 +87,15 @@ export function EditGroupDialog({
               onIconUrlChange={setIconUrl}
             />
           </div>
-          <div className="space-y-2">
-            <Label>{t("group.bgColor")}</Label>
-            <ColorPicker value={bgColor} onChange={setBgColor} />
-          </div>
+          <ColorFields
+            bgColor={bgColor}
+            setBgColor={setBgColor}
+            borderColor={borderColor}
+            setBorderColor={setBorderColor}
+            borderMatchesBg={borderMatchesBg}
+            setBorderMatchesBg={setBorderMatchesBg}
+            idPrefix="edit-grp"
+          />
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading ? t("common.saving") : t("common.save")}

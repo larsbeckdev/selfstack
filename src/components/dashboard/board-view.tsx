@@ -171,7 +171,20 @@ export function BoardView({
   // for auto-mode groups: closestCenter works better.
   const collisionDetection: CollisionDetection = useCallback(
     (args) => {
-      if (activeType === "tile" || activeType === "category") {
+      if (activeType === "tile") {
+        // Strict: tiles may only be dropped on actual drop targets (cells or
+        // other tiles) under the pointer. Reject drops in the grid gap.
+        return pointerWithin(args);
+      }
+      if (activeType === "category") {
+        const pointerCollisions = pointerWithin(args);
+        if (pointerCollisions.length > 0) return pointerCollisions;
+        return rectIntersection(args);
+      }
+      if (activeType === "group") {
+        // Drop where the cursor is, not where the overlay's center happens
+        // to land. Fall back to rect intersection if the pointer isn't over
+        // any droppable (e.g. at the edge of a target).
         const pointerCollisions = pointerWithin(args);
         if (pointerCollisions.length > 0) return pointerCollisions;
         return rectIntersection(args);

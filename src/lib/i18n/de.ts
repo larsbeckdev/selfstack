@@ -148,6 +148,8 @@ const de = {
   "group.tileCount": "Kacheln",
   "group.width": "Breite (Spalten)",
   "group.bgColor": "Hintergrundfarbe",
+  "group.borderColor": "Rahmenfarbe",
+  "group.borderMatchesBg": "Rahmen = Hintergrund",
   "group.noTiles": "Keine Kacheln",
   "group.changeViewFailed": "Fehler beim Ändern der Ansicht",
   "group.namePlaceholder": "z.B. Frontend",
@@ -240,6 +242,28 @@ const de = {
     "Diese Aktion kann nicht rückgängig gemacht werden. Alle deine Boards, Kategorien, Gruppen und Kacheln werden gelöscht.",
   "settings.deleteConfirm": "Endgültig löschen",
   "settings.changing": "Ändern...",
+  "settings.currentPasswordRequired": "Aktuelles Passwort erforderlich",
+  "settings.twoFactor": "Zwei-Faktor-Authentifizierung",
+  "settings.twoFactorDesc":
+    "Zusätzlicher Schutz beim Anmelden mit einem Einmal-Code aus deiner Authenticator-App.",
+  "settings.twoFactorActive":
+    "2FA ist aktiv. Zum Deaktivieren bitte aktuelles Passwort bestätigen.",
+  "settings.twoFactorInactive": "2FA ist derzeit nicht aktiviert.",
+  "settings.twoFactorEnable": "2FA aktivieren",
+  "settings.twoFactorDisable": "2FA deaktivieren",
+  "settings.twoFactorSetupDesc":
+    "Scanne den QR-Code mit einer Authenticator-App (z. B. Google Authenticator, 1Password, Aegis) oder trage den Code manuell ein.",
+  "settings.twoFactorManualCode": "Manueller Code",
+  "settings.twoFactorConfirm": "Code bestätigen",
+  "settings.twoFactorEnabled": "2FA aktiviert",
+  "settings.twoFactorDisabled": "2FA deaktiviert",
+  "auth.twoFactorTitle": "Zwei-Faktor-Authentifizierung",
+  "auth.twoFactorDesc":
+    "Gib den 6-stelligen Code aus deiner Authenticator-App ein.",
+  "auth.twoFactorCode": "Code",
+  "auth.twoFactorCodeInvalid": "Code muss 6 Ziffern haben",
+  "auth.verify": "Bestätigen",
+  "auth.verifying": "Prüfe…",
 
   // Admin
   "admin.title": "Administration",
@@ -258,6 +282,29 @@ const de = {
   "admin.appUrlDesc":
     "Öffentliche Basis-URL der App (wird in E-Mails als Login-Link verwendet).",
   "admin.appUrlSaved": "App-URL gespeichert",
+  "admin.smtpTitle": "SMTP / E-Mail",
+  "admin.smtpDesc":
+    "SMTP-Server für ausgehende E-Mails (Passwort-Reset, Kontoerstellung).",
+  "admin.smtpHost": "Host",
+  "admin.smtpPort": "Port",
+  "admin.smtpPortInvalid": "Port muss zwischen 1 und 65535 liegen",
+  "admin.smtpSecure": "TLS (secure)",
+  "admin.smtpSecureDesc":
+    "Aktivieren für Port 465 (impliziter TLS). Für 587/STARTTLS deaktiviert lassen.",
+  "admin.smtpUser": "Benutzer",
+  "admin.smtpPassword": "Passwort",
+  "admin.smtpPasswordSet": "•••••• (gespeichert, leer lassen = unverändert)",
+  "admin.smtpPasswordEmpty": "Kein Passwort gesetzt",
+  "admin.smtpClearPassword": "Gespeichertes Passwort entfernen",
+  "admin.smtpFrom": "Absender (From)",
+  "admin.smtpSaved": "SMTP-Einstellungen gespeichert",
+  "admin.smtpTest": "Test-E-Mail senden",
+  "admin.smtpTestDesc":
+    "Sendet eine Test-Nachricht an die angegebene Adresse mit der aktuell gespeicherten Konfiguration.",
+  "admin.smtpTestEmailRequired": "Bitte eine Empfänger-Adresse angeben",
+  "admin.smtpSendTest": "Test senden",
+  "admin.smtpTesting": "Sende…",
+  "admin.smtpTestSent": "Test-E-Mail versendet",
   "admin.userManagement": "Benutzerverwaltung",
   "admin.usersRegistered": "Benutzer registriert",
   "admin.createUser": "Benutzer erstellen",
@@ -320,6 +367,7 @@ const de = {
   "error.deleteFailed": "Fehler beim Löschen",
   "error.duplicateFailed": "Fehler beim Duplizieren",
   "error.changeFailed": "Fehler beim Ändern",
+  "error.copyFailed": "Kopieren fehlgeschlagen",
 
   // Media
   "media.loadFailed": "Fehler beim Laden der Medien",
@@ -372,6 +420,17 @@ const de = {
   "board.saved": "Board gespeichert",
   "category.width": "Breite",
   "category.bgColor": "Hintergrundfarbe",
+  "category.borderColor": "Rahmenfarbe",
+  "category.borderMatchesBg": "Rahmen = Hintergrund",
+  "colorPicker.none": "Keine Farbe",
+  "colorPicker.reset": "Farben zurücksetzen",
+  "board.resetColors": "Alle Farben zurücksetzen",
+  "board.resetColorsDesc":
+    "Entfernt alle eigenen Hintergrund- und Rahmenfarben von Kategorien, Gruppen und Kacheln auf diesem Board.",
+  "board.resetColorsConfirmTitle": "Alle Farben wirklich zurücksetzen?",
+  "board.resetColorsConfirmDesc":
+    "Alle eigenen Farben auf diesem Board werden entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+  "board.resetColorsDone": "Farben zurückgesetzt",
   "board.layoutFullwidth": "Volle Breite",
   "board.layoutBoxed": "Zentriert",
   "board.positionFree": "Frei positionieren (Snap-Raster)",

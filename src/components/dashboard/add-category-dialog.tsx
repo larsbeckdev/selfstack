@@ -14,7 +14,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { IconPicker } from "@/components/icon-picker";
-import { ColorPicker } from "@/components/ui/color-picker";
+import { ColorFields } from "@/components/ui/color-fields";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 
@@ -29,8 +29,9 @@ export function AddCategoryDialog({
 }) {
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("folder");
-  const [color, setColor] = useState("#6366f1");
   const [bgColor, setBgColor] = useState<string | null>(null);
+  const [borderColor, setBorderColor] = useState<string | null>(null);
+  const [borderMatchesBg, setBorderMatchesBg] = useState(false);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
@@ -41,14 +42,22 @@ export function AddCategoryDialog({
 
     setLoading(true);
     try {
-      await createCategory({ name, icon, color, bgColor, boardId });
+      await createCategory({
+        name,
+        icon,
+        bgColor,
+        borderColor: borderMatchesBg ? bgColor : borderColor,
+        borderMatchesBg,
+        boardId,
+      });
       toast.success(t("category.created"));
       router.refresh();
       onOpenChange(false);
       setName("");
       setIcon("folder");
-      setColor("#6366f1");
       setBgColor(null);
+      setBorderColor(null);
+      setBorderMatchesBg(false);
     } catch {
       toast.error(t("error.createFailed"));
     } finally {
@@ -77,18 +86,15 @@ export function AddCategoryDialog({
             <Label>{t("tile.icon")}</Label>
             <IconPicker value={icon} onChange={setIcon} />
           </div>
-          <div className="space-y-2">
-            <Label>{t("common.color")}</Label>
-            <ColorPicker
-              value={color}
-              onChange={(v) => setColor(v ?? "#6366f1")}
-              allowNone={false}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>{t("category.bgColor")}</Label>
-            <ColorPicker value={bgColor} onChange={setBgColor} />
-          </div>
+          <ColorFields
+            bgColor={bgColor}
+            setBgColor={setBgColor}
+            borderColor={borderColor}
+            setBorderColor={setBorderColor}
+            borderMatchesBg={borderMatchesBg}
+            setBorderMatchesBg={setBorderMatchesBg}
+            idPrefix="cat"
+          />
           <DialogFooter>
             <Button type="submit" disabled={loading}>
               {loading ? t("common.creating") : t("common.create")}
