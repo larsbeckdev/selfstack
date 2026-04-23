@@ -9,8 +9,10 @@ import {
   MoreHorizontal,
   Shield,
   Trash2,
+  UserMinus,
   UserPlus,
   User as UserIcon,
+  Building2,
 } from "lucide-react";
 import {
   updateUserRole,
@@ -20,6 +22,12 @@ import {
   adminSendPasswordEmail,
   getUserBoards,
 } from "@/lib/actions/settings";
+import {
+  addOrgMember,
+  updateOrgMemberRole,
+  removeOrgMember,
+  getUserOrganizations,
+} from "@/lib/actions/organization";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -88,7 +96,18 @@ type UserRow = {
   _count: { boards: number };
 };
 
-export function UserTable({ users }: { users: UserRow[] }) {
+type OrgOption = { id: string; name: string; slug: string };
+
+const ORG_ROLES = ["owner", "admin", "editor", "member"] as const;
+type OrgRole = (typeof ORG_ROLES)[number];
+
+export function UserTable({
+  users,
+  organizations,
+}: {
+  users: UserRow[];
+  organizations: OrgOption[];
+}) {
   const { t, locale } = useTranslation();
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
