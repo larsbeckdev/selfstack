@@ -271,6 +271,7 @@ const en: Record<TranslationKey, string> = {
   "admin.description": "Manage users and system settings",
   "admin.overview": "Overview",
   "admin.users": "Users",
+  "admin.organizations": "Organizations",
   "admin.systemSettings": "System",
   "admin.registeredUsers": "Registered users",
   "admin.totalBoards": "Total boards",
