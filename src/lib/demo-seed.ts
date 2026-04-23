@@ -82,7 +82,12 @@ export async function seedDemoData(): Promise<void> {
     statusCheck?: boolean;
     size?: "small" | "default" | "large";
   };
-  type GroupIn = { name: string; icon: string; tiles: TileIn[] };
+  type GroupIn = {
+    name: string;
+    icon: string;
+    layout?: "grid" | "list";
+    tiles: TileIn[];
+  };
   type CategoryIn = {
     name: string;
     icon: string;
@@ -136,6 +141,7 @@ export async function seedDemoData(): Promise<void> {
           data: {
             name: g.name,
             icon: g.icon,
+            layout: g.layout ?? "grid",
             x: gi % 2,
             y: Math.floor(gi / 2) * 4,
             w: 1,

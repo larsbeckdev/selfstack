@@ -29,6 +29,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+# catch-all for any stray log files at the repo root or subfolders
+*.log
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -51,3 +53,17 @@ prisma/*.db
 # sensitive files
 cookies.txt
 build.log
+b.log
+c.log
+
+# editor/OS scratch
+.vscode/
+.idea/
+Thumbs.db
+
+# prisma dev sqlite journals
+prisma/*.db-journal
+
+# local scratch / build artifacts sometimes produced in this repo
+/tsc-out
+/dist

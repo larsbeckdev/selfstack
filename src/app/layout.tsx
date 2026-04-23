@@ -9,7 +9,7 @@ import { ThemeSyncer } from "@/components/theme-syncer";
 import { LocaleProvider } from "@/components/locale-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DemoBanner } from "@/components/demo-banner";
-import { isDemoMode } from "@/lib/demo";
+import { isDemoMode, getDemoResetMinutes } from "@/lib/demo";
 import { getSession } from "@/lib/auth";
 import type { Locale } from "@/lib/i18n";
 import "./globals.css";
@@ -76,7 +76,7 @@ export default async function RootLayout({
           {hasSession && <ThemeSyncer initialTheme={theme} />}
           <LocaleProvider locale={locale}>
             <TooltipProvider>
-              <DemoBanner />
+              {isDemoMode() && <DemoBanner minutes={getDemoResetMinutes()} />}
               {children}
               <Toaster richColors position="bottom-right" />
             </TooltipProvider>
