@@ -272,6 +272,7 @@ const de = {
   "admin.description": "Verwalte Benutzer und Systemeinstellungen",
   "admin.overview": "Übersicht",
   "admin.users": "Benutzer",
+  "admin.organizations": "Organisationen",
   "admin.systemSettings": "System",
   "admin.registeredUsers": "Registrierte Benutzer",
   "admin.totalBoards": "Boards insgesamt",
