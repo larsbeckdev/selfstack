@@ -8,7 +8,6 @@ import {
   Settings,
   Shield,
   Plus,
-  Layers,
   Image as ImageIcon,
   MoreHorizontal,
   ExternalLink,
@@ -34,7 +33,6 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import {
@@ -150,9 +148,12 @@ export function AppSidebar({
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/dashboard">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Layers className="size-4" />
-                </div>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/selfstack_symbol.svg"
+                  alt="Selfstack"
+                  className="h-8 w-auto"
+                />
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">Selfstack</span>
                   <span className="truncate text-xs text-muted-foreground">
