@@ -1140,6 +1140,7 @@ export async function getAvailableUsersForBoard(boardId: string) {
     where: { id: boardId },
     select: {
       userId: true,
+      orgId: true,
       members: { select: { userId: true } },
     },
   });
@@ -1147,8 +1148,18 @@ export async function getAvailableUsersForBoard(boardId: string) {
 
   const excludeIds = [board.userId, ...board.members.map((m) => m.userId)];
 
+  // For org boards, restrict candidates to members of that organization
+  // so you cannot accidentally share org boards outside the org.
+  const where: {
+    id: { notIn: string[] };
+    orgMembers?: { some: { orgId: string } };
+  } = { id: { notIn: excludeIds } };
+  if (board.orgId) {
+    where.orgMembers = { some: { orgId: board.orgId } };
+  }
+
   return db.user.findMany({
-    where: { id: { notIn: excludeIds } },
+    where,
     select: { id: true, name: true, email: true, image: true },
     orderBy: { name: "asc" },
   });
