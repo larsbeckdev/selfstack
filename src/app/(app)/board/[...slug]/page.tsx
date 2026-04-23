@@ -11,6 +11,7 @@ export default async function BoardPage({
 }) {
   const { slug: slugParts } = await params;
   const slug = slugParts.join("/");
+  console.log("[board page] slug=", JSON.stringify(slug), "parts=", slugParts);
   const session = await getSession();
 
   // Unauthenticated visitors: only public boards are viewable (readonly).
