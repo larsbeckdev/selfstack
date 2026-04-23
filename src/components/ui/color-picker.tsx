@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/popover";
 import { ColorPickerPanel } from "@/components/ui/color-picker-panel";
 import { useTranslation } from "@/components/locale-provider";
+import { SHADCN_SWATCH_HEXES } from "@/lib/shadcn-palette";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -100,6 +101,7 @@ export function ColorPicker({
         <ColorPickerPanel
           value={value ?? "#7c3aed"}
           onChange={(v) => onChange(v)}
+          swatches={SHADCN_SWATCH_HEXES}
         />
         {allowNone && (
           <div className="flex items-center justify-end gap-2 border-t px-3 py-2">
