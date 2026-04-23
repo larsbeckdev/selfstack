@@ -81,7 +81,9 @@ async function checkDatabaseFile(): Promise<HealthCheck> {
       };
     }
     const rel = raw.slice(5).replace(/^\.\//, "");
-    const abs = path.isAbsolute(rel) ? rel : path.join(process.cwd(), "prisma", rel);
+    const abs = path.isAbsolute(rel)
+      ? rel
+      : path.join(process.cwd(), "prisma", rel);
     const stat = await fs.stat(abs);
     return {
       id: "database-file",
@@ -146,9 +148,7 @@ async function checkAppUrl(): Promise<HealthCheck> {
     return {
       id: "app-url",
       status: isLocal ? "warn" : "ok",
-      message: isLocal
-        ? "App-URL zeigt auf localhost"
-        : "App-URL konfiguriert",
+      message: isLocal ? "App-URL zeigt auf localhost" : "App-URL konfiguriert",
       details: { url },
     };
   } catch (err) {
@@ -160,7 +160,11 @@ async function checkAppUrl(): Promise<HealthCheck> {
   }
 }
 
-function tryConnect(host: string, port: number, timeoutMs: number): Promise<boolean> {
+function tryConnect(
+  host: string,
+  port: number,
+  timeoutMs: number,
+): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = new net.Socket();
     let done = false;

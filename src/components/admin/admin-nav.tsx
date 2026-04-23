@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Users, Cog, Building2 } from "lucide-react";
+import { BarChart3, Users, Cog, Building2, HeartPulse } from "lucide-react";
 import { useTranslation } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,7 @@ export function AdminNav() {
       icon: Building2,
     },
     { href: "/admin/settings", label: t("admin.systemSettings"), icon: Cog },
+    { href: "/admin/health", label: t("admin.health"), icon: HeartPulse },
   ];
 
   return (
