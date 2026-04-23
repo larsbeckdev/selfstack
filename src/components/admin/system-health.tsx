@@ -11,7 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getSystemHealth, type SystemHealth, type HealthStatus } from "@/lib/actions/health";
+import {
+  getSystemHealth,
+  type SystemHealth,
+  type HealthStatus,
+} from "@/lib/actions/health";
 import { useTranslation } from "@/components/locale-provider";
 import { cn } from "@/lib/utils";
 
@@ -33,16 +37,18 @@ function StatusIcon({ status }: { status: HealthStatus }) {
 }
 
 function StatusBadge({ status }: { status: HealthStatus }) {
-  const label = status === "ok" ? "OK" : status === "warn" ? "Warnung" : "Fehler";
+  const label =
+    status === "ok" ? "OK" : status === "warn" ? "Warnung" : "Fehler";
   return (
     <Badge
       variant="outline"
       className={cn(
         "font-medium",
-        status === "ok" && "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
-        status === "warn" && "border-amber-500/40 text-amber-600 dark:text-amber-400",
-        status === "error" &&
-          "border-destructive/40 text-destructive",
+        status === "ok" &&
+          "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
+        status === "warn" &&
+          "border-amber-500/40 text-amber-600 dark:text-amber-400",
+        status === "error" && "border-destructive/40 text-destructive",
       )}>
       {label}
     </Badge>
@@ -186,10 +192,7 @@ export function SystemHealthView({ initial }: { initial: SystemHealth }) {
               label={t("admin.healthUptime")}
               value={formatUptime(health.info.uptimeSeconds)}
             />
-            <InfoRow
-              label="RSS"
-              value={`${health.info.memoryRssMb} MB`}
-            />
+            <InfoRow label="RSS" value={`${health.info.memoryRssMb} MB`} />
             <InfoRow
               label="Heap"
               value={`${health.info.memoryHeapUsedMb} / ${health.info.memoryHeapTotalMb} MB`}
