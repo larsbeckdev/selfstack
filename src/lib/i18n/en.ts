@@ -348,6 +348,8 @@ const en: Record<TranslationKey, string> = {
   "admin.copiedToClipboard": "Copied to clipboard",
   "admin.resetFailed": "Reset failed",
   "admin.sendFailed": "Send failed",
+  "admin.viewBoards": "View boards",
+  "admin.viewBoardsDesc": "All boards owned by this user.",
 
   // Organizations
   "org.title": "Organizations",

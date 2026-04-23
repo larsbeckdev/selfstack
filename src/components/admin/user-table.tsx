@@ -75,6 +75,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useTranslation } from "@/components/locale-provider";
+import { DynamicIcon } from "@/components/dynamic-icon";
 import { toast } from "sonner";
 
 type UserRow = {
@@ -419,6 +420,13 @@ export function UserTable({ users }: { users: UserRow[] }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => openBoards(user)}
+                          disabled={user._count.boards === 0}>
+                          <LayoutDashboard className="mr-2 size-3.5" />
+                          {t("admin.viewBoards")}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         {user.role !== "user" && (
                           <DropdownMenuItem
                             onClick={() => handleRoleChange(user.id, "user")}>
@@ -537,6 +545,65 @@ export function UserTable({ users }: { users: UserRow[] }) {
               {t("common.close")}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* User boards dialog */}
+      <Dialog
+        open={!!boardsUser}
+        onOpenChange={(o) => {
+          if (!o) {
+            setBoardsUser(null);
+            setUserBoards([]);
+          }
+        }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {boardsUser?.name} — {t("admin.viewBoards")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("admin.viewBoardsDesc")}
+            </DialogDescription>
+          </DialogHeader>
+          {boardsLoading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
+          ) : userBoards.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("nav.noBoards")}
+            </p>
+          ) : (
+            <ul className="divide-y">
+              {userBoards.map((b) => (
+                <li key={b.id} className="flex items-center gap-3 py-2">
+                  <DynamicIcon
+                    name={b.icon}
+                    iconUrl={b.iconUrl}
+                    className="size-4 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">{b.name}</div>
+                    <div className="truncate font-mono text-xs text-muted-foreground">
+                      /board/{b.slug}
+                      {b.organization && (
+                        <span className="ml-2">@{b.organization.slug}</span>
+                      )}
+                    </div>
+                  </div>
+                  <Button asChild variant="outline" size="sm">
+                    <a
+                      href={`/board/${b.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer">
+                      {t("common.open")}
+                    </a>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </DialogContent>
       </Dialog>
     </>

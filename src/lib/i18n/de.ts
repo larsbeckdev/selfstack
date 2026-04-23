@@ -352,6 +352,8 @@ const de = {
   "admin.copiedToClipboard": "In Zwischenablage kopiert",
   "admin.resetFailed": "Fehler beim Zurücksetzen",
   "admin.sendFailed": "Fehler beim Versenden",
+  "admin.viewBoards": "Boards anzeigen",
+  "admin.viewBoardsDesc": "Alle Boards, die diesem Benutzer gehören.",
 
   // Organizations
   "org.title": "Organisationen",
