@@ -89,7 +89,7 @@ const boardSchema = z.object({
     .min(1)
     .max(200)
     .regex(
-      /^[a-z0-9]+(?:[-/][a-z0-9]+)*$/,
+      /^@?[a-z0-9]+(?:[-/][a-z0-9]+)*$/,
       "Nur Kleinbuchstaben, Zahlen, Bindestriche und Schrägstriche",
     )
     .optional(),
@@ -97,6 +97,8 @@ const boardSchema = z.object({
   iconUrl: iconUrlSchema,
   isPublic: z.boolean().default(false),
   layoutMode: z.enum(["auto", "free"]).optional(),
+  /** When set, the board is owned by an organization. Admin only. */
+  orgId: z.string().nullable().optional(),
 });
 
 export async function createBoard(data: z.infer<typeof boardSchema>) {
@@ -113,10 +115,23 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  // Regular users' boards live under /board/<username>/<name>.
-  // Admins create system-level boards without the username prefix.
-  const prefix =
-    dbUser?.role !== "admin" && dbUser?.username ? `${dbUser.username}/` : "";
+  // Determine slug prefix based on ownership type.
+  // - Admin + orgId       → `@<orgSlug>/`   (org board)
+  // - Admin + no orgId    → ``               (system board, no prefix)
+  // - Regular user        → `<username>/`   (personal user board)
+  let prefix = "";
+  let orgId: string | null = null;
+  if (dbUser?.role === "admin" && parsed.orgId) {
+    const org = await db.organization.findUnique({
+      where: { id: parsed.orgId },
+      select: { id: true, slug: true },
+    });
+    if (!org) throw new Error("Organisation nicht gefunden");
+    prefix = `@${org.slug}/`;
+    orgId = org.id;
+  } else if (dbUser?.role !== "admin" && dbUser?.username) {
+    prefix = `${dbUser.username}/`;
+  }
 
   let slug = `${prefix}${baseName}`;
   let counter = 0;
@@ -130,13 +145,15 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     _max: { order: true },
   });
 
+  const { orgId: _ignored, ...rest } = parsed;
   const board = await db.board.create({
     data: {
-      ...parsed,
+      ...rest,
       iconUrl: parsed.iconUrl || null,
       slug,
       order: (maxOrder._max.order ?? -1) + 1,
       userId: user.id,
+      orgId,
     },
   });
 
