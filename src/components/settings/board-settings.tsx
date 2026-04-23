@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Lock, Trash2, Copy, Pencil, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Globe,
+  Lock,
+  Trash2,
+  Copy,
+  Pencil,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import type { Board } from "@/generated/prisma/client";
 import { updateBoard, deleteBoard, reorderBoards } from "@/lib/actions/board";
 import { getAppUrl } from "@/lib/actions/settings";
@@ -161,6 +169,26 @@ function BoardSettingsRow({
       </div>
 
       <div className="flex items-center gap-2">
+        <div className="flex flex-col">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-6"
+            disabled={!canMoveUp}
+            onClick={onMoveUp}
+            aria-label={t("common.moveUp")}>
+            <ArrowUp className="size-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-5 w-6"
+            disabled={!canMoveDown}
+            onClick={onMoveDown}
+            aria-label={t("common.moveDown")}>
+            <ArrowDown className="size-3" />
+          </Button>
+        </div>
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

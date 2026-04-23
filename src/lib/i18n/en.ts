@@ -33,6 +33,8 @@ const en: Record<TranslationKey, string> = {
   "common.add": "Add",
   "common.copy": "Copy",
   "common.link": "Link",
+  "common.moveUp": "Move up",
+  "common.moveDown": "Move down",
   "common.linkCopied": "Link copied",
   "common.copyFailed": "Copy failed",
   "common.color": "Color",

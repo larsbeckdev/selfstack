@@ -31,6 +31,8 @@ const de = {
   "common.add": "Hinzufügen",
   "common.copy": "Kopieren",
   "common.link": "Link",
+  "common.moveUp": "Nach oben",
+  "common.moveDown": "Nach unten",
   "common.linkCopied": "Link kopiert",
   "common.copyFailed": "Kopieren fehlgeschlagen",
   "common.color": "Farbe",

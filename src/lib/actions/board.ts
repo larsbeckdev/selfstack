@@ -1134,9 +1134,7 @@ export async function reorderBoards(orderedIds: string[]) {
   const ownedSet = new Set(owned.map((b) => b.id));
   const ids = orderedIds.filter((id) => ownedSet.has(id));
   await db.$transaction(
-    ids.map((id, i) =>
-      db.board.update({ where: { id }, data: { order: i } }),
-    ),
+    ids.map((id, i) => db.board.update({ where: { id }, data: { order: i } })),
   );
   revalidatePath("/dashboard");
   revalidatePath("/settings/boards");
