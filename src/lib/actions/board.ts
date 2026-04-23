@@ -4,7 +4,7 @@ import { revalidatePath, refresh } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
-import { CATEGORY_COLS } from "@/lib/grid";
+import { CATEGORY_COLS, getCategoryWidth } from "@/lib/grid";
 import type { BoardRole } from "@/types";
 
 async function revalidateBoard(boardId: string) {
@@ -689,12 +689,23 @@ export async function duplicateCategory(categoryId: string) {
 
   // Find a free slot for the copy: prefer right → left → below of the original,
   // otherwise scan the board top-to-bottom, left-to-right for the first fit.
-  const existing = await db.category.findMany({
-    where: { boardId: category.boardId },
+  // Category widths may be stored as legacy values (e.g. 6 or 12); clamp to the
+  // actual visual 1–4 span so collision math matches the rendered grid.
+  const existingRaw = await db.category.findMany({
+    where: { boardId: category.boardId, NOT: { id: category.id } },
     select: { x: true, y: true, w: true, h: true },
   });
-  const newW = category.w;
-  const newH = category.h;
+  const existing = existingRaw.map((c) => ({
+    x: c.x,
+    y: c.y,
+    w: getCategoryWidth(c.w),
+    h: Math.max(1, c.h || 1),
+  }));
+  const origW = getCategoryWidth(category.w);
+  const origH = Math.max(1, category.h || 1);
+  existing.push({ x: category.x, y: category.y, w: origW, h: origH });
+  const newW = origW;
+  const newH = origH;
   const fits = (x: number, y: number) => {
     if (x < 0 || x + newW > CATEGORY_COLS || y < 0) return false;
     for (const c of existing) {
@@ -707,9 +718,9 @@ export async function duplicateCategory(categoryId: string) {
   let nextX = 0;
   let nextY = 0;
   const preferred = [
-    { x: category.x + category.w, y: category.y }, // right
+    { x: category.x + origW, y: category.y }, // right
     { x: category.x - newW, y: category.y }, // left
-    { x: category.x, y: category.y + category.h }, // below
+    { x: category.x, y: category.y + origH }, // below
   ];
   const hit = preferred.find((p) => fits(p.x, p.y));
   if (hit) {
@@ -735,8 +746,8 @@ export async function duplicateCategory(categoryId: string) {
       color: category.color,
       x: nextX,
       y: nextY,
-      w: category.w,
-      h: category.h,
+      w: origW,
+      h: origH,
       boardId: category.boardId,
       groups: {
         create: category.groups.map((group) => ({
