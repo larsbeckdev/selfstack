@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Lock, Trash2, Copy, Pencil } from "lucide-react";
+import { Globe, Lock, Trash2, Copy, Pencil, ArrowUp, ArrowDown } from "lucide-react";
 import type { Board } from "@/generated/prisma/client";
-import { updateBoard, deleteBoard } from "@/lib/actions/board";
+import { updateBoard, deleteBoard, reorderBoards } from "@/lib/actions/board";
 import { getAppUrl } from "@/lib/actions/settings";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -39,6 +39,22 @@ import { toast } from "sonner";
 
 export function BoardSettings({ boards }: { boards: Board[] }) {
   const { t } = useTranslation();
+  const [items, setItems] = useState(boards);
+
+  const move = async (index: number, delta: -1 | 1) => {
+    const target = index + delta;
+    if (target < 0 || target >= items.length) return;
+    const next = items.slice();
+    [next[index], next[target]] = [next[target], next[index]];
+    setItems(next);
+    try {
+      await reorderBoards(next.map((b) => b.id));
+    } catch {
+      setItems(items); // revert
+      toast.error(t("error.updateFailed"));
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -47,14 +63,21 @@ export function BoardSettings({ boards }: { boards: Board[] }) {
           <CardDescription>{t("settings.boardsDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
-          {boards.length === 0 ? (
+          {items.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               {t("dashboard.noBoardsTitle")}
             </p>
           ) : (
             <div className="space-y-4">
-              {boards.map((board) => (
-                <BoardSettingsRow key={board.id} board={board} />
+              {items.map((board, i) => (
+                <BoardSettingsRow
+                  key={board.id}
+                  board={board}
+                  canMoveUp={i > 0}
+                  canMoveDown={i < items.length - 1}
+                  onMoveUp={() => move(i, -1)}
+                  onMoveDown={() => move(i, 1)}
+                />
               ))}
             </div>
           )}
@@ -64,7 +87,19 @@ export function BoardSettings({ boards }: { boards: Board[] }) {
   );
 }
 
-function BoardSettingsRow({ board }: { board: Board }) {
+function BoardSettingsRow({
+  board,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
+}: {
+  board: Board;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+}) {
   const [isPublic, setIsPublic] = useState(board.isPublic);
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);

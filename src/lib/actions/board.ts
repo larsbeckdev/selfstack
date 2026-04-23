@@ -1124,6 +1124,25 @@ export async function getAvailableUsersForBoard(boardId: string) {
 
 // ─── Reorder Actions ─────────────────────────────────────────────────────────
 
+export async function reorderBoards(orderedIds: string[]) {
+  const { user } = await requireAuth();
+  // Only reorder boards the user owns (sidebar shows user's own board list).
+  const owned = await db.board.findMany({
+    where: { userId: user.id, id: { in: orderedIds } },
+    select: { id: true },
+  });
+  const ownedSet = new Set(owned.map((b) => b.id));
+  const ids = orderedIds.filter((id) => ownedSet.has(id));
+  await db.$transaction(
+    ids.map((id, i) =>
+      db.board.update({ where: { id }, data: { order: i } }),
+    ),
+  );
+  revalidatePath("/dashboard");
+  revalidatePath("/settings/boards");
+  refresh();
+}
+
 export async function reorderCategories(boardId: string, orderedIds: string[]) {
   await requireBoardAccess(boardId, "editor");
   await db.$transaction(
