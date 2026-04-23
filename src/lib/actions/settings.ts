@@ -215,6 +215,24 @@ export async function getUsers() {
   });
 }
 
+/** Admin helper: list all boards owned by a specific user. */
+export async function getUserBoards(userId: string) {
+  await requireAdmin();
+  return db.board.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      icon: true,
+      iconUrl: true,
+      isPublic: true,
+      organization: { select: { id: true, name: true, slug: true } },
+    },
+    orderBy: { order: "asc" },
+  });
+}
+
 export async function updateUserRole(userId: string, role: string) {
   await requireAdmin();
 
