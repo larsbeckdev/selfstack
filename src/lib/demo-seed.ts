@@ -338,7 +338,7 @@ export async function seedDemoData(): Promise<void> {
     userId: admin.id,
     orgId: acme.id,
     name: "Team-Board",
-    slug: "@acme/team",
+    slug: "acme/team",
     icon: "users",
     order: 1,
     categories: [

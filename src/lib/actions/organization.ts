@@ -178,10 +178,10 @@ export async function updateOrganization(
       },
     });
 
-    // Cascade-rename board slugs that started with @<oldSlug>/.
+    // Cascade-rename board slugs that started with <oldSlug>/.
     if (slugChanged) {
-      const oldPrefix = `@${org.slug}/`;
-      const newSlugPrefix = `@${data.slug}/`;
+      const oldPrefix = `${org.slug}/`;
+      const newSlugPrefix = `${data.slug}/`;
       const boards = await tx.board.findMany({
         where: { orgId, slug: { startsWith: oldPrefix } },
         select: { id: true, slug: true },

@@ -104,7 +104,7 @@ const boardSchema = z.object({
     .min(1)
     .max(200)
     .regex(
-      /^@?[a-z0-9]+(?:[-/][a-z0-9]+)*$/,
+      /^[a-z0-9]+(?:[-/][a-z0-9]+)*$/,
       "Nur Kleinbuchstaben, Zahlen, Bindestriche und Schrägstriche",
     )
     .optional(),
@@ -131,9 +131,13 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     .replace(/^-|-$/g, "");
 
   // Determine slug prefix based on ownership type.
-  // - Admin + orgId       → `@<orgSlug>/`   (org board)
+  // - Admin + orgId       → `<orgSlug>/`    (org board)
   // - Admin + no orgId    → ``               (system board, no prefix)
-  // - Regular user        → `<username>/`   (personal user board)
+  // - Regular user        → `<username>/`    (personal user board)
+  //
+  // NOTE: we intentionally do NOT use an `@` prefix on org slugs because
+  // Next.js App Router treats URL segments starting with `@` as parallel
+  // route slots, which breaks `/board/@org/...` navigation.
   let prefix = "";
   let orgId: string | null = null;
   if (dbUser?.role === "admin" && parsed.orgId) {
@@ -142,7 +146,7 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
       select: { id: true, slug: true },
     });
     if (!org) throw new Error("Organisation nicht gefunden");
-    prefix = `@${org.slug}/`;
+    prefix = `${org.slug}/`;
     orgId = org.id;
   } else if (dbUser?.role !== "admin" && dbUser?.username) {
     prefix = `${dbUser.username}/`;

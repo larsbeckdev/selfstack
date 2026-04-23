@@ -61,7 +61,7 @@ model Board {
   layoutMode String  @default("auto")
   userId    String
   /// Optional organization that owns this board. When set the slug is
-  /// prefixed with `@<org>/` and only explicit members (via BoardMember)
+  /// prefixed with `<org>/` and only explicit members (via BoardMember)
   /// can access it.
   orgId     String?
   createdAt DateTime @default(now())
