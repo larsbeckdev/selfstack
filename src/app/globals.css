@@ -165,3 +165,71 @@
   background-size: calc(var(--grid-u) + var(--grid-gap)) calc(var(--grid-u) + var(--grid-gap));
   background-position: calc(var(--grid-gap) / -2) calc(var(--grid-gap) / -2);
 }
+
+/* ─── Responsive dashboard overrides ────────────────────────────────────── */
+/* The board uses absolute grid coordinates (gridColumn / gridRow) set via
+   inline styles. On narrow viewports we collapse those to natural flow so
+   content stays readable. Inline styles win by specificity, so we use
+   !important here. */
+
+/* Hide drag-and-drop placement cells on touch / small screens — the grid
+   has been collapsed to natural flow, so the invisible drop-cells would
+   just appear as rows of empty boxes. */
+@media (max-width: 1599px) {
+  [data-drop-cell] {
+    display: none !important;
+  }
+}
+
+/* Desktop-narrow / small-laptop (≤1599 px): 3 board columns */
+@media (max-width: 1599px) {
+  [data-board-grid] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  [data-board-grid] > * {
+    grid-column: auto / span 1 !important;
+    grid-row: auto !important;
+  }
+}
+
+/* Large tablet (≤1279 px): 2 board columns */
+@media (max-width: 1279px) {
+  [data-board-grid] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Tablet (≤1023 px): single board column + single group column so half-width
+   groups no longer crush their contents. */
+@media (max-width: 1023px) {
+  [data-board-grid] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  [data-board-grid] > * {
+    grid-column: 1 / -1 !important;
+  }
+  [data-category-grid] {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  [data-category-grid] > * {
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+}
+
+/* Mobile (≤639 px): tile grid also collapses, tiles flow naturally but
+   large tiles still span 2 cols for visual emphasis. */
+@media (max-width: 639px) {
+  [data-tile-grid] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+  }
+  [data-tile-grid] > * {
+    grid-column: auto / span 1 !important;
+    grid-row: auto !important;
+    min-height: 0 !important;
+  }
+  [data-tile-grid] > [data-tile-size="large"] {
+    grid-column: auto / span 2 !important;
+  }
+}

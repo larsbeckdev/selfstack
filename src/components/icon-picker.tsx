@@ -2,25 +2,65 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { icons, Link as LinkIcon, Upload, FolderOpen } from "lucide-react";
+import * as TablerIcons from "@tabler/icons-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 
-const allIconNames = Object.keys(icons).map((name) =>
+const lucideNames = Object.keys(icons).map((name) =>
   name
     .replace(/([A-Z])/g, "-$1")
     .toLowerCase()
     .replace(/^-/, ""),
 );
+
+// Tabler exports `IconFoo` components; strip the `Icon` prefix and kebab-case.
+const tablerNames = Object.keys(TablerIcons)
+  .filter((k) => k.startsWith("Icon") && k !== "Icon")
+  .map((k) =>
+    k
+      .slice(4)
+      .replace(/([A-Z])/g, "-$1")
+      .toLowerCase()
+      .replace(/^-/, ""),
+  );
+
+type IconLibrary = "lucide" | "tabler" | "selfhst";
+
+// Module-level cache + in-flight promise so the list is fetched at most once
+// per browser session and prefetched as soon as the picker is first opened.
+let selfhstCache: string[] | null = null;
+let selfhstPromise: Promise<string[]> | null = null;
+function loadSelfhstIcons(): Promise<string[]> {
+  if (selfhstCache) return Promise.resolve(selfhstCache);
+  if (selfhstPromise) return selfhstPromise;
+  selfhstPromise = fetch("/api/icons/selfhst")
+    .then((r) => r.json())
+    .then((d: { icons?: string[] }) => {
+      selfhstCache = d.icons ?? [];
+      return selfhstCache;
+    })
+    .catch(() => {
+      selfhstPromise = null;
+      return [] as string[];
+    });
+  return selfhstPromise;
+}
 
 export function IconPicker({
   value,
@@ -35,11 +75,33 @@ export function IconPicker({
 }) {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
-  const [urlInput, setUrlInput] = useState(iconUrl ?? "");
+  const [library, setLibrary] = useState<IconLibrary>(() => {
+    if (value?.startsWith("tabler:")) return "tabler";
+    if (value?.startsWith("selfhst:")) return "selfhst";
+    return "lucide";
+  });
+  const [urlInput, setUrlInput] = useState(
+    iconUrl && /^https?:\/\//i.test(iconUrl) && !iconUrl.includes("/uploads/")
+      ? iconUrl
+      : "",
+  );
   const [uploading, setUploading] = useState(false);
   const [uploadPreview, setUploadPreview] = useState<string | null>(null);
   const [uploadName, setUploadName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Selfh.st list (prefetched as soon as the picker opens) ───
+  const [selfhstNames, setSelfhstNames] = useState<string[] | null>(
+    selfhstCache,
+  );
+  const [selfhstLoading, setSelfhstLoading] = useState(false);
+  useEffect(() => {
+    if (!open || selfhstNames !== null) return;
+    setSelfhstLoading(true);
+    loadSelfhstIcons()
+      .then((list) => setSelfhstNames(list))
+      .finally(() => setSelfhstLoading(false));
+  }, [open, selfhstNames]);
 
   // ── Media library tab ──────────────────────────────────────────────
   type MediaFile = { name: string; url: string; size: number };
@@ -90,22 +152,32 @@ export function IconPicker({
   };
 
   const filtered = useMemo(() => {
-    if (!search) return allIconNames.slice(0, 100);
+    const source =
+      library === "lucide"
+        ? lucideNames
+        : library === "tabler"
+          ? tablerNames
+          : (selfhstNames ?? []);
+    if (!search) return source.slice(0, 500);
     const lower = search.toLowerCase();
-    return allIconNames.filter((name) => name.includes(lower)).slice(0, 100);
-  }, [search]);
+    return source.filter((name) => name.includes(lower)).slice(0, 500);
+  }, [search, library, selfhstNames]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" className="w-full justify-start gap-2">
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 cursor-pointer">
           <DynamicIcon name={value} iconUrl={iconUrl} className="size-4" />
           <span className="truncate">
             {iconUrl ? uploadName || "Eigenes Icon" : value}
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
+      <PopoverContent
+        className="w-80 max-w-[calc(100vw-2rem)] p-2"
+        align="start">
         <Tabs defaultValue={iconUrl ? "url" : "icons"}>
           <TabsList className="w-full">
             <TabsTrigger value="icons" className="flex-1">
@@ -124,51 +196,85 @@ export function IconPicker({
               URL
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="icons" className="mt-0">
-            <div className="p-2">
+          <TabsContent value="icons" className="mt-2">
+            <div className="flex items-center gap-2 pb-2">
+              <Select
+                value={library}
+                onValueChange={(v) => setLibrary(v as IconLibrary)}>
+                <SelectTrigger className="w-[120px] shrink-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="lucide">Lucide</SelectItem>
+                  <SelectItem value="tabler">Tabler</SelectItem>
+                  <SelectItem value="selfhst">Selfh.st</SelectItem>
+                </SelectContent>
+              </Select>
               <Input
                 placeholder="Icon suchen..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <ScrollArea className="h-64">
-              <div className="grid grid-cols-8 gap-1 p-2">
-                {filtered.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    className={`flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
-                      value === name && !iconUrl
-                        ? "bg-accent text-foreground ring-1 ring-primary"
-                        : ""
-                    }`}
-                    title={name}
-                    onClick={() => {
-                      onChange(name);
-                      onIconUrlChange?.(null);
-                      setOpen(false);
-                    }}>
-                    <DynamicIcon name={name} className="size-4" />
-                  </button>
-                ))}
-                {filtered.length === 0 && (
-                  <p className="col-span-8 py-4 text-center text-sm text-muted-foreground">
-                    Kein Icon gefunden
-                  </p>
-                )}
-              </div>
-            </ScrollArea>
+            <div
+              className="h-64 overflow-y-auto overscroll-contain"
+              onWheel={(e) => e.stopPropagation()}>
+              {library === "selfhst" && selfhstLoading ? (
+                <p className="py-6 text-center text-xs text-muted-foreground">
+                  Lädt...
+                </p>
+              ) : (
+                <div className="grid grid-cols-8 gap-1">
+                  {filtered.map((name) => {
+                    const storedValue =
+                      library === "lucide"
+                        ? name
+                        : library === "tabler"
+                          ? `tabler:${name}`
+                          : `selfhst:${name}`;
+                    const selected = value === storedValue && !iconUrl;
+                    const isSelfhst = library === "selfhst";
+                    return (
+                      <button
+                        key={storedValue}
+                        type="button"
+                        className={`flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
+                          isSelfhst ? "bg-muted/40" : ""
+                        } ${
+                          selected
+                            ? "bg-accent text-foreground ring-1 ring-primary"
+                            : ""
+                        }`}
+                        title={name}
+                        onClick={() => {
+                          onChange(storedValue);
+                          onIconUrlChange?.(null);
+                          setOpen(false);
+                        }}>
+                        <DynamicIcon name={storedValue} className="size-4" />
+                      </button>
+                    );
+                  })}
+                  {filtered.length === 0 && (
+                    <p className="col-span-8 py-4 text-center text-sm text-muted-foreground">
+                      Kein Icon gefunden
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
           </TabsContent>
-          <TabsContent value="media" className="mt-0">
-            <div className="p-2">
+          <TabsContent value="media" className="mt-2">
+            <div className="pb-2">
               <Input
                 placeholder="Medien suchen..."
                 value={mediaSearch}
                 onChange={(e) => setMediaSearch(e.target.value)}
               />
             </div>
-            <ScrollArea className="h-64">
+            <div
+              className="h-64 overflow-y-auto overscroll-contain"
+              onWheel={(e) => e.stopPropagation()}>
               {mediaLoading ? (
                 <p className="py-6 text-center text-xs text-muted-foreground">
                   Lädt...
@@ -178,7 +284,7 @@ export function IconPicker({
                   Keine Dateien gefunden
                 </p>
               ) : (
-                <div className="grid grid-cols-5 gap-1 p-2">
+                <div className="grid grid-cols-5 gap-1">
                   {filteredMedia.map((file) => {
                     const selected = iconUrl === file.url;
                     return (
@@ -208,9 +314,9 @@ export function IconPicker({
                   })}
                 </div>
               )}
-            </ScrollArea>
+            </div>
           </TabsContent>
-          <TabsContent value="upload" className="mt-0 p-3 space-y-3">
+          <TabsContent value="upload" className="mt-2 space-y-3">
             <input
               ref={fileInputRef}
               type="file"
@@ -271,7 +377,7 @@ export function IconPicker({
               </div>
             )}
           </TabsContent>
-          <TabsContent value="url" className="mt-0 p-3 space-y-3">
+          <TabsContent value="url" className="mt-2 space-y-3">
             <div className="space-y-2">
               <Label htmlFor="icon-url">Icon-URL</Label>
               <Input

@@ -11,6 +11,8 @@ services:
       # Change this in production! Generate with:
       #   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
       JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
+      # Public base URL (used in outgoing emails). Override via env or Admin UI.
+      APP_URL: "${APP_URL:-http://localhost:3026}"
       # Enable when serving over HTTPS
       # SECURE_COOKIES: "true"
     volumes:

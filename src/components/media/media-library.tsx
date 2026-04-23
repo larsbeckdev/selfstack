@@ -306,7 +306,7 @@ export function MediaLibrary() {
           )}
         </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 2xl:grid-cols-12">
           {filtered.map((file) => (
             <Card
               key={file.name}
@@ -353,17 +353,19 @@ export function MediaLibrary() {
         </div>
       ) : (
         <div className="rounded-md border">
-          <div className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-2 text-xs font-medium text-muted-foreground">
+          <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 text-xs font-medium text-muted-foreground sm:grid-cols-[auto_1fr_auto_auto_auto] sm:gap-4 sm:px-4">
             <span className="w-8" />
             <span>{t("media.name")}</span>
-            <span className="w-20 text-right">{t("media.size")}</span>
-            <span className="w-32 text-right">{t("media.date")}</span>
-            <span className="w-20" />
+            <span className="w-16 text-right sm:w-20">{t("media.size")}</span>
+            <span className="hidden w-32 text-right sm:inline">
+              {t("media.date")}
+            </span>
+            <span className="w-16 sm:w-20" />
           </div>
           {filtered.map((file) => (
             <div
               key={file.name}
-              className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border-b px-4 py-2 last:border-b-0 hover:bg-muted/50">
+              className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto_auto_auto] sm:gap-4 sm:px-4">
               <div className="flex size-8 items-center justify-center rounded bg-muted/30">
                 <img
                   src={file.url}
@@ -378,13 +380,13 @@ export function MediaLibrary() {
                 </TooltipTrigger>
                 <TooltipContent>{file.name}</TooltipContent>
               </Tooltip>
-              <span className="w-20 text-right text-xs text-muted-foreground">
+              <span className="w-16 text-right text-xs text-muted-foreground sm:w-20">
                 {formatBytes(file.size)}
               </span>
-              <span className="w-32 text-right text-xs text-muted-foreground">
+              <span className="hidden w-32 text-right text-xs text-muted-foreground sm:inline">
                 {formatDate(file.createdAt, locale)}
               </span>
-              <div className="flex w-20 justify-end gap-1">
+              <div className="flex w-16 justify-end gap-1 sm:w-20">
                 <Button
                   variant="ghost"
                   size="icon"

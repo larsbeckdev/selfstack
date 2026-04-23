@@ -20,6 +20,7 @@ const de = {
   "common.yes": "Ja",
   "common.no": "Nein",
   "common.name": "Name",
+  "common.username": "Username",
   "common.email": "E-Mail",
   "common.password": "Passwort",
   "common.description": "Beschreibung",
@@ -253,6 +254,10 @@ const de = {
   "admin.registrationEnabledDesc":
     "Neue Benutzer können sich selbst registrieren",
   "admin.registrationSaved": "Einstellung gespeichert",
+  "admin.appUrl": "App-URL",
+  "admin.appUrlDesc":
+    "Öffentliche Basis-URL der App (wird in E-Mails als Login-Link verwendet).",
+  "admin.appUrlSaved": "App-URL gespeichert",
   "admin.userManagement": "Benutzerverwaltung",
   "admin.usersRegistered": "Benutzer registriert",
   "admin.createUser": "Benutzer erstellen",
@@ -264,15 +269,20 @@ const de = {
   "admin.sendCredentials": "Zugangsdaten per E-Mail versenden",
   "admin.role": "Rolle",
   "admin.roleUser": "Benutzer",
+  "admin.roleEditor": "Editor",
   "admin.roleAdmin": "Administrator",
   "admin.roleAdminShort": "Admin",
   "admin.colName": "Name",
+  "admin.colUsername": "Username",
   "admin.colEmail": "E-Mail",
   "admin.colRole": "Rolle",
   "admin.colBoards": "Boards",
   "admin.colCreated": "Erstellt",
   "admin.makeAdmin": "Zum Admin machen",
+  "admin.makeEditor": "Zum Editor machen",
   "admin.makeUser": "Zum Benutzer machen",
+  "admin.usernameHelp":
+    "Wird für Board-URLs verwendet: /board/username/board-name",
   "admin.resetPassword": "Passwort zurücksetzen",
   "admin.sendPasswordEmail": "Neues Passwort per E-Mail",
   "admin.deleteUserTitle": "Benutzer löschen?",
@@ -371,6 +381,20 @@ const de = {
   "tile.size.small": "Klein",
   "tile.size.default": "Normal",
   "tile.size.large": "Groß",
+
+  // Footer / legal
+  "footer.copyright": "Selfstack",
+  "footer.impressum": "Impressum",
+  "footer.datenschutz": "Datenschutz",
+  "legal.impressum": "Impressum",
+  "legal.datenschutz": "Datenschutz",
+  "legal.placeholder":
+    "Dieser Bereich ist noch nicht eingerichtet. Bitte ergänze die rechtlichen Informationen.",
+
+  // Public boards overview
+  "board.publicTitle": "Öffentliche Boards",
+  "board.publicDesc": "Eine Übersicht aller öffentlich verfügbaren Boards.",
+  "board.publicEmpty": "Noch keine öffentlichen Boards vorhanden.",
 } as const;
 
 export type TranslationKey = keyof typeof de;

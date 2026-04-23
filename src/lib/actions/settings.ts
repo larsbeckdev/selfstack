@@ -79,6 +79,7 @@ export async function getUsers() {
     select: {
       id: true,
       name: true,
+      username: true,
       email: true,
       role: true,
       createdAt: true,
@@ -91,7 +92,7 @@ export async function getUsers() {
 export async function updateUserRole(userId: string, role: string) {
   await requireAdmin();
 
-  if (!["user", "admin"].includes(role)) {
+  if (!["user", "editor", "admin"].includes(role)) {
     throw new Error("Invalid role");
   }
 
@@ -116,6 +117,7 @@ export async function deleteUser(userId: string) {
 
 export async function adminCreateUser(data: {
   name: string;
+  username: string;
   email: string;
   password?: string;
   role: string;
@@ -123,10 +125,23 @@ export async function adminCreateUser(data: {
 }): Promise<{ generatedPassword?: string }> {
   await requireAdmin();
 
-  const existing = await db.user.findUnique({
-    where: { email: data.email },
-  });
-  if (existing) throw new Error("E-Mail wird bereits verwendet");
+  const username = data.username.trim().toLowerCase();
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(username)) {
+    throw new Error(
+      "Username: nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt",
+    );
+  }
+
+  const [existingEmail, existingUsername] = await Promise.all([
+    db.user.findUnique({ where: { email: data.email } }),
+    db.user.findUnique({ where: { username } }),
+  ]);
+  if (existingEmail) throw new Error("E-Mail wird bereits verwendet");
+  if (existingUsername) throw new Error("Username wird bereits verwendet");
+
+  if (!["user", "editor", "admin"].includes(data.role)) {
+    throw new Error("Invalid role");
+  }
 
   const plainPassword = data.password || generatePassword();
   const hashedPassword = await bcrypt.hash(plainPassword, 12);
@@ -135,6 +150,7 @@ export async function adminCreateUser(data: {
   const user = await db.user.create({
     data: {
       name: data.name,
+      username,
       email: data.email,
       password: hashedPassword,
       role: data.role,
@@ -145,14 +161,14 @@ export async function adminCreateUser(data: {
   await db.board.create({
     data: {
       name: "Mein Dashboard",
-      slug: `dashboard-${user.id.slice(0, 8)}`,
+      slug: `${username}/dashboard`,
       userId: user.id,
       order: 0,
     },
   });
 
   if (data.sendEmail) {
-    const loginUrl = `${process.env.APP_URL || "http://localhost:3025"}/login`;
+    const loginUrl = `${await getAppUrl()}/login`;
     await sendWelcomeEmail(data.email, data.name, plainPassword, loginUrl);
   }
 
@@ -184,7 +200,7 @@ export async function adminSendPasswordEmail(userId: string, password: string) {
   const target = await db.user.findUnique({ where: { id: userId } });
   if (!target) throw new Error("Benutzer nicht gefunden");
 
-  const loginUrl = `${process.env.APP_URL || "http://localhost:3025"}/login`;
+  const loginUrl = `${await getAppUrl()}/login`;
   await sendPasswordResetEmail(target.email, target.name, password, loginUrl);
 }
 
@@ -304,4 +320,12 @@ export async function setSystemSetting(key: string, value: string) {
 export async function isRegistrationEnabled(): Promise<boolean> {
   const val = await getSystemSetting("registration_enabled");
   return val !== "false"; // default to true
+}
+
+export async function getAppUrl(): Promise<string> {
+  const fromDb = await getSystemSetting("app_url");
+  return (fromDb || process.env.APP_URL || "http://localhost:3025").replace(
+    /\/$/,
+    "",
+  );
 }

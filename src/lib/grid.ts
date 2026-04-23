@@ -16,22 +16,65 @@ export function getTileSize(tile: Pick<Tile, "size">): TileSize {
   return "default";
 }
 
-/** Grid/list layout of a group's tile list. */
-export type GroupLayoutMode = "grid" | "list" | "snap";
+/** Grid/list layout of a group's tile list. Only "snap" and "list" are offered in the UI. */
+export type GroupLayoutMode = "list" | "snap";
 
 export function getGroupLayout(group: {
   layout?: string | null;
 }): GroupLayoutMode {
   if (group.layout === "list") return "list";
-  if (group.layout === "snap") return "snap";
-  return "grid";
+  return "snap";
 }
 
-/** Fixed number of columns inside every group's grid layout. */
-export const INNER_COLS = 6;
+/** Fixed number of columns inside every group's grid layout (fallback / max). */
+export const INNER_COLS = 16;
 
 /** Row height (in px) for each cell in the group's inner grid. */
 export const INNER_ROW_PX = 56;
+
+/** Number of columns inside a category for positioning groups. */
+export const GROUP_COLS = 2;
+
+/**
+ * Number of tile columns inside a full-width group, scaled by the owning
+ * category's board-width. A 1/4 category gets 4 columns, 2/4 → 6, 3/4 → 8,
+ * 4/4 → 12.
+ */
+export function getCategoryInnerCols(w: CategoryWidth): number {
+  switch (w) {
+    case 1:
+      return 4;
+    case 2:
+      return 6;
+    case 3:
+      return 8;
+    case 4:
+    default:
+      return 12;
+  }
+}
+
+/** Group width is a span in the category's 2-column layout grid. */
+export const GROUP_WIDTHS = [1, 2] as const;
+export type GroupWidth = (typeof GROUP_WIDTHS)[number];
+
+export function getGroupWidth(w: number | null | undefined): GroupWidth {
+  if (w === 1) return 1;
+  return 2;
+}
+
+/**
+ * Tile columns available inside a group, derived from the category's
+ * full-width tile columns and the group's width (1 = half, 2 = full).
+ * Half-width groups get half the columns (rounded down, min 1).
+ */
+export function getGroupTileCols(
+  catTileCols: number,
+  groupW: GroupWidth,
+): number {
+  if (groupW === 2) return catTileCols;
+  return Math.max(1, Math.floor(catTileCols / 2));
+}
 
 /** Category width is a span in the top-level 4-column grid. */
 export const CATEGORY_COLS = 4;

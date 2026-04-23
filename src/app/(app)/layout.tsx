@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Layers, LogIn } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { AppSidebar } from "@/components/layout/app-sidebar";
@@ -9,9 +7,9 @@ import { SidebarInset } from "@/components/ui/sidebar";
 import { PersistedSidebarProvider } from "@/components/layout/persisted-sidebar-provider";
 import { LayoutModeProvider } from "@/components/layout/layout-mode-provider";
 import { LayoutModeMain } from "@/components/layout/layout-mode-toggle";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { getTranslator } from "@/lib/i18n/server";
+import { BoardTitleProvider } from "@/components/layout/board-title-provider";
+import { PublicShell } from "@/components/layout/public-shell";
+import { AppFooter } from "@/components/layout/app-footer";
 
 export default async function AppLayout({
   children,
@@ -22,31 +20,13 @@ export default async function AppLayout({
 
   // Unauthenticated users get a minimal public shell. Individual pages inside
   // this layout are responsible for redirecting to /login if they require a
-  // session. The only route that renders for unauthenticated visitors is
-  // /board/<slug> with a public board.
+  // session. Unauthenticated visitors can reach /board and /board/<slug>
+  // (for public boards).
   if (!session) {
-    const t = await getTranslator();
     return (
-      <div className="min-h-svh">
-        <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="mx-auto flex h-14 max-w-7xl items-center justify-between px-4">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
-              <Layers className="size-5 text-primary" />
-              Selfstack
-            </Link>
-            <div className="flex items-center gap-1">
-              <ThemeToggle />
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">
-                  <LogIn className="mr-2 size-4" />
-                  {t("auth.login")}
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </header>
-        <div className="mx-auto max-w-7xl p-6">{children}</div>
-      </div>
+      <BoardTitleProvider>
+        <PublicShell>{children}</PublicShell>
+      </BoardTitleProvider>
     );
   }
 
@@ -63,14 +43,17 @@ export default async function AppLayout({
   });
 
   return (
-    <PersistedSidebarProvider defaultOpen={user?.sidebarOpen ?? true}>
-      <LayoutModeProvider>
-        <AppSidebar user={session.user} boards={boards} />
-        <SidebarInset>
-          <AppHeader user={session.user} />
-          <LayoutModeMain>{children}</LayoutModeMain>
-        </SidebarInset>
-      </LayoutModeProvider>
-    </PersistedSidebarProvider>
+    <BoardTitleProvider>
+      <PersistedSidebarProvider defaultOpen={user?.sidebarOpen ?? true}>
+        <LayoutModeProvider>
+          <AppSidebar user={session.user} boards={boards} />
+          <SidebarInset>
+            <AppHeader user={session.user} />
+            <LayoutModeMain>{children}</LayoutModeMain>
+            <AppFooter />
+          </SidebarInset>
+        </LayoutModeProvider>
+      </PersistedSidebarProvider>
+    </BoardTitleProvider>
   );
 }

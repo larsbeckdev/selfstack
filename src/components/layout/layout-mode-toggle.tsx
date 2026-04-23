@@ -35,8 +35,8 @@ export function LayoutModeMain({ children }: { children: React.ReactNode }) {
     <main
       className={
         containerMode === "boxed"
-          ? "mx-auto w-full max-w-screen-xl flex-1 p-6"
-          : "flex-1 p-6"
+          ? "mx-auto w-full max-w-screen-xl flex-1 p-3 md:p-6"
+          : "flex-1 p-3 md:p-6"
       }>
       {children}
     </main>

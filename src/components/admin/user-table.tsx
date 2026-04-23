@@ -78,6 +78,7 @@ import { toast } from "sonner";
 type UserRow = {
   id: string;
   name: string;
+  username: string | null;
   email: string;
   role: string;
   createdAt: Date;
@@ -88,6 +89,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
   const { t, locale } = useTranslation();
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
+  const [newUsername, setNewUsername] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("user");
@@ -102,6 +104,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
 
   const resetForm = () => {
     setNewName("");
+    setNewUsername("");
     setNewEmail("");
     setNewPassword("");
     setNewRole("user");
@@ -115,6 +118,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
     try {
       const result = await adminCreateUser({
         name: newName,
+        username: newUsername,
         email: newEmail,
         password: generatePw ? undefined : newPassword,
         role: newRole,
@@ -224,6 +228,26 @@ export function UserTable({ users }: { users: UserRow[] }) {
                   />
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="new-user-username">
+                    {t("common.username")}
+                  </Label>
+                  <Input
+                    id="new-user-username"
+                    value={newUsername}
+                    onChange={(e) =>
+                      setNewUsername(
+                        e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                      )
+                    }
+                    pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                    placeholder="john-doe"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {t("admin.usernameHelp")}
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="new-user-email">{t("common.email")}</Label>
                   <Input
                     id="new-user-email"
@@ -273,6 +297,9 @@ export function UserTable({ users }: { users: UserRow[] }) {
                       <SelectItem value="user">
                         {t("admin.roleUser")}
                       </SelectItem>
+                      <SelectItem value="editor">
+                        {t("admin.roleEditor")}
+                      </SelectItem>
                       <SelectItem value="admin">
                         {t("admin.roleAdmin")}
                       </SelectItem>
@@ -307,6 +334,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
             <TableHeader>
               <TableRow>
                 <TableHead>{t("admin.colName")}</TableHead>
+                <TableHead>{t("admin.colUsername")}</TableHead>
                 <TableHead>{t("admin.colEmail")}</TableHead>
                 <TableHead>{t("admin.colRole")}</TableHead>
                 <TableHead>{t("admin.colBoards")}</TableHead>
@@ -318,6 +346,9 @@ export function UserTable({ users }: { users: UserRow[] }) {
               {users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {user.username ?? "—"}
+                  </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
                     <Badge
@@ -329,7 +360,9 @@ export function UserTable({ users }: { users: UserRow[] }) {
                       )}
                       {user.role === "admin"
                         ? t("admin.roleAdminShort")
-                        : t("admin.roleUser")}
+                        : user.role === "editor"
+                          ? t("admin.roleEditor")
+                          : t("admin.roleUser")}
                     </Badge>
                   </TableCell>
                   <TableCell>{user._count.boards}</TableCell>
@@ -346,17 +379,25 @@ export function UserTable({ users }: { users: UserRow[] }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {user.role === "user" ? (
-                          <DropdownMenuItem
-                            onClick={() => handleRoleChange(user.id, "admin")}>
-                            <Shield className="mr-2 size-3.5" />
-                            {t("admin.makeAdmin")}
-                          </DropdownMenuItem>
-                        ) : (
+                        {user.role !== "user" && (
                           <DropdownMenuItem
                             onClick={() => handleRoleChange(user.id, "user")}>
                             <UserIcon className="mr-2 size-3.5" />
                             {t("admin.makeUser")}
+                          </DropdownMenuItem>
+                        )}
+                        {user.role !== "editor" && (
+                          <DropdownMenuItem
+                            onClick={() => handleRoleChange(user.id, "editor")}>
+                            <UserIcon className="mr-2 size-3.5" />
+                            {t("admin.makeEditor")}
+                          </DropdownMenuItem>
+                        )}
+                        {user.role !== "admin" && (
+                          <DropdownMenuItem
+                            onClick={() => handleRoleChange(user.id, "admin")}>
+                            <Shield className="mr-2 size-3.5" />
+                            {t("admin.makeAdmin")}
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />

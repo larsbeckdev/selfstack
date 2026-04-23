@@ -8,6 +8,7 @@ import { useTranslation } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Card,
   CardContent,
@@ -59,6 +60,21 @@ export function RegisterForm() {
             )}
           </div>
           <div className="space-y-2">
+            <Label htmlFor="username">{t("common.username")}</Label>
+            <Input
+              id="username"
+              name="username"
+              placeholder="john-doe"
+              pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+              required
+            />
+            {state.fieldErrors?.username && (
+              <p className="text-sm text-destructive">
+                {state.fieldErrors.username[0]}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="email">{t("common.email")}</Label>
             <Input
               id="email"
@@ -75,10 +91,9 @@ export function RegisterForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("common.password")}</Label>
-            <Input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               placeholder={t("auth.passwordPlaceholder")}
               required
             />
@@ -90,10 +105,9 @@ export function RegisterForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">{t("auth.confirmPassword")}</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               placeholder={t("auth.confirmPasswordPlaceholder")}
               required
             />

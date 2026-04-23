@@ -10,13 +10,13 @@ import {
   MoreHorizontal,
   LayoutGrid,
   Rows3,
-  Move,
   GripVertical,
+  Check,
+  Columns2,
 } from "lucide-react";
 import { useDroppable } from "@dnd-kit/core";
 import {
   SortableContext,
-  rectSortingStrategy,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import type { GroupWithTiles } from "@/types";
@@ -27,37 +27,56 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SortableTile } from "./sortable-tile";
 import { FreeTile, FreeTileGrid } from "./free-tile";
 import { EditGroupDialog } from "./edit-group-dialog";
 import { useEditMode } from "./edit-mode-context";
-import { deleteGroup, duplicateGroup, updateGroup } from "@/lib/actions/board";
+import {
+  deleteGroup,
+  duplicateGroup,
+  setGroupWidth,
+  updateGroup,
+} from "@/lib/actions/board";
 import { useTranslation } from "@/components/locale-provider";
 import { toast } from "sonner";
 import { cn, withAlpha } from "@/lib/utils";
-import { getGroupLayout, INNER_COLS, INNER_ROW_PX } from "@/lib/grid";
+import {
+  getGroupLayout,
+  getGroupWidth,
+  getTileSize,
+  GROUP_WIDTHS,
+  INNER_ROW_PX,
+  TILE_SPANS,
+} from "@/lib/grid";
 
 export function GroupCard({
   group,
   categoryId,
-  allGroups,
+  tileCols = 4,
   onAddTile,
   dragHandleProps,
+  isTileDragging = false,
 }: {
   group: GroupWithTiles;
   categoryId: string;
-  allGroups: { id: string; name: string; categoryName: string }[];
+  /** Number of tile columns to render inside this group (derived from category width). */
+  tileCols?: number;
   onAddTile: (groupId: string) => void;
   dragHandleProps?: Record<string, unknown>;
+  /** True while a tile is being dragged somewhere in the board. */
+  isTileDragging?: boolean;
 }) {
   const isEditing = useEditMode();
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
   const layout = getGroupLayout(group);
-  const otherGroups = allGroups.filter((g) => g.id !== group.id);
+  const groupW = getGroupWidth(group.w);
 
   const { setNodeRef, isOver } = useDroppable({
     id: `group-drop:${group.id}`,
@@ -86,11 +105,20 @@ export function GroupCard({
   };
 
   const handleToggleLayout = async () => {
-    // Cycle: grid -> snap -> list -> grid
-    const next: "grid" | "list" | "snap" =
-      layout === "grid" ? "snap" : layout === "snap" ? "list" : "grid";
+    // Toggle snap <-> list.
+    const next: "list" | "snap" = layout === "snap" ? "list" : "snap";
     try {
       await updateGroup(group.id, { layout: next });
+      router.refresh();
+    } catch {
+      toast.error(t("error.updateFailed"));
+    }
+  };
+
+  const handleWidth = async (w: 1 | 2) => {
+    if (w === groupW) return;
+    try {
+      await setGroupWidth(group.id, w);
       router.refresh();
     } catch {
       toast.error(t("error.updateFailed"));
@@ -127,15 +155,11 @@ export function GroupCard({
                 className="size-6 text-muted-foreground"
                 onClick={handleToggleLayout}
                 title={
-                  layout === "grid"
-                    ? t("group.layoutSnap")
-                    : layout === "snap"
-                      ? t("group.layoutList")
-                      : t("group.layoutGrid")
+                  layout === "snap"
+                    ? t("group.layoutList")
+                    : t("group.layoutSnap")
                 }>
-                {layout === "grid" ? (
-                  <Move className="size-3" />
-                ) : layout === "snap" ? (
+                {layout === "snap" ? (
                   <Rows3 className="size-3" />
                 ) : (
                   <LayoutGrid className="size-3" />
@@ -164,6 +188,26 @@ export function GroupCard({
                     <Pencil className="mr-2 size-4" />
                     {t("common.edit")}
                   </DropdownMenuItem>
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <Columns2 className="mr-2 size-4" />
+                      {t("group.width")}
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent>
+                      {GROUP_WIDTHS.map((w) => (
+                        <DropdownMenuItem
+                          key={w}
+                          onClick={() => handleWidth(w)}>
+                          {w === groupW ? (
+                            <Check className="mr-2 size-4" />
+                          ) : (
+                            <span className="mr-2 size-4" />
+                          )}
+                          {w === 2 ? "1/1" : "1/2"}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
                   <DropdownMenuItem onClick={handleDuplicate}>
                     <CopyIcon className="mr-2 size-4" />
                     {t("common.duplicate")}
@@ -196,17 +240,26 @@ export function GroupCard({
           }>
           {layout === "snap" ? (
             <div
+              data-tile-grid
               className="relative grid gap-2"
               style={{
-                gridTemplateColumns: `repeat(${INNER_COLS}, minmax(0, 1fr))`,
+                gridTemplateColumns: `repeat(${tileCols}, minmax(0, 1fr))`,
                 gridAutoRows: `${INNER_ROW_PX}px`,
+                minHeight:
+                  group.tiles.length === 0
+                    ? `${INNER_ROW_PX * 2}px`
+                    : undefined,
               }}>
               {isEditing && (
                 <FreeTileGrid
                   groupId={group.id}
+                  cols={tileCols}
                   rows={Math.max(
-                    ...group.tiles.map((tile) => (tile.y ?? 0) + 2),
-                    4,
+                    ...group.tiles.map(
+                      (tile) =>
+                        (tile.y ?? 0) + TILE_SPANS[getTileSize(tile)].h + 1,
+                    ),
+                    group.tiles.length === 0 ? 2 : 4,
                   )}
                 />
               )}
@@ -216,55 +269,42 @@ export function GroupCard({
                   tile={tile}
                   groupId={group.id}
                   categoryId={categoryId}
-                  otherGroups={otherGroups}
+                  cols={tileCols}
                 />
               ))}
+              {group.tiles.length === 0 && isEditing && !isTileDragging && (
+                <button
+                  type="button"
+                  onClick={() => onAddTile(group.id)}
+                  className={cn(
+                    "absolute inset-0 z-10 m-auto flex h-fit w-fit items-center justify-center gap-1.5 rounded-lg border border-dashed border-border/50 px-4 py-2 text-xs text-muted-foreground/80 transition-colors",
+                    "hover:border-border hover:bg-muted/40 hover:text-foreground",
+                  )}>
+                  <Plus className="size-3.5" />
+                  {t("tile.addTo")}
+                </button>
+              )}
             </div>
           ) : (
             <SortableContext
               items={group.tiles.map((tile) => tile.id)}
-              strategy={
-                layout === "grid"
-                  ? rectSortingStrategy
-                  : verticalListSortingStrategy
-              }>
-              {layout === "grid" ? (
-                <div
-                  className="grid gap-2"
-                  style={{
-                    gridTemplateColumns: `repeat(${INNER_COLS}, minmax(0, 1fr))`,
-                    gridAutoRows: `${INNER_ROW_PX}px`,
-                    gridAutoFlow: "dense",
-                  }}>
-                  {group.tiles.map((tile) => (
-                    <SortableTile
-                      key={tile.id}
-                      tile={tile}
-                      groupId={group.id}
-                      categoryId={categoryId}
-                      layout="grid"
-                      otherGroups={otherGroups}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {group.tiles.map((tile) => (
-                    <SortableTile
-                      key={tile.id}
-                      tile={tile}
-                      groupId={group.id}
-                      categoryId={categoryId}
-                      layout="list"
-                      otherGroups={otherGroups}
-                    />
-                  ))}
-                </div>
-              )}
+              strategy={verticalListSortingStrategy}>
+              <div className="flex flex-col gap-1.5">
+                {group.tiles.map((tile) => (
+                  <SortableTile
+                    key={tile.id}
+                    tile={tile}
+                    groupId={group.id}
+                    categoryId={categoryId}
+                    layout="list"
+                  />
+                ))}
+              </div>
             </SortableContext>
           )}
 
           {group.tiles.length === 0 &&
+            layout === "list" &&
             (isEditing ? (
               <button
                 type="button"

@@ -15,6 +15,14 @@ const loginSchema = z.object({
 const registerSchema = z
   .object({
     name: z.string().min(2, "Name muss mindestens 2 Zeichen haben"),
+    username: z
+      .string()
+      .min(2, "Username muss mindestens 2 Zeichen haben")
+      .max(40)
+      .regex(
+        /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+        "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+      ),
     email: z.string().email("Ungültige E-Mail-Adresse"),
     password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben"),
     confirmPassword: z.string().min(1, "Passwort-Bestätigung ist erforderlich"),
@@ -72,6 +80,7 @@ export async function register(
 
   const raw = {
     name: formData.get("name") as string,
+    username: formData.get("username") as string,
     email: formData.get("email") as string,
     password: formData.get("password") as string,
     confirmPassword: formData.get("confirmPassword") as string,
@@ -82,12 +91,16 @@ export async function register(
     return { fieldErrors: result.error.flatten().fieldErrors };
   }
 
-  const existing = await db.user.findUnique({
-    where: { email: result.data.email },
-  });
+  const [existingEmail, existingUsername] = await Promise.all([
+    db.user.findUnique({ where: { email: result.data.email } }),
+    db.user.findUnique({ where: { username: result.data.username } }),
+  ]);
 
-  if (existing) {
+  if (existingEmail) {
     return { error: "E-Mail-Adresse wird bereits verwendet" };
+  }
+  if (existingUsername) {
+    return { error: "Username wird bereits verwendet" };
   }
 
   const hashedPassword = await bcrypt.hash(result.data.password, 12);
@@ -95,6 +108,7 @@ export async function register(
   const user = await db.user.create({
     data: {
       name: result.data.name,
+      username: result.data.username,
       email: result.data.email,
       password: hashedPassword,
     },
@@ -104,7 +118,7 @@ export async function register(
   await db.board.create({
     data: {
       name: "Mein Dashboard",
-      slug: `dashboard-${user.id.slice(0, 8)}`,
+      slug: `${result.data.username}/dashboard`,
       userId: user.id,
       order: 0,
     },

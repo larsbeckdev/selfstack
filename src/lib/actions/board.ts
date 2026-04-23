@@ -4,6 +4,7 @@ import { revalidatePath, refresh } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { CATEGORY_COLS } from "@/lib/grid";
 import type { BoardRole } from "@/types";
 
 async function revalidateBoard(boardId: string) {
@@ -19,6 +20,7 @@ async function revalidateBoard(boardId: string) {
 async function getBoardRole(
   boardId: string,
   userId: string,
+  globalRole?: string,
 ): Promise<BoardRole | null> {
   const board = await db.board.findUnique({
     where: { id: boardId },
@@ -31,8 +33,12 @@ async function getBoardRole(
     where: { boardId_userId: { boardId, userId } },
     select: { role: true },
   });
-  if (!member) return null;
-  return member.role as BoardRole;
+  if (member) return member.role as BoardRole;
+
+  // Global roles elevate access on any existing board
+  if (globalRole === "admin") return "owner";
+  if (globalRole === "editor") return "editor";
+  return null;
 }
 
 async function requireBoardAccess(
@@ -40,7 +46,7 @@ async function requireBoardAccess(
   minRole: "viewer" | "editor" | "owner",
 ) {
   const { user } = await requireAuth();
-  const role = await getBoardRole(boardId, user.id);
+  const role = await getBoardRole(boardId, user.id, user.role);
   if (!role) throw new Error("Board not found");
 
   const hierarchy: BoardRole[] = ["viewer", "editor", "owner"];
@@ -50,7 +56,9 @@ async function requireBoardAccess(
   return { user, role };
 }
 
-function boardAccessWhere(userId: string) {
+function boardAccessWhere(userId: string, globalRole?: string) {
+  // Editors/admins can access all boards
+  if (globalRole === "admin" || globalRole === "editor") return {};
   return {
     OR: [{ userId }, { members: { some: { userId } } }],
   };
@@ -71,10 +79,10 @@ const boardSchema = z.object({
   slug: z
     .string()
     .min(1)
-    .max(100)
+    .max(200)
     .regex(
-      /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-      "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+      /^[a-z0-9]+(?:[-/][a-z0-9]+)*$/,
+      "Nur Kleinbuchstaben, Zahlen, Bindestriche und Schrägstriche",
     )
     .optional(),
   icon: z.string().default("layout-dashboard"),
@@ -87,16 +95,26 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
   const { user } = await requireAuth();
   const parsed = boardSchema.parse(data);
 
-  const baseSlug = parsed.name
+  const dbUser = await db.user.findUnique({
+    where: { id: user.id },
+    select: { username: true, role: true },
+  });
+
+  const baseName = parsed.name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
 
-  let slug = baseSlug;
+  // Regular users' boards live under /board/<username>/<name>.
+  // Admins create system-level boards without the username prefix.
+  const prefix =
+    dbUser?.role !== "admin" && dbUser?.username ? `${dbUser.username}/` : "";
+
+  let slug = `${prefix}${baseName}`;
   let counter = 0;
   while (await db.board.findUnique({ where: { slug } })) {
     counter++;
-    slug = `${baseSlug}-${counter}`;
+    slug = `${prefix}${baseName}-${counter}`;
   }
 
   const maxOrder = await db.board.aggregate({
@@ -165,7 +183,7 @@ export async function deleteBoard(boardId: string) {
 export async function getBoards() {
   const { user } = await requireAuth();
   return db.board.findMany({
-    where: boardAccessWhere(user.id),
+    where: boardAccessWhere(user.id, user.role),
     orderBy: { order: "asc" },
   });
 }
@@ -173,7 +191,7 @@ export async function getBoards() {
 export async function getBoardWithContents(boardId: string) {
   const { user } = await requireAuth();
   return db.board.findFirst({
-    where: { id: boardId, ...boardAccessWhere(user.id) },
+    where: { id: boardId, ...boardAccessWhere(user.id, user.role) },
     include: {
       categories: {
         orderBy: [{ y: "asc" }, { x: "asc" }],
@@ -296,7 +314,7 @@ const groupSchema = z.object({
   icon: z.string().default("grid-3x3"),
   iconUrl: iconUrlSchema,
   bgColor: z.string().nullable().optional(),
-  layout: z.enum(["grid", "list", "snap"]).default("grid").optional(),
+  layout: z.enum(["list", "snap"]).default("snap").optional(),
   x: z.number().int().min(0).default(0).optional(),
   y: z.number().int().min(0).default(0).optional(),
   w: z.number().int().min(1).max(48).default(4).optional(),
@@ -669,10 +687,45 @@ export async function duplicateCategory(categoryId: string) {
   if (!category) throw new Error("Category not found");
   await requireBoardAccess(category.boardId, "editor");
 
-  const maxY = await db.category.aggregate({
+  // Find a free slot for the copy: prefer right → left → below of the original,
+  // otherwise scan the board top-to-bottom, left-to-right for the first fit.
+  const existing = await db.category.findMany({
     where: { boardId: category.boardId },
-    _max: { y: true, h: true },
+    select: { x: true, y: true, w: true, h: true },
   });
+  const newW = category.w;
+  const newH = category.h;
+  const fits = (x: number, y: number) => {
+    if (x < 0 || x + newW > CATEGORY_COLS || y < 0) return false;
+    for (const c of existing) {
+      if (x < c.x + c.w && x + newW > c.x && y < c.y + c.h && y + newH > c.y) {
+        return false;
+      }
+    }
+    return true;
+  };
+  let nextX = 0;
+  let nextY = 0;
+  const preferred = [
+    { x: category.x + category.w, y: category.y }, // right
+    { x: category.x - newW, y: category.y }, // left
+    { x: category.x, y: category.y + category.h }, // below
+  ];
+  const hit = preferred.find((p) => fits(p.x, p.y));
+  if (hit) {
+    nextX = hit.x;
+    nextY = hit.y;
+  } else {
+    outer: for (let y = 0; y < 500; y++) {
+      for (let x = 0; x <= CATEGORY_COLS - newW; x++) {
+        if (fits(x, y)) {
+          nextX = x;
+          nextY = y;
+          break outer;
+        }
+      }
+    }
+  }
 
   const copy = await db.category.create({
     data: {
@@ -680,8 +733,8 @@ export async function duplicateCategory(categoryId: string) {
       icon: category.icon,
       iconUrl: category.iconUrl,
       color: category.color,
-      x: 0,
-      y: (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      x: nextX,
+      y: nextY,
       w: category.w,
       h: category.h,
       boardId: category.boardId,
@@ -1036,6 +1089,50 @@ export async function setCategoryPosition(
   await requireBoardAccess(category.boardId, "editor");
   await db.category.update({ where: { id: categoryId }, data: { x, y } });
   await revalidateBoard(category.boardId);
+  refresh();
+}
+
+export async function setGroupPosition(
+  groupId: string,
+  x: number,
+  y: number,
+  categoryId?: string,
+) {
+  if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
+    throw new Error("Invalid position");
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    include: { category: true },
+  });
+  if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
+  const data: { x: number; y: number; categoryId?: string } = { x, y };
+  if (categoryId && categoryId !== group.categoryId) {
+    const target = await db.category.findUnique({ where: { id: categoryId } });
+    if (!target) throw new Error("Target category not found");
+    if (target.boardId !== group.category.boardId)
+      throw new Error("Cross-board move not allowed");
+    data.categoryId = categoryId;
+  }
+  await db.group.update({ where: { id: groupId }, data });
+  await revalidateBoard(group.category.boardId);
+  refresh();
+}
+
+export async function setGroupWidth(groupId: string, width: number) {
+  if (width !== 1 && width !== 2) throw new Error("Invalid width");
+  const group = await db.group.findUnique({
+    where: { id: groupId },
+    include: { category: true },
+  });
+  if (!group) throw new Error("Group not found");
+  await requireBoardAccess(group.category.boardId, "editor");
+  const newX = width === 2 ? 0 : Math.min(group.x ?? 0, 1);
+  await db.group.update({
+    where: { id: groupId },
+    data: { w: width, x: Math.max(0, newX) },
+  });
+  await revalidateBoard(group.category.boardId);
   refresh();
 }
 

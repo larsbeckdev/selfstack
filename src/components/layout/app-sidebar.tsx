@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -30,6 +31,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import {
   DropdownMenu,
@@ -38,6 +40,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CreateBoardDialog } from "@/components/dashboard/create-board-dialog";
+import { useBoardTitle } from "@/components/layout/board-title-provider";
 import { copyToClipboard } from "@/lib/clipboard";
 import { toast } from "sonner";
 
@@ -51,6 +54,14 @@ export function AppSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const { t } = useTranslation();
+  const boardTitleCtx = useBoardTitle();
+  const boardTitle = boardTitleCtx?.boardTitle ?? null;
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  // Auto-close mobile sidebar sheet when the route changes.
+  useEffect(() => {
+    if (isMobile) setOpenMobile(false);
+  }, [pathname, isMobile, setOpenMobile]);
 
   const copyBoardLink = async (board: Board) => {
     const path = `/board/${board.slug}`;
@@ -72,8 +83,8 @@ export function AppSidebar({
                 </div>
                 <div className="flex flex-col gap-0.5 leading-none">
                   <span className="font-semibold">Selfstack</span>
-                  <span className="text-xs text-muted-foreground">
-                    Dashboard
+                  <span className="truncate text-xs text-muted-foreground">
+                    {boardTitle ?? t("nav.dashboard")}
                   </span>
                 </div>
               </Link>

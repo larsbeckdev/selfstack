@@ -5,7 +5,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { Tile } from "@/generated/prisma/client";
 import { useEditMode } from "./edit-mode-context";
 import { TileCard } from "./tile-card";
-import { TILE_SPANS, getTileSize, INNER_COLS, INNER_ROW_PX } from "@/lib/grid";
+import { TILE_SPANS, getTileSize, INNER_ROW_PX } from "@/lib/grid";
 import { cn } from "@/lib/utils";
 
 /** Draggable tile placed at fixed (x, y) grid coordinates within a group. */
@@ -13,12 +13,12 @@ export function FreeTile({
   tile,
   groupId,
   categoryId,
-  otherGroups,
+  cols,
 }: {
   tile: Tile;
   groupId: string;
   categoryId: string;
-  otherGroups: { id: string; name: string; categoryName: string }[];
+  cols: number;
 }) {
   const isEditing = useEditMode();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -30,7 +30,7 @@ export function FreeTile({
 
   const size = getTileSize(tile);
   const { w, h } = TILE_SPANS[size];
-  const x = Math.max(0, Math.min(tile.x ?? 0, INNER_COLS - w));
+  const x = Math.max(0, Math.min(tile.x ?? 0, cols - w));
   const y = Math.max(0, tile.y ?? 0);
 
   const style: React.CSSProperties = {
@@ -47,10 +47,11 @@ export function FreeTile({
     <div
       ref={setNodeRef}
       style={style}
+      data-tile-size={size}
       className={cn("min-w-0", isEditing && "touch-none")}
       {...(isEditing ? attributes : {})}
       {...(isEditing ? listeners : {})}>
-      <TileCard tile={tile} layout="grid" otherGroups={otherGroups} />
+      <TileCard tile={tile} layout="snap" />
     </div>
   );
 }
@@ -58,14 +59,16 @@ export function FreeTile({
 /** Invisible grid of droppable cells behind tiles; shown while dragging in snap mode. */
 export function FreeTileGrid({
   groupId,
+  cols,
   rows,
 }: {
   groupId: string;
+  cols: number;
   rows: number;
 }) {
   const cells: React.ReactNode[] = [];
   for (let y = 0; y < rows; y++) {
-    for (let x = 0; x < INNER_COLS; x++) {
+    for (let x = 0; x < cols; x++) {
       cells.push(
         <TileDropCell key={`${x}-${y}`} groupId={groupId} x={x} y={y} />,
       );
@@ -90,6 +93,7 @@ function TileDropCell({
   return (
     <div
       ref={setNodeRef}
+      data-drop-cell
       style={{
         gridColumn: `${x + 1}`,
         gridRow: `${y + 1}`,

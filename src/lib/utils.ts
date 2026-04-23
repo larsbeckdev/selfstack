@@ -31,3 +31,31 @@ export function withAlpha(
     .padStart(2, "0");
   return `#${hex}${a}`;
 }
+
+/**
+ * Pick a readable foreground (black or white) for a given hex background.
+ * Uses the relative-luminance formula. Returns undefined for invalid input.
+ */
+export function readableTextColor(
+  bg: string | null | undefined,
+): "#000000" | "#ffffff" | undefined {
+  if (!bg) return undefined;
+  let hex = bg.trim();
+  if (!hex.startsWith("#")) return undefined;
+  hex = hex.slice(1);
+  if (hex.length === 3) {
+    hex = hex
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  if (hex.length === 8) hex = hex.slice(0, 6);
+  if (hex.length !== 6 || !/^[0-9a-fA-F]{6}$/.test(hex)) return undefined;
+  const r = parseInt(hex.slice(0, 2), 16) / 255;
+  const g = parseInt(hex.slice(2, 4), 16) / 255;
+  const b = parseInt(hex.slice(4, 6), 16) / 255;
+  const lin = (c: number) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  return L > 0.55 ? "#000000" : "#ffffff";
+}

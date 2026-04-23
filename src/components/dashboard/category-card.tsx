@@ -12,10 +12,6 @@ import {
   Check,
   Columns2,
 } from "lucide-react";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
 import type { CategoryWithGroups } from "@/types";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Button } from "@/components/ui/button";
@@ -29,7 +25,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SortableGroup } from "./sortable-group";
+import { FreeGroup, FreeGroupDropGrid } from "./free-group";
 import { EditCategoryDialog } from "./edit-category-dialog";
 import { useEditMode } from "./edit-mode-context";
 import {
@@ -42,6 +38,7 @@ import { toast } from "sonner";
 import { cn, withAlpha } from "@/lib/utils";
 import {
   CATEGORY_WIDTHS,
+  getCategoryInnerCols,
   getCategoryWidth,
   type CategoryWidth,
 } from "@/lib/grid";
@@ -55,22 +52,25 @@ const WIDTH_LABELS: Record<CategoryWidth, string> = {
 
 export function CategoryCard({
   category,
-  allGroups,
   onAddGroup,
   onAddTile,
   dragHandleProps,
+  isGroupDragging = false,
+  isTileDragging = false,
 }: {
   category: CategoryWithGroups;
-  allGroups: { id: string; name: string; categoryName: string }[];
   onAddGroup: (categoryId: string) => void;
   onAddTile: (groupId: string) => void;
   dragHandleProps?: Record<string, unknown>;
+  isGroupDragging?: boolean;
+  isTileDragging?: boolean;
 }) {
   const isEditing = useEditMode();
   const [editOpen, setEditOpen] = useState(false);
   const router = useRouter();
   const { t } = useTranslation();
   const width = getCategoryWidth(category.w);
+  const innerCols = getCategoryInnerCols(width);
 
   const handleDuplicate = async () => {
     try {
@@ -115,7 +115,7 @@ export function CategoryCard({
             : undefined
         }>
         {/* header */}
-        <div className="flex items-center gap-2.5 px-5 pt-4 pb-3">
+        <div className="flex items-center gap-2.5 px-3 pt-3 pb-2 md:px-5 md:pt-4 md:pb-3">
           {isEditing && (
             <button
               type="button"
@@ -195,21 +195,34 @@ export function CategoryCard({
           )}
         </div>
 
-        {/* body: stacked groups */}
-        <div className="flex-1 space-y-5 px-5 pb-5">
-          <SortableContext
-            items={category.groups.map((g) => g.id)}
-            strategy={verticalListSortingStrategy}>
+        {/* body: groups placed on a 2-column snap grid (half / full) */}
+        <div className="flex-1 px-3 pb-3 md:px-5 md:pb-5">
+          <div
+            data-category-grid
+            className="relative grid gap-4"
+            style={{
+              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+              gridAutoRows: "min-content",
+            }}>
+            {isEditing && isGroupDragging && (
+              <FreeGroupDropGrid
+                categoryId={category.id}
+                rows={
+                  Math.max(...category.groups.map((g) => (g.y ?? 0) + 1), 0) + 3
+                }
+              />
+            )}
             {category.groups.map((group) => (
-              <SortableGroup
+              <FreeGroup
                 key={group.id}
                 group={group}
                 categoryId={category.id}
-                allGroups={allGroups}
+                catTileCols={innerCols}
                 onAddTile={onAddTile}
+                isTileDragging={isTileDragging}
               />
             ))}
-          </SortableContext>
+          </div>
 
           {category.groups.length === 0 &&
             (isEditing ? (

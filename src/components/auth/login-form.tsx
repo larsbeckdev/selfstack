@@ -8,6 +8,7 @@ import { useTranslation } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Card,
   CardContent,
@@ -65,7 +66,7 @@ export function LoginForm({
           </div>
           <div className="space-y-2">
             <Label htmlFor="password">{t("common.password")}</Label>
-            <Input id="password" name="password" type="password" required />
+            <PasswordInput id="password" name="password" required />
             {state.fieldErrors?.password && (
               <p className="text-sm text-destructive">
                 {state.fieldErrors.password[0]}

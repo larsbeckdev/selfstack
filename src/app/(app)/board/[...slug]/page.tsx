@@ -7,9 +7,10 @@ import type { BoardRole, BoardWithContents } from "@/types";
 export default async function BoardPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string[] }>;
 }) {
-  const { slug } = await params;
+  const { slug: slugParts } = await params;
+  const slug = slugParts.join("/");
   const session = await getSession();
 
   // Unauthenticated visitors: only public boards are viewable (readonly).
@@ -34,14 +35,19 @@ export default async function BoardPage({
     return <BoardView board={publicBoard as BoardWithContents} forceReadonly />;
   }
 
+  const isPrivileged =
+    session.user.role === "admin" || session.user.role === "editor";
+
   const board = await db.board.findFirst({
-    where: {
-      slug,
-      OR: [
-        { userId: session.user.id },
-        { members: { some: { userId: session.user.id } } },
-      ],
-    },
+    where: isPrivileged
+      ? { slug }
+      : {
+          slug,
+          OR: [
+            { userId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+          ],
+        },
     include: {
       categories: {
         orderBy: [{ y: "asc" }, { x: "asc" }],
@@ -91,6 +97,10 @@ export default async function BoardPage({
     boardRole = "owner";
   } else if (board.members[0]) {
     boardRole = board.members[0].role as BoardRole;
+  } else if (session.user.role === "admin") {
+    boardRole = "owner";
+  } else if (session.user.role === "editor") {
+    boardRole = "editor";
   }
 
   return <BoardView board={board as BoardWithContents} boardRole={boardRole} />;

@@ -1,6 +1,6 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Monitor } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,8 +10,18 @@ import {
 } from "@/components/ui/tooltip";
 
 export function ThemeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const next = resolvedTheme === "dark" ? "light" : "dark";
+  const { theme, setTheme } = useTheme();
+  const current = (theme ?? "system") as "light" | "dark" | "system";
+
+  const next =
+    current === "light" ? "dark" : current === "dark" ? "system" : "light";
+
+  const label =
+    current === "light"
+      ? "Hellmodus"
+      : current === "dark"
+        ? "Dunkelmodus"
+        : "System";
 
   return (
     <Tooltip>
@@ -21,14 +31,13 @@ export function ThemeToggle() {
           size="icon"
           className="size-8"
           onClick={() => setTheme(next)}>
-          <Sun className="size-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          {current === "light" && <Sun className="size-4" />}
+          {current === "dark" && <Moon className="size-4" />}
+          {current === "system" && <Monitor className="size-4" />}
           <span className="sr-only">Theme wechseln</span>
         </Button>
       </TooltipTrigger>
-      <TooltipContent>
-        {next === "dark" ? "Dunkelmodus" : "Hellmodus"}
-      </TooltipContent>
+      <TooltipContent>{label}</TooltipContent>
     </Tooltip>
   );
 }

@@ -10,14 +10,16 @@ import { cn } from "@/lib/utils";
 
 export function FreeCategory({
   category,
-  allGroups,
   onAddGroup,
   onAddTile,
+  isGroupDragging = false,
+  isTileDragging = false,
 }: {
   category: CategoryWithGroups;
-  allGroups: { id: string; name: string; categoryName: string }[];
   onAddGroup: (categoryId: string) => void;
   onAddTile: (groupId: string) => void;
+  isGroupDragging?: boolean;
+  isTileDragging?: boolean;
 }) {
   const isEditing = useEditMode();
   const { attributes, listeners, setNodeRef, transform, isDragging } =
@@ -44,9 +46,10 @@ export function FreeCategory({
     <div ref={setNodeRef} style={style} className="min-w-0">
       <CategoryCard
         category={category}
-        allGroups={allGroups}
         onAddGroup={onAddGroup}
         onAddTile={onAddTile}
+        isGroupDragging={isGroupDragging}
+        isTileDragging={isTileDragging}
         dragHandleProps={
           isEditing ? { ...attributes, ...listeners } : undefined
         }
@@ -74,6 +77,7 @@ function DropCell({ x, y }: { x: number; y: number }) {
   return (
     <div
       ref={setNodeRef}
+      data-drop-cell
       style={{
         gridColumn: `${x + 1}`,
         gridRow: `${y + 1}`,

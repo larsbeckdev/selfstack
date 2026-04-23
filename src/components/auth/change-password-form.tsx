@@ -7,6 +7,7 @@ import { forceChangePassword } from "@/lib/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Card,
   CardContent,
@@ -64,9 +65,8 @@ export function ChangePasswordForm() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="new-password">{t("settings.newPassword")}</Label>
-            <Input
+            <PasswordInput
               id="new-password"
-              type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder={t("auth.passwordPlaceholder")}
@@ -79,9 +79,8 @@ export function ChangePasswordForm() {
             <Label htmlFor="confirm-password">
               {t("auth.confirmPassword")}
             </Label>
-            <Input
+            <PasswordInput
               id="confirm-password"
-              type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder={t("auth.confirmPasswordPlaceholder")}

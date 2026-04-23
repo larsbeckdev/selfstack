@@ -9,12 +9,10 @@ import { getCategoryWidth } from "@/lib/grid";
 
 export function SortableCategory({
   category,
-  allGroups,
   onAddGroup,
   onAddTile,
 }: {
   category: CategoryWithGroups;
-  allGroups: { id: string; name: string; categoryName: string }[];
   onAddGroup: (categoryId: string) => void;
   onAddTile: (groupId: string) => void;
 }) {
@@ -45,7 +43,6 @@ export function SortableCategory({
     <div ref={setNodeRef} style={style} className="min-w-0">
       <CategoryCard
         category={category}
-        allGroups={allGroups}
         onAddGroup={onAddGroup}
         onAddTile={onAddTile}
         dragHandleProps={

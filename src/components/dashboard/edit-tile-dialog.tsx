@@ -143,7 +143,7 @@ export function EditTileDialog({
           {/* Colors */}
           <div className="space-y-3">
             <Label>{t("tile.colors")}</Label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <ColorInput
                 id="edit-tile-color"
                 label={t("tile.colorIcon")}
@@ -155,6 +155,17 @@ export function EditTileDialog({
                 label={t("tile.colorBg")}
                 value={bgColor || color + "18"}
                 onChange={(v) => setBgColor(v)}
+              />
+              <ColorInput
+                id="edit-tile-border"
+                label={t("tile.colorBorder")}
+                value={
+                  borderMatchesBg
+                    ? bgColor || color + "40"
+                    : borderColor || color + "40"
+                }
+                onChange={(v) => setBorderColor(v)}
+                disabled={borderMatchesBg}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -170,17 +181,6 @@ export function EditTileDialog({
                 {t("tile.borderMatchesBg")}
               </Label>
             </div>
-            <ColorInput
-              id="edit-tile-border"
-              label={t("tile.colorBorder")}
-              value={
-                borderMatchesBg
-                  ? bgColor || color + "40"
-                  : borderColor || color + "40"
-              }
-              onChange={(v) => setBorderColor(v)}
-              disabled={borderMatchesBg}
-            />
           </div>
 
           <div className="space-y-2">

@@ -9,12 +9,10 @@ import { GroupCard } from "./group-card";
 export function SortableGroup({
   group,
   categoryId,
-  allGroups,
   onAddTile,
 }: {
   group: GroupWithTiles;
   categoryId: string;
-  allGroups: { id: string; name: string; categoryName: string }[];
   onAddTile: (groupId: string) => void;
 }) {
   const isEditing = useEditMode();
@@ -42,7 +40,6 @@ export function SortableGroup({
       <GroupCard
         group={group}
         categoryId={categoryId}
-        allGroups={allGroups}
         onAddTile={onAddTile}
         dragHandleProps={
           isEditing ? { ...attributes, ...listeners } : undefined

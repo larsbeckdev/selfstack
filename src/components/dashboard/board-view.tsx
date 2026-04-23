@@ -19,14 +19,11 @@ import {
   LayoutGrid,
   Square,
   Sparkles,
-  Move,
-  Rows3,
 } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
   KeyboardSensor,
-  PointerSensor,
   closestCenter,
   pointerWithin,
   rectIntersection,
@@ -37,11 +34,8 @@ import {
   type DragOverEvent,
   type CollisionDetection,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
-} from "@dnd-kit/sortable";
+import { arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { SafePointerSensor } from "@/lib/dnd-safe-sensor";
 import type {
   BoardRole,
   BoardWithContents,
@@ -62,7 +56,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DynamicIcon } from "@/components/dynamic-icon";
-import { SortableCategory } from "./sortable-category";
 import { CategoryCard } from "./category-card";
 import { GroupCard } from "./group-card";
 import { TileCard } from "./tile-card";
@@ -73,21 +66,22 @@ import { AddGroupDialog } from "./add-group-dialog";
 import { AddTileDialog } from "./add-tile-dialog";
 import { BoardSettingsDialog } from "./board-settings-dialog";
 import { useTranslation } from "@/components/locale-provider";
+import { usePublishBoardTitle } from "@/components/layout/board-title-provider";
 import {
-  reorderCategories,
-  reorderGroups,
   reorderTiles,
   moveTileToGroup,
-  setBoardLayoutMode,
   setCategoryPosition,
+  setGroupPosition,
   setTilePosition,
 } from "@/lib/actions/board";
 import {
   getCategoryWidth,
+  getCategoryInnerCols,
   getGroupLayout,
+  getGroupTileCols,
+  getGroupWidth,
   getTileSize,
   CATEGORY_COLS,
-  INNER_COLS,
   TILE_SPANS,
 } from "@/lib/grid";
 import { toast } from "sonner";
@@ -113,28 +107,14 @@ export function BoardView({
     !forceReadonly && (boardRole === "owner" || boardRole === "editor");
   const isOwner = !forceReadonly && boardRole === "owner";
 
+  // Publish the board title into the shell (sidebar / public header) when
+  // rendering in read-only mode so visitors see which board they're viewing
+  // even though the in-board header is hidden.
+  usePublishBoardTitle(board.name, forceReadonly);
+
   const [isEditing, setIsEditing] = useState(false);
 
-  // Position mode: "auto" (sortable flow) or "free" (snap-to-grid positioning)
-  const [positionMode, setPositionMode] = useState<"auto" | "free">(
-    (board.layoutMode as "auto" | "free") === "free" ? "free" : "auto",
-  );
-  useEffect(() => {
-    setPositionMode(
-      (board.layoutMode as "auto" | "free") === "free" ? "free" : "auto",
-    );
-  }, [board.layoutMode]);
-  const togglePositionMode = useCallback(async () => {
-    const next = positionMode === "auto" ? "free" : "auto";
-    setPositionMode(next);
-    try {
-      await setBoardLayoutMode(board.id, next);
-      router.refresh();
-    } catch {
-      toast.error(t("error.updateFailed"));
-      setPositionMode(positionMode);
-    }
-  }, [positionMode, board.id, router, t]);
+  // Board categories are always snap-grid positioned (free mode).
   const [categories, setCategories] = useState<CategoryWithGroups[]>(
     board.categories,
   );
@@ -181,27 +161,24 @@ export function BoardView({
   const [activeType, setActiveType] = useState<ActiveType>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(SafePointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
-  // For tiles & free-positioned categories: prefer pointerWithin;
-  // for auto-mode groups/categories: closestCenter works better.
+  // For tiles & (always-free) categories: prefer pointerWithin;
+  // for auto-mode groups: closestCenter works better.
   const collisionDetection: CollisionDetection = useCallback(
     (args) => {
-      if (
-        activeType === "tile" ||
-        (activeType === "category" && positionMode === "free")
-      ) {
+      if (activeType === "tile" || activeType === "category") {
         const pointerCollisions = pointerWithin(args);
         if (pointerCollisions.length > 0) return pointerCollisions;
         return rectIntersection(args);
       }
       return closestCenter(args);
     },
-    [activeType, positionMode],
+    [activeType],
   );
 
   // ── Handlers ──────────────────────────────────────────────────────────
@@ -304,8 +281,8 @@ export function BoardView({
 
       if (!over) return;
 
-      // ── Free-mode category reposition (snap to cell)
-      if (type === "category" && positionMode === "free") {
+      // ── Category reposition (snap to cell, with overlap prevention)
+      if (type === "category") {
         const oData = over.data.current as
           | { type?: string; x?: number; y?: number }
           | undefined;
@@ -314,7 +291,20 @@ export function BoardView({
         if (!cat) return;
         const w = getCategoryWidth(cat.w);
         const newX = Math.max(0, Math.min(oData.x ?? 0, CATEGORY_COLS - w));
-        const newY = Math.max(0, oData.y ?? 0);
+        const targetY = Math.max(0, oData.y ?? 0);
+
+        // Shift down until row has no horizontal overlap with other categories.
+        const overlapsAt = (y: number) =>
+          categories.some((c) => {
+            if (c.id === cat.id) return false;
+            if ((c.y ?? 0) !== y) return false;
+            const cx = c.x ?? 0;
+            const cw = getCategoryWidth(c.w);
+            return !(newX + w <= cx || cx + cw <= newX);
+          });
+        let newY = targetY;
+        while (overlapsAt(newY)) newY++;
+
         if (cat.x === newX && cat.y === newY) return;
         setCategories((prev) =>
           prev.map((c) => (c.id === cat.id ? { ...c, x: newX, y: newY } : c)),
@@ -332,56 +322,64 @@ export function BoardView({
         return;
       }
 
-      // ── Category reorder (auto mode, sortable)
-      if (type === "category") {
-        if (active.id === over.id) return;
-        const oldIdx = categories.findIndex((c) => c.id === active.id);
-        const newIdx = categories.findIndex((c) => c.id === over.id);
-        if (oldIdx < 0 || newIdx < 0) return;
-        const next = arrayMove(categories, oldIdx, newIdx);
-        setCategories(next);
-        dirtyRef.current = true;
-        try {
-          await reorderCategories(
-            board.id,
-            next.map((c) => c.id),
-          );
-          dirtyRef.current = false;
-          router.refresh();
-        } catch {
-          toast.error(t("error.updateFailed"));
-        }
-        return;
-      }
-
-      // ── Group reorder (within a single category)
+      // ── Group reposition (snap to cell, with overlap prevention; cross-category allowed)
       if (type === "group") {
         const activeCatId = aData?.categoryId ?? null;
-        const overData = over.data.current as
-          | { type?: string; categoryId?: string }
+        if (!activeCatId) return;
+        const oData = over.data.current as
+          | { type?: string; categoryId?: string; x?: number; y?: number }
           | undefined;
-        const overCatId = overData?.categoryId ?? activeCatId;
-        if (!activeCatId || activeCatId !== overCatId) return;
-        const cat = categories.find((c) => c.id === activeCatId);
-        if (!cat) return;
-        const oldIdx = cat.groups.findIndex((g) => g.id === active.id);
-        const newIdx = cat.groups.findIndex((g) => g.id === over.id);
-        if (oldIdx < 0 || newIdx < 0 || oldIdx === newIdx) return;
-        const nextGroups = arrayMove(cat.groups, oldIdx, newIdx);
-        const next = categories.map((c) =>
-          c.id === activeCatId ? { ...c, groups: nextGroups } : c,
-        );
-        setCategories(next);
+        if (oData?.type !== "group-free-cell") return;
+        const targetCatId = oData.categoryId ?? activeCatId;
+        const sourceCat = categories.find((c) => c.id === activeCatId);
+        const targetCat = categories.find((c) => c.id === targetCatId);
+        if (!sourceCat || !targetCat) return;
+        const group = sourceCat.groups.find((g) => g.id === active.id);
+        if (!group) return;
+        const groupW = getGroupWidth(group.w);
+        const newX = Math.max(0, Math.min(oData.x ?? 0, 2 - groupW));
+        const targetY = Math.max(0, oData.y ?? 0);
+
+        const overlapsAt = (y: number) =>
+          targetCat.groups.some((g) => {
+            if (g.id === group.id) return false;
+            if ((g.y ?? 0) !== y) return false;
+            const gx = g.x ?? 0;
+            const gw = getGroupWidth(g.w);
+            return !(newX + groupW <= gx || gx + gw <= newX);
+          });
+        let newY = targetY;
+        while (overlapsAt(newY)) newY++;
+
+        const sameCat = activeCatId === targetCatId;
+        if (sameCat && group.x === newX && group.y === newY) return;
+        setCategories((prev) => {
+          const withoutGroup = prev.map((c) =>
+            c.id === activeCatId
+              ? { ...c, groups: c.groups.filter((g) => g.id !== group.id) }
+              : c,
+          );
+          const movedGroup = { ...group, x: newX, y: newY };
+          return withoutGroup.map((c) =>
+            c.id === targetCatId
+              ? { ...c, groups: [...c.groups, movedGroup] }
+              : c,
+          );
+        });
         dirtyRef.current = true;
         try {
-          await reorderGroups(
-            activeCatId,
-            nextGroups.map((g) => g.id),
+          await setGroupPosition(
+            group.id,
+            newX,
+            newY,
+            sameCat ? undefined : targetCatId,
           );
           dirtyRef.current = false;
           router.refresh();
         } catch {
           toast.error(t("error.updateFailed"));
+          setCategories(board.categories);
+          dirtyRef.current = false;
         }
         return;
       }
@@ -409,9 +407,32 @@ export function BoardView({
           const tile = currentGroup.tiles.find((x) => x.id === active.id);
           if (!tile) return;
           const size = getTileSize(tile);
-          const { w } = TILE_SPANS[size];
-          const newX = Math.max(0, Math.min(oData.x ?? 0, INNER_COLS - w));
-          const newY = Math.max(0, oData.y ?? 0);
+          const { w, h } = TILE_SPANS[size];
+          const catTileCols = getCategoryInnerCols(
+            getCategoryWidth(categories[loc.catIdx].w),
+          );
+          const tileCols = getGroupTileCols(
+            catTileCols,
+            getGroupWidth(currentGroup.w),
+          );
+          const newX = Math.max(0, Math.min(oData.x ?? 0, tileCols - w));
+          const targetY = Math.max(0, oData.y ?? 0);
+
+          // Shift down until rectangle is free of overlaps with other tiles.
+          const overlapsAt = (y: number) =>
+            currentGroup.tiles.some((other) => {
+              if (other.id === tile.id) return false;
+              const oSize = getTileSize(other);
+              const oSpan = TILE_SPANS[oSize];
+              const ox = other.x ?? 0;
+              const oy = other.y ?? 0;
+              const horizOverlap = !(newX + w <= ox || ox + oSpan.w <= newX);
+              const vertOverlap = !(y + h <= oy || oy + oSpan.h <= y);
+              return horizOverlap && vertOverlap;
+            });
+          let newY = targetY;
+          while (overlapsAt(newY)) newY++;
+
           const crossGroup =
             originalGroupId && originalGroupId !== currentGroup.id;
           if (!crossGroup && tile.x === newX && tile.y === newY) return;
@@ -538,7 +559,6 @@ export function BoardView({
         <div style={{ width: 320, opacity: 0.95 }}>
           <CategoryCard
             category={cat}
-            allGroups={allGroups}
             onAddGroup={() => {}}
             onAddTile={() => {}}
           />
@@ -548,21 +568,24 @@ export function BoardView({
     if (activeType === "group") {
       let group: GroupWithTiles | null = null;
       let catId = "";
+      let catCols = 12;
       for (const c of categories) {
         const g = c.groups.find((x) => x.id === activeId);
         if (g) {
           group = g;
           catId = c.id;
+          catCols = getCategoryInnerCols(getCategoryWidth(c.w));
           break;
         }
       }
       if (!group) return null;
+      const overlayTileCols = getGroupTileCols(catCols, getGroupWidth(group.w));
       return (
         <div style={{ width: 280, opacity: 0.95 }}>
           <GroupCard
             group={group}
             categoryId={catId}
-            allGroups={allGroups}
+            tileCols={overlayTileCols}
             onAddTile={() => {}}
           />
         </div>
@@ -575,11 +598,7 @@ export function BoardView({
           if (tile) {
             return (
               <div style={{ width: 140, opacity: 0.95 }}>
-                <TileCard
-                  tile={tile}
-                  layout={getGroupLayout(g)}
-                  otherGroups={[]}
-                />
+                <TileCard tile={tile} layout={getGroupLayout(g)} />
               </div>
             );
           }
@@ -587,7 +606,7 @@ export function BoardView({
       }
     }
     return null;
-  }, [activeId, activeType, categories, allGroups]);
+  }, [activeId, activeType, categories]);
 
   // ── Render ────────────────────────────────────────────────────────────
 
@@ -602,132 +621,115 @@ export function BoardView({
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}>
         <div className="space-y-4">
-          {/* board header */}
-          <div className="sticky top-14 z-20 flex flex-wrap items-center gap-3 border-b border-border/50 bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/75">
-            <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <DynamicIcon
-                name={board.icon}
-                iconUrl={board.iconUrl}
-                className="size-5"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-2xl font-bold tracking-tight">
-                {board.name}
-              </h1>
-            </div>
-            {canEdit && isEditing && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant={positionMode === "free" ? "default" : "ghost"}
-                    onClick={togglePositionMode}>
-                    {positionMode === "free" ? (
-                      <Rows3 className="size-4" />
-                    ) : (
-                      <Move className="size-4" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {positionMode === "free"
-                    ? t("board.positionAuto")
-                    : t("board.positionFree")}
-                </TooltipContent>
-              </Tooltip>
-            )}
-            {canEdit && (
-              <div className="flex items-center gap-2">
-                {isEditing ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        onClick={() => setIsEditing(false)}
-                        variant="default">
-                        <Check className="size-4 sm:mr-2" />
-                        <span className="hidden sm:inline">
-                          {t("common.done")}
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="sm:hidden">
-                      {t("common.done")}
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setIsEditing(true)}>
-                        <Pencil className="size-4 sm:mr-2" />
-                        <span className="hidden sm:inline">
-                          {t("board.editMode")}
-                        </span>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent className="sm:hidden">
-                      {t("board.editMode")}
-                    </TooltipContent>
-                  </Tooltip>
-                )}
-                {isEditing && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button size="sm" variant="outline">
-                        <Plus className="mr-2 size-4" />
-                        {t("common.add")}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() => setAddCategoryOpen(true)}>
-                        <FolderPlus className="mr-2 size-4" />
-                        {t("category.addTo")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={categories.length === 0}
-                        onClick={() => {
-                          setTargetCategoryId(undefined);
-                          setAddGroupOpen(true);
-                        }}>
-                        <LayoutGrid className="mr-2 size-4" />
-                        {t("group.addTo")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={allGroups.length === 0}
-                        onClick={() => {
-                          setTargetGroupId(undefined);
-                          setAddTileOpen(true);
-                        }}>
-                        <Square className="mr-2 size-4" />
-                        {t("tile.addTo")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem disabled>
-                        <Sparkles className="mr-2 size-4" />
-                        {t("widget.addTo")}
-                        <span className="ml-2 text-xs text-muted-foreground">
-                          ({t("common.comingSoon")})
-                        </span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-                {isOwner && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setSettingsOpen(true)}
-                    title={t("board.settings")}>
-                    <Settings2 className="size-4" />
-                  </Button>
-                )}
+          {/* board header (hidden for readonly/public views) */}
+          {!forceReadonly && (
+            <div className="sticky top-14 z-20 flex flex-wrap items-center gap-3 border-b border-border/50 bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+              <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <DynamicIcon
+                  name={board.icon}
+                  iconUrl={board.iconUrl}
+                  className="size-5"
+                />
               </div>
-            )}
-          </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-2xl font-bold tracking-tight">
+                  {board.name}
+                </h1>
+              </div>
+              {canEdit && (
+                <div className="flex items-center gap-2">
+                  {isEditing ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          onClick={() => setIsEditing(false)}
+                          variant="default">
+                          <Check className="size-4 sm:mr-2" />
+                          <span className="hidden sm:inline">
+                            {t("common.done")}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="sm:hidden">
+                        {t("common.done")}
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setIsEditing(true)}>
+                          <Pencil className="size-4 sm:mr-2" />
+                          <span className="hidden sm:inline">
+                            {t("board.editMode")}
+                          </span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent className="sm:hidden">
+                        {t("board.editMode")}
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {isEditing && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Plus className="size-4 sm:mr-2" />
+                          <span className="hidden sm:inline">
+                            {t("common.add")}
+                          </span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => setAddCategoryOpen(true)}>
+                          <FolderPlus className="mr-2 size-4" />
+                          {t("category.addTo")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={categories.length === 0}
+                          onClick={() => {
+                            setTargetCategoryId(undefined);
+                            setAddGroupOpen(true);
+                          }}>
+                          <LayoutGrid className="mr-2 size-4" />
+                          {t("group.addTo")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={allGroups.length === 0}
+                          onClick={() => {
+                            setTargetGroupId(undefined);
+                            setAddTileOpen(true);
+                          }}>
+                          <Square className="mr-2 size-4" />
+                          {t("tile.addTo")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem disabled>
+                          <Sparkles className="mr-2 size-4" />
+                          {t("widget.addTo")}
+                          <span className="ml-2 text-xs text-muted-foreground">
+                            ({t("common.comingSoon")})
+                          </span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                  {isOwner && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => setSettingsOpen(true)}
+                      title={t("board.settings")}>
+                      <Settings2 className="size-4" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* dashboard surface */}
           {categories.length === 0 ? (
@@ -742,8 +744,9 @@ export function BoardView({
                 </Button>
               )}
             </div>
-          ) : positionMode === "free" ? (
+          ) : (
             <div
+              data-board-grid
               className={cn(
                 "grid gap-4 rounded-xl",
                 isEditing && "p-3 bg-edit-grid",
@@ -763,44 +766,12 @@ export function BoardView({
                 <FreeCategory
                   key={cat.id}
                   category={cat}
-                  allGroups={allGroups}
                   onAddGroup={handleAddGroup}
                   onAddTile={handleAddTile}
+                  isGroupDragging={activeType === "group"}
+                  isTileDragging={activeType === "tile"}
                 />
               ))}
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "grid grid-cols-1 gap-4 rounded-xl lg:grid-cols-4",
-                isEditing && "p-3 bg-edit-grid",
-              )}
-              style={{ gridAutoFlow: "dense" }}>
-              <SortableContext
-                items={categories.map((c) => c.id)}
-                strategy={undefined}>
-                {categories.map((cat) => {
-                  const width = getCategoryWidth(cat.w);
-                  // On <lg (1-col grid) all categories take full width.
-                  // On >=lg (4-col grid) width maps 1:1 to col-span.
-                  const widthClass = {
-                    1: "lg:col-span-1",
-                    2: "lg:col-span-2",
-                    3: "lg:col-span-3",
-                    4: "lg:col-span-4",
-                  }[width];
-                  return (
-                    <div key={cat.id} className={cn("min-w-0", widthClass)}>
-                      <SortableCategory
-                        category={cat}
-                        allGroups={allGroups}
-                        onAddGroup={handleAddGroup}
-                        onAddTile={handleAddTile}
-                      />
-                    </div>
-                  );
-                })}
-              </SortableContext>
             </div>
           )}
 

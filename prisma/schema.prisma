@@ -11,10 +11,11 @@ datasource db {
 model User {
   id                 String   @id @default(cuid())
   email              String   @unique
+  username           String?  @unique
   name               String
   password           String
   image              String?
-  role               String   @default("user") // user | admin
+  role               String   @default("user") // user | editor | admin
   locale             String   @default("de")
   emailVerified      Boolean  @default(false)
   mustChangePassword Boolean  @default(false)

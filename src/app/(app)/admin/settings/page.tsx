@@ -1,9 +1,17 @@
 import { AdminSystemSettings } from "@/components/admin/admin-system-settings";
-import { getSystemSetting } from "@/lib/actions/settings";
+import { getAppUrl, getSystemSetting } from "@/lib/actions/settings";
 
 export default async function AdminSettingsPage() {
-  const registrationEnabled =
-    (await getSystemSetting("registration_enabled")) !== "false";
+  const [registrationSetting, appUrl] = await Promise.all([
+    getSystemSetting("registration_enabled"),
+    getAppUrl(),
+  ]);
+  const registrationEnabled = registrationSetting !== "false";
 
-  return <AdminSystemSettings registrationEnabled={registrationEnabled} />;
+  return (
+    <AdminSystemSettings
+      registrationEnabled={registrationEnabled}
+      appUrl={appUrl}
+    />
+  );
 }

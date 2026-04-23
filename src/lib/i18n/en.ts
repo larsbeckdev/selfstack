@@ -22,6 +22,7 @@ const en: Record<TranslationKey, string> = {
   "common.yes": "Yes",
   "common.no": "No",
   "common.name": "Name",
+  "common.username": "Username",
   "common.email": "Email",
   "common.password": "Password",
   "common.description": "Description",
@@ -252,6 +253,10 @@ const en: Record<TranslationKey, string> = {
   "admin.registrationEnabled": "Registration allowed",
   "admin.registrationEnabledDesc": "New users can register themselves",
   "admin.registrationSaved": "Setting saved",
+  "admin.appUrl": "App URL",
+  "admin.appUrlDesc":
+    "Public base URL of the app (used in outgoing emails for login links).",
+  "admin.appUrlSaved": "App URL saved",
   "admin.userManagement": "User Management",
   "admin.usersRegistered": "users registered",
   "admin.createUser": "Create user",
@@ -263,15 +268,19 @@ const en: Record<TranslationKey, string> = {
   "admin.sendCredentials": "Send credentials by email",
   "admin.role": "Role",
   "admin.roleUser": "User",
+  "admin.roleEditor": "Editor",
   "admin.roleAdmin": "Administrator",
   "admin.roleAdminShort": "Admin",
   "admin.colName": "Name",
+  "admin.colUsername": "Username",
   "admin.colEmail": "Email",
   "admin.colRole": "Role",
   "admin.colBoards": "Boards",
   "admin.colCreated": "Created",
   "admin.makeAdmin": "Make admin",
+  "admin.makeEditor": "Make editor",
   "admin.makeUser": "Make user",
+  "admin.usernameHelp": "Used for board URLs: /board/username/board-name",
   "admin.resetPassword": "Reset password",
   "admin.sendPasswordEmail": "Send new password by email",
   "admin.deleteUserTitle": "Delete user?",
@@ -369,6 +378,20 @@ const en: Record<TranslationKey, string> = {
   "tile.size.small": "Small",
   "tile.size.default": "Normal",
   "tile.size.large": "Large",
+
+  // Footer / legal
+  "footer.copyright": "Selfstack",
+  "footer.impressum": "Imprint",
+  "footer.datenschutz": "Privacy",
+  "legal.impressum": "Imprint",
+  "legal.datenschutz": "Privacy Policy",
+  "legal.placeholder":
+    "This section has not been set up yet. Please add your legal information.",
+
+  // Public boards overview
+  "board.publicTitle": "Public boards",
+  "board.publicDesc": "An overview of all publicly available boards.",
+  "board.publicEmpty": "No public boards yet.",
 };
 
 export default en;
