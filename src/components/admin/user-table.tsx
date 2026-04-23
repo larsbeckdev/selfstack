@@ -562,9 +562,7 @@ export function UserTable({ users }: { users: UserRow[] }) {
             <DialogTitle>
               {boardsUser?.name} — {t("admin.viewBoards")}
             </DialogTitle>
-            <DialogDescription>
-              {t("admin.viewBoardsDesc")}
-            </DialogDescription>
+            <DialogDescription>{t("admin.viewBoardsDesc")}</DialogDescription>
           </DialogHeader>
           {boardsLoading ? (
             <p className="py-8 text-center text-sm text-muted-foreground">

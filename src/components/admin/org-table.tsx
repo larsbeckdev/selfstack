@@ -126,6 +126,7 @@ export function OrgTable({
   const [newName, setNewName] = useState("");
   const [newSlug, setNewSlug] = useState("");
   const [newIcon, setNewIcon] = useState("building-2");
+  const [newSlugTouched, setNewSlugTouched] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Edit
@@ -143,6 +144,7 @@ export function OrgTable({
     setNewName("");
     setNewSlug("");
     setNewIcon("building-2");
+    setNewSlugTouched(false);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -389,7 +391,7 @@ export function OrgTable({
                 value={newName}
                 onChange={(e) => {
                   setNewName(e.target.value);
-                  if (!newSlug)
+                  if (!newSlugTouched)
                     setNewSlug(
                       e.target.value
                         .toLowerCase()
@@ -405,7 +407,10 @@ export function OrgTable({
               <Input
                 id="org-slug"
                 value={newSlug}
-                onChange={(e) => setNewSlug(sanitizeSlug(e.target.value))}
+                onChange={(e) => {
+                  setNewSlug(sanitizeSlug(e.target.value));
+                  setNewSlugTouched(true);
+                }}
                 pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
                 required
                 minLength={2}
