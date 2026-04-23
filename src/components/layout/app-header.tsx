@@ -73,6 +73,7 @@ export function AppHeader({ user }: { user: SessionUser }) {
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
             onSelect={async () => {
               await logout();
             }}>
