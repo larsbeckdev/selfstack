@@ -190,6 +190,20 @@
     grid-column: auto / span 1 !important;
     grid-row: auto !important;
   }
+  /* Half-width groups get squeezed into narrow categories — collapse their
+     tile grid to 2 columns and let tiles auto-flow so they stay readable. */
+  [data-tile-grid][data-group-width="1"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-auto-rows: auto !important;
+  }
+  [data-tile-grid][data-group-width="1"] > * {
+    grid-column: auto / span 1 !important;
+    grid-row: auto !important;
+    min-height: 0 !important;
+  }
+  [data-tile-grid][data-group-width="1"] > [data-tile-size="large"] {
+    grid-column: auto / span 2 !important;
+  }
 }
 
 /* Large tablet (≤1279 px): 2 board columns */

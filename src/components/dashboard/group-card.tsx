@@ -251,6 +251,7 @@ export function GroupCard({
           {layout === "snap" ? (
             <div
               data-tile-grid
+              data-group-width={groupW}
               className="relative grid gap-2"
               style={{
                 gridTemplateColumns: `repeat(${tileCols}, minmax(0, 1fr))`,
