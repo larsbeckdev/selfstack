@@ -68,8 +68,7 @@ export function CreateBoardDialog({
 
     setLoading(true);
     try {
-      const orgId =
-        isAdmin && ownerKey !== "system" ? ownerKey : null;
+      const orgId = isAdmin && ownerKey !== "system" ? ownerKey : null;
       await createBoard({
         name,
         icon,
@@ -115,7 +114,6 @@ export function CreateBoardDialog({
                   <SelectValue placeholder={t("org.pickOwner")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">{t("org.ownerUser")}</SelectItem>
                   <SelectItem value="system">{t("org.ownerSystem")}</SelectItem>
                   {orgs.map((o) => (
                     <SelectItem key={o.id} value={o.id}>

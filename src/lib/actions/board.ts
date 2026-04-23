@@ -160,7 +160,8 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     _max: { order: true },
   });
 
-  const { orgId: _ignored, ...rest } = parsed;
+  const { orgId: _orgId, ...rest } = parsed;
+  void _orgId;
   const board = await db.board.create({
     data: {
       ...rest,
