@@ -205,8 +205,6 @@ export function AppSidebar({
           </SidebarGroup>
         )}
 
-        <SidebarSeparator className="bg-muted"/>
-
         <SidebarGroup>
           <SidebarGroupLabel>{t("nav.dashboard")}</SidebarGroupLabel>
           <SidebarGroupContent>
