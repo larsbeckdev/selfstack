@@ -354,6 +354,11 @@ const de = {
   "admin.sendFailed": "Fehler beim Versenden",
   "admin.viewBoards": "Boards anzeigen",
   "admin.viewBoardsDesc": "Alle Boards, die diesem Benutzer gehören.",
+  "admin.manageOrgs": "Organisationen",
+  "admin.manageOrgsDesc":
+    "Organisationen, in denen dieser Benutzer Mitglied ist.",
+  "admin.noOrgsAvailable": "Keine weiteren Organisationen verfügbar",
+  "admin.userNoOrgs": "Benutzer ist in keiner Organisation",
 
   // Organizations
   "org.title": "Organisationen",

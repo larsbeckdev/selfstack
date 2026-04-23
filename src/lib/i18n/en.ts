@@ -350,6 +350,11 @@ const en: Record<TranslationKey, string> = {
   "admin.sendFailed": "Send failed",
   "admin.viewBoards": "View boards",
   "admin.viewBoardsDesc": "All boards owned by this user.",
+  "admin.manageOrgs": "Organizations",
+  "admin.manageOrgsDesc":
+    "Organizations this user belongs to.",
+  "admin.noOrgsAvailable": "No other organizations available",
+  "admin.userNoOrgs": "User is not a member of any organization",
 
   // Organizations
   "org.title": "Organizations",

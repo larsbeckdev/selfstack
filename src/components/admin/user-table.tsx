@@ -152,6 +152,92 @@ export function UserTable({
     }
   };
 
+  // Orgs dialog (admin managing a user's org memberships)
+  type UserOrgRow = {
+    id: string;
+    role: string;
+    orgId: string;
+    organization: {
+      id: string;
+      name: string;
+      slug: string;
+      icon: string;
+      iconUrl: string | null;
+    };
+  };
+  const [orgsUser, setOrgsUser] = useState<UserRow | null>(null);
+  const [userOrgs, setUserOrgs] = useState<UserOrgRow[]>([]);
+  const [orgsLoading, setOrgsLoading] = useState(false);
+  const [addOrgId, setAddOrgId] = useState("");
+  const [addOrgRole, setAddOrgRole] = useState<OrgRole>("member");
+
+  const loadUserOrgs = async (userId: string) => {
+    const list = await getUserOrganizations(userId);
+    setUserOrgs(list as UserOrgRow[]);
+  };
+
+  const openOrgs = async (user: UserRow) => {
+    setOrgsUser(user);
+    setUserOrgs([]);
+    setAddOrgId("");
+    setAddOrgRole("member");
+    setOrgsLoading(true);
+    try {
+      await loadUserOrgs(user.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setOrgsLoading(false);
+    }
+  };
+
+  const handleAddUserOrg = async () => {
+    if (!orgsUser || !addOrgId) return;
+    try {
+      await addOrgMember(addOrgId, orgsUser.id, addOrgRole);
+      await loadUserOrgs(orgsUser.id);
+      setAddOrgId("");
+      toast.success(t("org.memberAdded"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("common.error"));
+    }
+  };
+
+  const handleChangeUserOrgRole = async (orgId: string, role: OrgRole) => {
+    if (!orgsUser) return;
+    try {
+      await updateOrgMemberRole(orgId, orgsUser.id, role);
+      await loadUserOrgs(orgsUser.id);
+      toast.success(t("org.memberRoleUpdated"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("common.error"));
+    }
+  };
+
+  const handleRemoveUserOrg = async (orgId: string) => {
+    if (!orgsUser) return;
+    try {
+      await removeOrgMember(orgId, orgsUser.id);
+      await loadUserOrgs(orgsUser.id);
+      toast.success(t("org.memberRemoved"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("common.error"));
+    }
+  };
+
+  const availableOrgsForAdd = organizations.filter(
+    (o) => !userOrgs.some((m) => m.orgId === o.id),
+  );
+
+  const orgRoleLabel = (r: string) =>
+    r === "owner"
+      ? t("org.roleOwner")
+      : r === "admin"
+        ? t("org.roleAdmin")
+        : r === "editor"
+          ? t("org.roleEditor")
+          : t("org.roleMember");
+
   const resetForm = () => {
     setNewName("");
     setNewUsername("");
@@ -445,6 +531,10 @@ export function UserTable({
                           <LayoutDashboard className="mr-2 size-3.5" />
                           {t("admin.viewBoards")}
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openOrgs(user)}>
+                          <Building2 className="mr-2 size-3.5" />
+                          {t("admin.manageOrgs")}
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {user.role !== "user" && (
                           <DropdownMenuItem
@@ -620,6 +710,140 @@ export function UserTable({
                 </li>
               ))}
             </ul>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* User organizations dialog */}
+      <Dialog
+        open={!!orgsUser}
+        onOpenChange={(o) => {
+          if (!o) {
+            setOrgsUser(null);
+            setUserOrgs([]);
+          }
+        }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {orgsUser?.name} — {t("admin.manageOrgs")}
+            </DialogTitle>
+            <DialogDescription>{t("admin.manageOrgsDesc")}</DialogDescription>
+          </DialogHeader>
+
+          {/* Add-to-org row */}
+          <div className="flex items-end gap-2">
+            <div className="flex-1 space-y-2">
+              <Label>{t("org.pickOrg")}</Label>
+              <Select value={addOrgId} onValueChange={setAddOrgId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("org.pickOrg")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableOrgsForAdd.length === 0 ? (
+                    <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                      {t("admin.noOrgsAvailable")}
+                    </div>
+                  ) : (
+                    availableOrgsForAdd.map((o) => (
+                      <SelectItem key={o.id} value={o.id}>
+                        @{o.slug} — {o.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-36 space-y-2">
+              <Label>{t("org.memberRole")}</Label>
+              <Select
+                value={addOrgRole}
+                onValueChange={(v) => setAddOrgRole(v as OrgRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ORG_ROLES.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {orgRoleLabel(r)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleAddUserOrg} disabled={!addOrgId}>
+              <UserPlus className="mr-2 size-4" />
+              {t("org.addMember")}
+            </Button>
+          </div>
+
+          {orgsLoading ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("common.loading")}
+            </p>
+          ) : userOrgs.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("admin.userNoOrgs")}
+            </p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-8" />
+                  <TableHead>{t("org.name")}</TableHead>
+                  <TableHead>{t("org.slug")}</TableHead>
+                  <TableHead>{t("org.memberRole")}</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {userOrgs.map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      <DynamicIcon
+                        name={m.organization.icon}
+                        iconUrl={m.organization.iconUrl}
+                        className="size-4"
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      {m.organization.name}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-muted-foreground">
+                      @{m.organization.slug}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={m.role}
+                        onValueChange={(v) =>
+                          handleChangeUserOrgRole(m.orgId, v as OrgRole)
+                        }>
+                        <SelectTrigger className="h-8 w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ORG_ROLES.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              {orgRoleLabel(r)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-8"
+                        onClick={() => handleRemoveUserOrg(m.orgId)}
+                        title={t("org.removeMember")}>
+                        <UserMinus className="size-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </DialogContent>
       </Dialog>
