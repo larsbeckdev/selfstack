@@ -204,6 +204,12 @@
   [data-tile-grid][data-group-width="1"] > [data-tile-size="large"] {
     grid-column: auto / span 2 !important;
   }
+  /* List-layout half-width groups lose too much horizontal space when the
+     category is narrow — promote them to full width so descriptions stay
+     readable. */
+  [data-category-grid] > [data-group-layout="list"][data-group-width="1"] {
+    grid-column: 1 / -1 !important;
+  }
 }
 
 /* Large tablet (≤1279 px): 2 board columns */

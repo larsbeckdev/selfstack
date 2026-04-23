@@ -125,7 +125,7 @@ export async function seedDemoData(): Promise<void> {
           icon: cat.icon,
           color: cat.color,
           x: 0,
-          y: ci * 8,
+          y: ci,
           w: 4, // full-width category (1..4 range)
           h: 8,
           boardId: board.id,

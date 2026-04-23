@@ -50,7 +50,12 @@ export function FreeGroup({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="min-w-0">
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-group-layout={group.layout ?? "grid"}
+      data-group-width={groupW}
+      className="min-w-0">
       <GroupCard
         group={group}
         categoryId={categoryId}
