@@ -53,6 +53,20 @@ export async function getOrganizations() {
     orderBy: { name: "asc" },
     include: {
       _count: { select: { members: true, boards: true } },
+      members: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              email: true,
+              image: true,
+            },
+          },
+        },
+        orderBy: { user: { name: "asc" } },
+      },
     },
   });
 }
