@@ -30,6 +30,7 @@ model User {
 
   boards       Board[]
   boardMembers BoardMember[]
+  orgMembers   OrganizationMember[]
   sessions     Session[]
 }
 
@@ -59,12 +60,17 @@ model Board {
   /// "auto" | "free" — controls whether categories snap to auto-flow or free grid
   layoutMode String  @default("auto")
   userId    String
+  /// Optional organization that owns this board. When set the slug is
+  /// prefixed with `@<org>/` and only explicit members (via BoardMember)
+  /// can access it.
+  orgId     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  categories Category[]
-  members    BoardMember[]
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [orgId], references: [id], onDelete: SetNull)
+  categories   Category[]
+  members      BoardMember[]
 }
 
 model BoardMember {
@@ -140,4 +146,30 @@ model Tile {
   groupId         String
 
   group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  icon      String   @default("building-2")
+  iconUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members OrganizationMember[]
+  boards  Board[]
+}
+
+model OrganizationMember {
+  id     String @id @default(cuid())
+  /// "owner" | "admin" | "editor" | "member"
+  role   String @default("member")
+  orgId  String
+  userId String
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([orgId, userId])
 }
