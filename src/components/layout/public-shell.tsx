@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LogIn } from "lucide-react";
+import { Layers, LogIn } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,12 +32,7 @@ function PublicShellInner({ children }: { children: React.ReactNode }) {
               : "flex h-14 w-full items-center justify-between px-4"
           }>
           <Link href="/board" className="flex items-center gap-2 font-semibold">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/selfstack_symbol.svg"
-              alt="Selfstack"
-              className="h-6 w-auto"
-            />
+            <Layers className="size-5 text-primary" />
             <div className="flex flex-col leading-tight">
               <span>Selfstack</span>
               {boardTitle && (

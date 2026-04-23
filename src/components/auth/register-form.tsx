@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { Layers } from "lucide-react";
 import { register, type AuthState } from "@/lib/actions/auth";
 import { useTranslation } from "@/components/locale-provider";
 import { Button } from "@/components/ui/button";
