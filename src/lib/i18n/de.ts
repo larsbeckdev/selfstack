@@ -362,8 +362,7 @@ const de = {
   "org.edit": "Organisation bearbeiten",
   "org.name": "Name",
   "org.slug": "Slug",
-  "org.slugHelp":
-    "Wird für Board-URLs verwendet: /board/@slug/board-name",
+  "org.slugHelp": "Wird für Board-URLs verwendet: /board/@slug/board-name",
   "org.icon": "Icon",
   "org.members": "Mitglieder",
   "org.boards": "Boards",
