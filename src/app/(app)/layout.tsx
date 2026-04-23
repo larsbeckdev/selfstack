@@ -37,9 +37,34 @@ export default async function AppLayout({
   });
   if (user?.mustChangePassword) redirect("/change-password");
 
+  // Sidebar shows all boards the user can access:
+  // - Admin: all boards.
+  // - Global editor: own + explicit members + any org board.
+  // - Everyone else: own + explicit members + boards whose org they belong to.
+  const role = session.user.role;
+  const boardWhere =
+    role === "admin"
+      ? {}
+      : {
+          OR: [
+            { userId: session.user.id },
+            { members: { some: { userId: session.user.id } } },
+            role === "editor"
+              ? { orgId: { not: null } }
+              : {
+                  organization: {
+                    is: { members: { some: { userId: session.user.id } } },
+                  },
+                },
+          ],
+        };
+
   const boards = await db.board.findMany({
-    where: { userId: session.user.id },
+    where: boardWhere,
     orderBy: { order: "asc" },
+    include: {
+      organization: { select: { id: true, name: true, slug: true } },
+    },
   });
 
   return (

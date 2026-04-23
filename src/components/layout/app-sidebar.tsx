@@ -19,6 +19,10 @@ import { DynamicIcon } from "@/components/dynamic-icon";
 import { useTranslation } from "@/components/locale-provider";
 import type { SessionUser } from "@/types";
 import type { Board } from "@/generated/prisma/client";
+
+type SidebarBoard = Board & {
+  organization: { id: string; name: string; slug: string } | null;
+};
 import {
   Sidebar,
   SidebarContent,
@@ -49,7 +53,7 @@ export function AppSidebar({
   boards,
 }: {
   user: SessionUser;
-  boards: Board[];
+  boards: SidebarBoard[];
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -63,7 +67,7 @@ export function AppSidebar({
     if (isMobile) setOpenMobile(false);
   }, [pathname, isMobile, setOpenMobile]);
 
-  const copyBoardLink = async (board: Board) => {
+  const copyBoardLink = async (board: SidebarBoard) => {
     const path = `/board/${board.slug}`;
     let origin = "";
     try {
