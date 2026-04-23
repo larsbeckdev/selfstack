@@ -485,17 +485,17 @@ export function OrgTable({
         onOpenChange={(o) => {
           if (!o) setMembersOrg(null);
         }}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
               {membersOrg?.name} — {t("org.members")}
             </DialogTitle>
-            <DialogDescription>{t("org.description")}</DialogDescription>
+            <DialogDescription>{t("org.membersDesc")}</DialogDescription>
           </DialogHeader>
 
           {/* Add member row */}
-          <div className="flex items-end gap-2">
-            <div className="flex-1 space-y-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_9rem_auto] sm:items-end">
+            <div className="space-y-2">
               <Label>{t("org.selectUser")}</Label>
               <Select value={addUserId} onValueChange={setAddUserId}>
                 <SelectTrigger>
@@ -521,7 +521,7 @@ export function OrgTable({
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-36 space-y-2">
+            <div className="space-y-2">
               <Label>{t("org.memberRole")}</Label>
               <Select
                 value={addRole}
