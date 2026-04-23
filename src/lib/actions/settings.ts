@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth, requireAdmin } from "@/lib/auth";
+import { assertNotDemo } from "@/lib/demo";
 import {
   sendWelcomeEmail,
   sendPasswordResetEmail,
@@ -35,6 +36,7 @@ const changePasswordSchema = z.object({
 });
 
 export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
+  assertNotDemo();
   const { user } = await requireAuth();
   const parsed = updateProfileSchema.parse(data);
 
@@ -102,6 +104,7 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
 export async function changePassword(
   data: z.infer<typeof changePasswordSchema>,
 ) {
+  assertNotDemo();
   const { user } = await requireAuth();
   const parsed = changePasswordSchema.parse(data);
 
@@ -119,6 +122,7 @@ export async function changePassword(
 }
 
 export async function deleteAccount() {
+  assertNotDemo();
   const { user } = await requireAuth();
   await db.user.delete({ where: { id: user.id } });
 }
@@ -143,6 +147,7 @@ export async function beginTwoFactorEnrollment(): Promise<{
   secret: string;
   qrCode: string;
 }> {
+  assertNotDemo();
   const { generateTotpSecret, renderQrCodeDataUrl } =
     await import("@/lib/totp");
   const { user } = await requireAuth();
@@ -163,6 +168,7 @@ export async function beginTwoFactorEnrollment(): Promise<{
 }
 
 export async function confirmTwoFactorEnrollment(token: string) {
+  assertNotDemo();
   const { verifyTotp } = await import("@/lib/totp");
   const { user } = await requireAuth();
   const dbUser = await db.user.findUnique({
@@ -183,6 +189,7 @@ export async function confirmTwoFactorEnrollment(token: string) {
 }
 
 export async function disableTwoFactor(password: string) {
+  assertNotDemo();
   const { user } = await requireAuth();
   const dbUser = await db.user.findUnique({ where: { id: user.id } });
   if (!dbUser) throw new Error("User not found");
@@ -235,6 +242,7 @@ export async function getUserBoards(userId: string) {
 
 export async function updateUserRole(userId: string, role: string) {
   await requireAdmin();
+  assertNotDemo();
 
   if (!["user", "editor", "admin"].includes(role)) {
     throw new Error("Invalid role");
@@ -250,6 +258,7 @@ export async function updateUserRole(userId: string, role: string) {
 
 export async function deleteUser(userId: string) {
   const { user } = await requireAdmin();
+  assertNotDemo();
 
   if (userId === user.id) {
     throw new Error("Du kannst dich nicht selbst löschen");
@@ -268,6 +277,7 @@ export async function adminCreateUser(data: {
   sendEmail?: boolean;
 }): Promise<{ generatedPassword?: string }> {
   await requireAdmin();
+  assertNotDemo();
 
   const username = data.username.trim().toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(username)) {
@@ -322,6 +332,7 @@ export async function adminCreateUser(data: {
 
 export async function adminResetPassword(userId: string) {
   await requireAdmin();
+  assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
   if (!target) throw new Error("Benutzer nicht gefunden");
@@ -340,6 +351,7 @@ export async function adminResetPassword(userId: string) {
 
 export async function adminSendPasswordEmail(userId: string, password: string) {
   await requireAdmin();
+  assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
   if (!target) throw new Error("Benutzer nicht gefunden");
@@ -451,6 +463,7 @@ export async function getSystemSetting(key: string): Promise<string | null> {
 
 export async function setSystemSetting(key: string, value: string) {
   await requireAdmin();
+  assertNotDemo();
 
   await db.systemSetting.upsert({
     where: { key },
@@ -521,6 +534,7 @@ export async function updateSmtpSettings(
   input: z.infer<typeof smtpInputSchema>,
 ) {
   await requireAdmin();
+  assertNotDemo();
   const parsed = smtpInputSchema.parse(input);
 
   const writes: Array<Promise<unknown>> = [
@@ -578,6 +592,7 @@ export async function updateSmtpSettings(
 
 export async function sendTestSmtpEmail(to: string) {
   await requireAdmin();
+  assertNotDemo();
   const parsed = z.string().email().parse(to);
   await sendTestEmail(parsed);
 }
