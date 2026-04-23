@@ -9,28 +9,61 @@ heavier homelab dashboards, designed to be deployed in a single container.
 
 ## Features
 
-- **Board Management** — Create multiple boards with drag-and-drop categories, groups, and tiles
-- **Responsive grid system** — Fixed tile sizes (small / default / large / list) that reflow to the viewport
-- **Group background colors** — Pick from the shadcn/tailwind palette, theme-aware
-- **Public Boards** — Share boards publicly via readable slug URLs (`/b/my-board`)
-- **Theming** — Light/dark mode with customizable color presets per user
-- **i18n** — German and English interface with per-user locale setting
-- **Admin Panel** — User management and system settings (e.g. registration toggle)
-- **Authentication** — Session-based auth with JWT, bcrypt password hashing
-- **Self-hosted** — SQLite database, no external services required
+### Boards, categories, groups, tiles
+- Multiple boards per user with drag-and-drop reordering (categories, groups, tiles, and boards themselves)
+- Two layout modes per board: auto-flow grid and free placement
+- Fixed tile sizes (small / default / large / list) that reflow responsively
+- Per-tile, per-group, per-category background **and** border colors, with "border matches background" shortcut
+- Icon picker with full Lucide library **or** upload your own PNG/SVG icons
+- One-click **reset all colors** per board
+- **Status ping** indicator per tile (HEAD → GET fallback, tolerates self-signed TLS for LAN services)
+
+### Sharing & access control
+- **Public boards** reachable via `/board/<username>/<slug>` (viewer-only)
+- **Board members** with per-board roles: owner / editor / viewer
+- Global roles: `user`, `editor` (edit any board), `admin` (full access)
+- Copyable share link with app-URL awareness (works behind reverse proxies)
+
+### Users & auth
+- Session-based auth (JWT + bcrypt)
+- **Two-factor authentication (TOTP)** — QR enrollment in settings, verification step on login
+- Password reset / "must change password on next login" flow
+- Registration can be toggled by admins
+- Required unique **username**, used as URL prefix for the user's boards (`/board/maxmuster/dashboard`)
+- Rename-your-username safely: owned board slugs are cascade-renamed in a transaction
+
+### Theming
+- Light / dark / system mode
+- Multiple built-in color presets (Sunset Horizon, Ocean, Forest, …)
+- Per-variable override (primary, background, accent, …) with a Figma-style color picker including shadcn/tailwind swatches
+- Preferences stored per user, applied SSR-side to avoid flash
+
+### i18n
+- German and English UI, per-user locale
+
+### Admin panel
+- User CRUD with one-time password generation and welcome email
+- System settings (registration toggle, public app URL)
+- **SMTP configuration UI** with test-email send
+- Role management
+
+### Self-hosted
+- SQLite database (better-sqlite3 adapter), no external services required
+- Runs in a single container
 
 ## Tech Stack
 
 - [Next.js 16](https://nextjs.org) (App Router, Turbopack, standalone output)
 - [React 19](https://react.dev)
-- [Prisma 6](https://www.prisma.io) + SQLite (via better-sqlite3 adapter)
+- [Prisma 6](https://www.prisma.io) + SQLite (via `@prisma/adapter-better-sqlite3`)
 - [shadcn/ui](https://ui.shadcn.com) + Tailwind CSS 4
 - [dnd-kit](https://dndkit.com) for drag-and-drop
 - [Lucide](https://lucide.dev) icons
+- [otpauth](https://github.com/hectorm/otpauth) + [qrcode](https://github.com/soldair/node-qrcode) for 2FA
+- [nodemailer](https://nodemailer.com) for transactional email
+- [jose](https://github.com/panva/jose) for JWT, [bcryptjs](https://github.com/dcodeIO/bcrypt.js) for password hashing
 
 ## Quick start with Docker
-
-The simplest way to run Selfstack:
 
 ```bash
 git clone https://github.com/larsbeckdev/selfstack.git
@@ -58,9 +91,11 @@ survives container rebuilds.
 | Variable | Default | Description |
 |---|---|---|
 | `DATABASE_URL` | `file:/data/selfstack.db` | Prisma connection string. Use a path on the mounted `/data` volume. |
-| `JWT_SECRET` | — | Required. Secret used to sign session tokens. |
+| `JWT_SECRET` | — | **Required.** Secret used to sign session tokens. |
 | `SECURE_COOKIES` | *(unset)* | Set to `"true"` when serving over HTTPS. |
 | `PORT` | `3026` | HTTP port inside the container. |
+| `APP_URL` | *(unset)* | Public base URL (e.g. `https://dash.example.com`). Used for share links and email links. Can also be set in the admin UI. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` / `SMTP_SECURE` | *(unset)* | Fallback SMTP config. Admin UI values override env. |
 
 ## Local development (without Docker)
 
@@ -103,29 +138,51 @@ npm start
 
 Runs on port 3026.
 
+## URL scheme
+
+- `/dashboard` — user overview of all accessible boards
+- `/board/<username>/<slug>` — a user's board (e.g. `/board/maxmuster/dashboard`)
+- `/board/<slug>` — admin-created system boards (no username prefix)
+- `/settings` · `/settings/appearance` · `/settings/account` · `/settings/boards`
+- `/admin/users` · `/admin/settings` (admin only)
+
+Public boards are reachable at the same path without authentication.
+
 ## Project Structure
 
 ```
 src/
 ├── app/
-│   ├── (app)/          # Authenticated app routes
-│   │   ├── board/      # Board view (/board/[slug])
-│   │   ├── dashboard/  # Dashboard overview
-│   │   ├── settings/   # User settings
-│   │   └── admin/      # Admin panel
-│   ├── (auth)/         # Login & register
-│   └── (public)/       # Public board pages (/b/[slug])
+│   ├── (app)/              # Authenticated app routes
+│   │   ├── board/[...slug] # Board view (supports username/slug paths)
+│   │   ├── dashboard/      # Dashboard overview
+│   │   ├── settings/       # User settings (general, appearance, account, boards)
+│   │   ├── media/          # Uploaded icon management
+│   │   └── admin/          # Admin panel
+│   ├── (auth)/             # Login (with 2FA step) & register
+│   ├── api/
+│   │   ├── tile-status/    # Tile status ping endpoint
+│   │   ├── media/          # Icon uploads
+│   │   └── upload/         # Generic upload endpoint
+│   └── change-password/    # Forced password change flow
 ├── components/
-│   ├── dashboard/      # Board, category, group, tile components
-│   ├── layout/         # Sidebar, header
-│   ├── settings/       # Settings pages
-│   └── ui/             # shadcn/ui components
+│   ├── dashboard/          # Board, category, group, tile components
+│   ├── layout/             # Sidebar, header, layout-mode toggle
+│   ├── settings/           # Settings pages & two-factor card
+│   ├── admin/              # Admin-only components (user table, SMTP card)
+│   ├── auth/               # Login / register / 2FA / change-password forms
+│   ├── media/              # Media library
+│   └── ui/                 # shadcn/ui components + color picker
 ├── lib/
-│   ├── actions/        # Server actions (board, auth, settings)
-│   ├── auth.ts         # Session management
-│   ├── db.ts           # Prisma client
-│   └── i18n/           # Translations (de, en)
-└── generated/prisma/   # Generated Prisma client
+│   ├── actions/            # Server actions (board, auth, settings)
+│   ├── auth.ts             # Session & 2FA-pending cookie management
+│   ├── totp.ts             # TOTP secret/QR/verify helpers
+│   ├── email.ts            # SMTP transport (DB-backed with env fallback)
+│   ├── db.ts               # Prisma client
+│   ├── theme-presets.ts    # Built-in theme presets
+│   ├── shadcn-palette.ts   # shadcn color swatches
+│   └── i18n/               # Translations (de, en)
+└── generated/prisma/       # Generated Prisma client
 ```
 
 ## Contributing
@@ -136,3 +193,4 @@ please open an issue first so we can discuss the direction.
 ## License
 
 Selfstack is released under the [MIT License](./LICENSE).
+
