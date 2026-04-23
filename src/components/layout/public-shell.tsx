@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Layers, LogIn } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AuthLanguageToggle } from "@/components/auth/auth-language-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -44,6 +45,7 @@ function PublicShellInner({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="flex items-center gap-1">
             <LayoutModeToggle />
+            <AuthLanguageToggle />
             <ThemeToggle />
             <Tooltip>
               <TooltipTrigger asChild>
