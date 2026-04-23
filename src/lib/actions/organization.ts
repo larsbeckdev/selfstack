@@ -265,3 +265,17 @@ export async function getAvailableUsersForOrg(orgId: string) {
     orderBy: { name: "asc" },
   });
 }
+
+/** Admin helper: list org memberships for a specific user. */
+export async function getUserOrganizations(userId: string) {
+  await requireAdmin();
+  return db.organizationMember.findMany({
+    where: { userId },
+    include: {
+      organization: {
+        select: { id: true, name: true, slug: true, icon: true, iconUrl: true },
+      },
+    },
+    orderBy: { organization: { name: "asc" } },
+  });
+}
