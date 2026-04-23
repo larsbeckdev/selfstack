@@ -111,7 +111,13 @@ export async function GET(request: Request) {
     // Many servers mishandle HEAD (some return 400/403/405/501 or close the
     // connection). If the HEAD response looks like a rejection of the method
     // itself, retry with GET before declaring the endpoint broken.
-    if (status === 0 || status === 400 || status === 403 || status === 405 || status === 501) {
+    if (
+      status === 0 ||
+      status === 400 ||
+      status === 403 ||
+      status === 405 ||
+      status === 501
+    ) {
       try {
         const r = await probe(target, "GET");
         status = r.status;
@@ -132,4 +138,3 @@ export async function GET(request: Request) {
     headers: { "Cache-Control": "no-store" },
   });
 }
-
