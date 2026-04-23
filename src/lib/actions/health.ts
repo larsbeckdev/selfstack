@@ -32,7 +32,7 @@ export type SystemHealth = {
     memoryHeapTotalMb: number;
     nodeEnv: string;
     appUrl: string;
-    databaseUrl: string;
+    databaseType: string;
   };
 };
 
@@ -40,6 +40,17 @@ function worst(a: HealthStatus, b: HealthStatus): HealthStatus {
   if (a === "error" || b === "error") return "error";
   if (a === "warn" || b === "warn") return "warn";
   return "ok";
+}
+
+function redactError(err: unknown, fallback: string): string {
+  const msg = err instanceof Error ? err.message : fallback;
+  // Strip absolute paths (POSIX /foo/bar and Windows C:\foo\bar) that Node
+  // commonly includes in fs error messages so they don't leak on the health
+  // page.
+  return msg
+    .replace(/[A-Za-z]:\\[^\s'"]+/g, "<path>")
+    .replace(/\/[^\s'":]+/g, "<path>")
+    .replace(/'[^']+'/g, "'<path>'");
 }
 
 async function checkDatabase(): Promise<HealthCheck> {
@@ -77,7 +88,6 @@ async function checkDatabaseFile(): Promise<HealthCheck> {
         id: "database-file",
         status: "ok",
         message: "Externe Datenbank konfiguriert",
-        details: { url: raw.replace(/\/\/[^@]+@/, "//***@") },
       };
     }
     const rel = raw.slice(5).replace(/^\.\//, "");
@@ -90,7 +100,6 @@ async function checkDatabaseFile(): Promise<HealthCheck> {
       status: "ok",
       message: "SQLite-Datei gefunden",
       details: {
-        path: abs,
         sizeMb: Math.round((stat.size / 1024 / 1024) * 100) / 100,
       },
     };
@@ -98,8 +107,7 @@ async function checkDatabaseFile(): Promise<HealthCheck> {
     return {
       id: "database-file",
       status: "error",
-      message:
-        err instanceof Error ? err.message : "Datenbankdatei nicht gefunden",
+      message: redactError(err, "Datenbankdatei nicht gefunden"),
     };
   }
 }
@@ -124,17 +132,13 @@ async function checkUploads(): Promise<HealthCheck> {
       id: "uploads",
       status: "ok",
       message: "Upload-Verzeichnis beschreibbar",
-      details: { path: uploadsDir, icons: iconCount },
+      details: { icons: iconCount },
     };
   } catch (err) {
     return {
       id: "uploads",
       status: "error",
-      message:
-        err instanceof Error
-          ? err.message
-          : "Upload-Verzeichnis nicht beschreibbar",
-      details: { path: uploadsDir },
+      message: redactError(err, "Upload-Verzeichnis nicht beschreibbar"),
     };
   }
 }
@@ -254,7 +258,11 @@ export async function getSystemHealth(): Promise<SystemHealth> {
 
   const mem = process.memoryUsage();
   const rawDbUrl = process.env.DATABASE_URL ?? "";
-  const maskedDbUrl = rawDbUrl.replace(/\/\/[^@]+@/, "//***@");
+  let databaseType = "unknown";
+  if (rawDbUrl.startsWith("file:")) databaseType = "sqlite";
+  else if (/^postgres(ql)?:/i.test(rawDbUrl)) databaseType = "postgres";
+  else if (/^mysql:/i.test(rawDbUrl)) databaseType = "mysql";
+  else if (rawDbUrl) databaseType = "external";
 
   return {
     overall,
@@ -270,7 +278,7 @@ export async function getSystemHealth(): Promise<SystemHealth> {
       memoryHeapTotalMb: Math.round(mem.heapTotal / 1024 / 1024),
       nodeEnv: process.env.NODE_ENV ?? "development",
       appUrl: await getAppUrl(),
-      databaseUrl: maskedDbUrl,
+      databaseType,
     },
   };
 }

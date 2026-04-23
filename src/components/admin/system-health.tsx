@@ -200,8 +200,7 @@ export function SystemHealthView({ initial }: { initial: SystemHealth }) {
             <InfoRow label="App-URL" value={health.info.appUrl} mono />
             <InfoRow
               label="Datenbank"
-              value={health.info.databaseUrl || "—"}
-              mono
+              value={health.info.databaseType || "—"}
             />
           </dl>
         </CardContent>
