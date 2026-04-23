@@ -9,6 +9,7 @@ import { ThemeSyncer } from "@/components/theme-syncer";
 import { LocaleProvider } from "@/components/locale-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { DemoBanner } from "@/components/demo-banner";
+import { isDemoMode } from "@/lib/demo";
 import { getSession } from "@/lib/auth";
 import type { Locale } from "@/lib/i18n";
 import "./globals.css";
@@ -66,7 +67,10 @@ export default async function RootLayout({
       <head>
         <ThemeInitScript preset={themePreset} customColors={customColors} />
       </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body
+        className={`min-h-full flex flex-col bg-background text-foreground${
+          isDemoMode() ? " pb-8" : ""
+        }`}>
         <ThemeProvider defaultTheme={theme}>
           <ThemeApplier preset={themePreset} customColors={customColors} />
           {hasSession && <ThemeSyncer initialTheme={theme} />}
