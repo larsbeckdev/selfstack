@@ -121,21 +121,24 @@ export async function seedDemoData(): Promise<void> {
           color: cat.color,
           x: 0,
           y: ci * 8,
-          w: 12,
-          h: 6,
+          w: 4, // full-width category (1..4 range)
+          h: 8,
           boardId: board.id,
         },
       });
 
       for (let gi = 0; gi < cat.groups.length; gi++) {
         const g = cat.groups[gi];
+        // Groups live in a 2-column grid inside the category. Use half-width
+        // (w=1) so two groups sit side by side; stack further groups onto
+        // the next row.
         const group = await db.group.create({
           data: {
             name: g.name,
             icon: g.icon,
-            x: (gi % 2) * 6,
+            x: gi % 2,
             y: Math.floor(gi / 2) * 4,
-            w: 6,
+            w: 1,
             h: 4,
             categoryId: category.id,
           },
@@ -143,6 +146,8 @@ export async function seedDemoData(): Promise<void> {
 
         for (let ti = 0; ti < g.tiles.length; ti++) {
           const t = g.tiles[ti];
+          // Half-width group in a full-width category → 6 inner columns.
+          // Default tile = 2×2, so 3 tiles per row at x = 0,2,4.
           await db.tile.create({
             data: {
               name: t.name,
