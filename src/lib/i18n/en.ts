@@ -510,6 +510,11 @@ const en: Record<TranslationKey, string> = {
   "board.publicTitle": "Public boards",
   "board.publicDesc": "An overview of all publicly available boards.",
   "board.publicEmpty": "No public boards yet.",
+
+  // Demo mode
+  "demo.active": "Demo mode active",
+  "demo.settingsDisabled": "changes are disabled",
+  "demo.resetsEvery": "automatic reset every {minutes} minutes",
 };
 
 export default en;

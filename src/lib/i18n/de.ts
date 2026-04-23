@@ -515,6 +515,11 @@ const de = {
   "board.publicTitle": "Öffentliche Boards",
   "board.publicDesc": "Eine Übersicht aller öffentlich verfügbaren Boards.",
   "board.publicEmpty": "Noch keine öffentlichen Boards vorhanden.",
+
+  // Demo mode
+  "demo.active": "Demo-Modus aktiv",
+  "demo.settingsDisabled": "Änderungen sind deaktiviert",
+  "demo.resetsEvery": "automatischer Reset alle {minutes} Minuten",
 } as const;
 
 export type TranslationKey = keyof typeof de;
