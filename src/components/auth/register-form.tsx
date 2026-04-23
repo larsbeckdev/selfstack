@@ -29,12 +29,7 @@ export function RegisterForm() {
     <Card>
       <CardHeader className="text-center">
         <div className="flex justify-center mb-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/selfstack_symbol.svg"
-            alt="Selfstack"
-            className="h-10 w-auto sm:h-12"
-          />
+          <Layers className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
         </div>
         <CardTitle className="text-xl sm:text-2xl">
           {t("auth.registerTitle")}
