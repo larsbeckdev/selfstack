@@ -10,8 +10,8 @@ export function DemoBanner() {
   return (
     <div className="sticky top-0 z-40 flex items-center justify-center gap-2 bg-amber-500 px-4 py-1.5 text-center text-xs font-medium text-amber-950 dark:bg-amber-400 dark:text-amber-950">
       <span className="inline-block size-2 rounded-full bg-amber-950/80" />
-      Demo-Modus aktiv &middot; Änderungen sind deaktiviert &middot; automatischer
-      Reset alle {minutes}&nbsp;Minuten
+      Demo-Modus aktiv &middot; Änderungen sind deaktiviert &middot;
+      automatischer Reset alle {minutes}&nbsp;Minuten
     </div>
   );
 }

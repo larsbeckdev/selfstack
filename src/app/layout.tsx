@@ -8,6 +8,7 @@ import { ThemeApplier } from "@/components/theme-applier";
 import { ThemeSyncer } from "@/components/theme-syncer";
 import { LocaleProvider } from "@/components/locale-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { DemoBanner } from "@/components/demo-banner";
 import { getSession } from "@/lib/auth";
 import type { Locale } from "@/lib/i18n";
 import "./globals.css";
@@ -71,6 +72,7 @@ export default async function RootLayout({
           {hasSession && <ThemeSyncer initialTheme={theme} />}
           <LocaleProvider locale={locale}>
             <TooltipProvider>
+              <DemoBanner />
               {children}
               <Toaster richColors position="bottom-right" />
             </TooltipProvider>

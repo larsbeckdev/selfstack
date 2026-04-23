@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { updateProfile } from "@/lib/actions/settings";
 import { useTranslation } from "@/components/locale-provider";
+import { DEMO_MODE } from "@/lib/demo";
 import type { SessionUser } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,7 +86,7 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
           </div>
         </CardContent>
         <CardFooter>
-          <Button type="submit" disabled={loading}>
+          <Button type="submit" disabled={loading || DEMO_MODE}>
             {loading ? t("common.saving") : t("common.save")}
           </Button>
         </CardFooter>

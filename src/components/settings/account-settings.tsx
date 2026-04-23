@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { changePassword, deleteAccount } from "@/lib/actions/settings";
 import { logout } from "@/lib/actions/auth";
 import { useTranslation } from "@/components/locale-provider";
+import { DEMO_MODE } from "@/lib/demo";
 import type { SessionUser } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,7 +103,7 @@ export function AccountSettings({
             </div>
           </CardContent>
           <CardFooter>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || DEMO_MODE}>
               {loading ? t("settings.changing") : t("settings.changePassword")}
             </Button>
           </CardFooter>
@@ -121,7 +122,7 @@ export function AccountSettings({
         <CardFooter>
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button variant="destructive">
+              <Button variant="destructive" disabled={DEMO_MODE}>
                 {t("settings.deleteAccount")}
               </Button>
             </AlertDialogTrigger>
