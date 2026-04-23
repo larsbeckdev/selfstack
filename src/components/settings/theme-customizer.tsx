@@ -206,6 +206,7 @@ export function ThemeCustomizer() {
   );
   const [activePreset, setActivePreset] = useState<string>("default");
   const [customColors, setCustomColors] = useState<Record<string, string>>({});
+  const [loaded, setLoaded] = useState(false);
 
   // Load theme from DB on mount
   useEffect(() => {
@@ -221,12 +222,13 @@ export function ThemeCustomizer() {
           } catch {}
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setLoaded(true));
   }, []);
 
   // Apply theme colors when preset or mode changes
   const applyCurrentTheme = useCallback(() => {
-    if (!mounted) return;
+    if (!mounted || !loaded) return;
     const preset = themePresets[activePreset];
     if (!preset || activePreset === "default") {
       clearThemeColors();
@@ -239,7 +241,7 @@ export function ThemeCustomizer() {
     const mode = resolvedTheme === "dark" ? "dark" : "light";
     const colors = { ...preset.colors[mode], ...customColors };
     applyThemeColors(colors);
-  }, [activePreset, resolvedTheme, mounted, customColors]);
+  }, [activePreset, resolvedTheme, mounted, loaded, customColors]);
 
   useEffect(() => {
     applyCurrentTheme();
