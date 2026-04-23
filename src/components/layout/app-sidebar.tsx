@@ -169,7 +169,7 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center justify-between">
             {t("nav.boards")}
-            <CreateBoardDialog>
+            <CreateBoardDialog isAdmin={user.role === "admin"}>
               <button className="rounded-md p-0.5 hover:bg-accent">
                 <Plus className="size-3.5" />
               </button>
