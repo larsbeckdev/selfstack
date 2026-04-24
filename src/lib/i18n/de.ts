@@ -448,12 +448,27 @@ const de = {
   // Errors
   "error.generic": "Ein Fehler ist aufgetreten",
   "error.notFound": "Seite nicht gefunden",
+  "error.backToDashboard": "Zurück zum Dashboard",
   "error.updateFailed": "Fehler beim Aktualisieren",
   "error.createFailed": "Fehler beim Erstellen",
   "error.deleteFailed": "Fehler beim Löschen",
   "error.duplicateFailed": "Fehler beim Duplizieren",
   "error.changeFailed": "Fehler beim Ändern",
   "error.copyFailed": "Kopieren fehlgeschlagen",
+
+  // Icon picker
+  "iconPicker.noneFound": "Kein Icon gefunden",
+  "iconPicker.noFilesFound": "Keine Dateien gefunden",
+  "iconPicker.uploading": "Wird hochgeladen...",
+  "iconPicker.dropHint": "Klicken oder Datei hierher ziehen",
+  "iconPicker.uploadConstraints": "PNG, JPG, WEBP, SVG, ICO (max. 512 KB)",
+  "iconPicker.uploadedIcon": "Hochgeladenes Icon",
+  "iconPicker.remove": "Entfernen",
+  "iconPicker.urlLabel": "Icon-URL",
+  "iconPicker.preview": "Vorschau",
+  "iconPicker.apply": "Übernehmen",
+  "iconPicker.removeUrl": "URL entfernen",
+  "iconPicker.searchMedia": "Medien suchen...",
 
   // Media
   "media.loadFailed": "Fehler beim Laden der Medien",
