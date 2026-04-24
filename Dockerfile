@@ -58,23 +58,11 @@ COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 # Prisma: schema + generated client + seed
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
-# Prisma CLI + tsx for `prisma db push` / seed at container startup.
-# NOTE: we intentionally don't COPY the .bin/ symlinks — Docker dereferences
-# them and the copied file then can't find its sibling wasm assets. We
-# recreate the symlinks below after the package dirs exist.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/adapter-better-sqlite3 ./node_modules/@prisma/adapter-better-sqlite3
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/tsx ./node_modules/tsx
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/esbuild ./node_modules/esbuild
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/get-tsconfig ./node_modules/get-tsconfig
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/resolve-pkg-maps ./node_modules/resolve-pkg-maps
-
-RUN mkdir -p ./node_modules/.bin \
-    && ln -sf ../prisma/build/index.js ./node_modules/.bin/prisma \
-    && ln -sf ../tsx/dist/cli.mjs ./node_modules/.bin/tsx \
-    && chown -h nextjs:nodejs ./node_modules/.bin/prisma ./node_modules/.bin/tsx
+# Copy the full node_modules so `prisma db push` and `tsx prisma/seed.ts`
+# at container startup have all their runtime and binary deps (wasm files,
+# esbuild native binary, etc.). The extra image size is worth the reliability.
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 
 # Data dir for SQLite + uploads (bind-mounted as volumes in production)
 RUN mkdir -p /data /app/public/uploads \
