@@ -226,8 +226,10 @@ const de = {
   "settings.themePresetsDesc": "Wähle ein vorgefertigtes Farbschema",
   "settings.themeColors": "Farben anpassen",
   "settings.themeColorsDesc": "Passe einzelne Farben individuell an",
-  "settings.themeColorsDescMode": "Passe einzelne Farben individuell an ({mode}-Modus)",
-  "settings.themePresetsDescFull": "Wähle ein vorgefertigtes Farbschema — inspiriert von tweakcn",
+  "settings.themeColorsDescMode":
+    "Passe einzelne Farben individuell an ({mode}-Modus)",
+  "settings.themePresetsDescFull":
+    "Wähle ein vorgefertigtes Farbschema — inspiriert von tweakcn",
   "settings.colorPrimary": "Primär",
   "settings.colorPrimaryFg": "Primär Text",
   "settings.colorBackground": "Hintergrund",

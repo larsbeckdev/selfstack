@@ -227,7 +227,8 @@ const en: Record<TranslationKey, string> = {
   "settings.themeColors": "Customize Colors",
   "settings.themeColorsDesc": "Customize individual colors",
   "settings.themeColorsDescMode": "Customize individual colors ({mode} mode)",
-  "settings.themePresetsDescFull": "Pick a pre-built color scheme — inspired by tweakcn",
+  "settings.themePresetsDescFull":
+    "Pick a pre-built color scheme — inspired by tweakcn",
   "settings.colorPrimary": "Primary",
   "settings.colorPrimaryFg": "Primary text",
   "settings.colorBackground": "Background",
