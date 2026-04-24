@@ -210,6 +210,13 @@
   [data-category-grid] > [data-group-layout="list"][data-group-width="1"] {
     grid-column: 1 / -1 !important;
   }
+  /* Groups inside a category use explicit (x, y) coordinates via inline
+     styles. On narrow viewports a list group may be promoted to full width,
+     which causes other groups in the same row to overlap. Drop fixed row
+     positions so groups auto-flow into the next row instead. */
+  [data-category-grid] > * {
+    grid-row: auto !important;
+  }
 }
 
 /* Large tablet (≤1279 px): 2 board columns */
