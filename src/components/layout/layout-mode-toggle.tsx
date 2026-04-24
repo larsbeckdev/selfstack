@@ -16,7 +16,11 @@ export function LayoutModeToggle() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button size="icon" variant="ghost" onClick={toggleContainerMode}>
+        <Button
+          size="icon"
+          variant="ghost"
+          onClick={toggleContainerMode}
+          className="hidden lg:inline-flex">
           <GalleryHorizontal className="size-4" />
         </Button>
       </TooltipTrigger>
