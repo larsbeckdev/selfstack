@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Mail,
   MoreHorizontal,
+  Pencil,
   Shield,
   Trash2,
   UserMinus,
@@ -18,6 +19,7 @@ import {
   updateUserRole,
   deleteUser,
   adminCreateUser,
+  adminUpdateUser,
   adminResetPassword,
   adminSendPasswordEmail,
   getUserBoards,
@@ -123,6 +125,43 @@ export function UserTable({
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [shownPassword, setShownPassword] = useState("");
   const [shownUserName, setShownUserName] = useState("");
+
+  // Edit user dialog
+  const [editUser, setEditUser] = useState<UserRow | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editUsername, setEditUsername] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editRole, setEditRole] = useState("user");
+  const [editLoading, setEditLoading] = useState(false);
+
+  const openEdit = (user: UserRow) => {
+    setEditUser(user);
+    setEditName(user.name);
+    setEditUsername(user.username ?? "");
+    setEditEmail(user.email);
+    setEditRole(user.role);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+    setEditLoading(true);
+    try {
+      await adminUpdateUser({
+        userId: editUser.id,
+        name: editName,
+        username: editUsername,
+        email: editEmail,
+        role: editRole as "user" | "editor" | "admin",
+      });
+      toast.success(t("admin.userUpdated"));
+      setEditUser(null);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("common.error"));
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   // Boards dialog (admin viewing a user's boards)
   type UserBoard = {
@@ -525,6 +564,10 @@ export function UserTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openEdit(user)}>
+                          <Pencil className="mr-2 size-3.5" />
+                          {t("admin.editUser")}
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => openBoards(user)}
                           disabled={user._count.boards === 0}>
