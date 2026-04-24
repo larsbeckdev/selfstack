@@ -42,7 +42,8 @@ missingInDe.forEach((k) => console.log("  " + k));
 
 // Detect English strings still in DE (heuristic: contains space + common English words)
 console.log("\nPotentially untranslated in DE (looks English):");
-const englishWords = /\b(the|and|or|please|click|with|from|settings|user|edit|delete|save|cancel|add|remove|new|here|enter|select|login|logout|password|email|created|updated)\b/i;
+const englishWords =
+  /\b(the|and|or|please|click|with|from|settings|user|edit|delete|save|cancel|add|remove|new|here|enter|select|login|logout|password|email|created|updated)\b/i;
 for (const [k, v] of Object.entries(de)) {
   if (englishWords.test(v) && !/[äöüßÄÖÜ]/.test(v)) {
     // Skip if value is same as EN and very short or single word
@@ -56,7 +57,12 @@ for (const [k, v] of Object.entries(de)) {
 // Detect German words in EN
 console.log("\nPotentially untranslated in EN (looks German):");
 for (const [k, v] of Object.entries(en)) {
-  if (/[äöüßÄÖÜ]/.test(v) || /\b(der|die|das|und|oder|bitte|wird|werden|nicht|kein|mit|für|auf|aus|zu|zum|zur|ein|eine|einen|Benutzer|Passwort|Einstellungen|löschen|speichern|bearbeiten|hinzufügen)\b/.test(v)) {
+  if (
+    /[äöüßÄÖÜ]/.test(v) ||
+    /\b(der|die|das|und|oder|bitte|wird|werden|nicht|kein|mit|für|auf|aus|zu|zum|zur|ein|eine|einen|Benutzer|Passwort|Einstellungen|löschen|speichern|bearbeiten|hinzufügen)\b/.test(
+      v,
+    )
+  ) {
     console.log(`  ${k}: "${v}"`);
   }
 }
