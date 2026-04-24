@@ -14,19 +14,23 @@ import { getSession } from "@/lib/auth";
 import type { Locale } from "@/lib/i18n";
 import "./globals.css";
 
+const allowIndexing = process.env.ALLOW_SEARCH_INDEXING === "true";
+
 export const metadata: Metadata = {
   title: "Selfstack",
   description: "Personal Dashboard",
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: {
-      index: false,
-      follow: false,
-      noimageindex: true,
-    },
-  },
+  robots: allowIndexing
+    ? undefined
+    : {
+        index: false,
+        follow: false,
+        nocache: true,
+        googleBot: {
+          index: false,
+          follow: false,
+          noimageindex: true,
+        },
+      },
 };
 
 export default async function RootLayout({
