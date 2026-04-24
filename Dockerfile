@@ -24,6 +24,11 @@ RUN apt-get update \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Dummy values so `next build` can collect page data without a real DB.
+# These are NOT used at runtime — the runner stage overrides DATABASE_URL.
+ENV DATABASE_URL="file:./dev.db" \
+    JWT_SECRET="build-time-placeholder"
+
 # Generate Prisma client for the build
 RUN npx prisma generate
 
