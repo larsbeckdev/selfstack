@@ -240,6 +240,89 @@ export async function getUserBoards(userId: string) {
   });
 }
 
+const adminUpdateUserSchema = z.object({
+  userId: z.string().min(1),
+  name: z.string().min(2).max(100),
+  username: z
+    .string()
+    .min(2)
+    .max(40)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  email: z.string().email(),
+  role: z.enum(["user", "editor", "admin"]),
+});
+
+export async function adminUpdateUser(
+  data: z.infer<typeof adminUpdateUserSchema>,
+) {
+  await requireAdmin();
+  assertNotDemo();
+  const parsed = adminUpdateUserSchema.parse(data);
+
+  const target = await db.user.findUnique({
+    where: { id: parsed.userId },
+    select: { id: true, email: true, username: true, role: true },
+  });
+  if (!target) throw new Error("Benutzer nicht gefunden");
+
+  if (parsed.email !== target.email) {
+    const existing = await db.user.findUnique({
+      where: { email: parsed.email },
+    });
+    if (existing && existing.id !== target.id) {
+      throw new Error("E-Mail wird bereits verwendet");
+    }
+  }
+
+  const usernameChanged = parsed.username !== target.username;
+  if (usernameChanged) {
+    const existing = await db.user.findUnique({
+      where: { username: parsed.username },
+    });
+    if (existing && existing.id !== target.id) {
+      throw new Error("Username wird bereits verwendet");
+    }
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: target.id },
+      data: {
+        name: parsed.name,
+        username: parsed.username,
+        email: parsed.email,
+        role: parsed.role,
+      },
+    });
+
+    // Cascade-rename board slugs prefixed with the old username.
+    if (usernameChanged && target.role !== "admin" && target.username) {
+      const oldPrefix = `${target.username}/`;
+      const boards = await tx.board.findMany({
+        where: { userId: target.id, slug: { startsWith: oldPrefix } },
+        select: { id: true, slug: true },
+      });
+      for (const b of boards) {
+        const tail = b.slug.slice(oldPrefix.length);
+        let newSlug = `${parsed.username}/${tail}`;
+        let n = 0;
+        while (
+          await tx.board.findFirst({
+            where: { slug: newSlug, NOT: { id: b.id } },
+            select: { id: true },
+          })
+        ) {
+          n++;
+          newSlug = `${parsed.username}/${tail}-${n}`;
+        }
+        await tx.board.update({ where: { id: b.id }, data: { slug: newSlug } });
+      }
+    }
+  });
+
+  revalidatePath("/admin/users");
+}
+
 export async function updateUserRole(userId: string, role: string) {
   await requireAdmin();
   assertNotDemo();

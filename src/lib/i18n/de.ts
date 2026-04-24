@@ -324,6 +324,11 @@ const de = {
   "admin.createUserTitle": "Neuen Benutzer erstellen",
   "admin.createUserDesc":
     "Erstelle ein Konto mit Einmalpasswort oder eigenem Passwort.",
+  "admin.editUser": "Benutzer bearbeiten",
+  "admin.editUserTitle": "Benutzer bearbeiten",
+  "admin.editUserDesc":
+    "Name, Username, E-Mail und Rolle anpassen. Beim Ändern des Usernames werden zugehörige Board-URLs automatisch umbenannt.",
+  "admin.userUpdated": "Benutzer aktualisiert",
   "admin.generatePassword":
     "Einmalpasswort generieren (Benutzer muss Passwort beim ersten Login ändern)",
   "admin.sendCredentials": "Zugangsdaten per E-Mail versenden",

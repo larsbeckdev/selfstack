@@ -322,6 +322,11 @@ const en: Record<TranslationKey, string> = {
   "admin.createUserTitle": "Create new user",
   "admin.createUserDesc":
     "Create an account with a one-time password or custom password.",
+  "admin.editUser": "Edit user",
+  "admin.editUserTitle": "Edit user",
+  "admin.editUserDesc":
+    "Update name, username, email and role. Changing the username automatically renames related board URLs.",
+  "admin.userUpdated": "User updated",
   "admin.generatePassword":
     "Generate one-time password (user must change password on first login)",
   "admin.sendCredentials": "Send credentials by email",
