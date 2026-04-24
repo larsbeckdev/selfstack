@@ -16,5 +16,9 @@ services:
       # Enable when serving over HTTPS
       # SECURE_COOKIES: "true"
     volumes:
-      - ./selfstack-data:/data
-      - ./selfstack-uploads:/app/public/uploads
+      - selfstack-data:/data
+      - selfstack-uploads:/app/public/uploads
+
+volumes:
+  selfstack-data:
+  selfstack-uploads:

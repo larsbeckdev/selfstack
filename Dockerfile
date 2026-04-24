@@ -43,7 +43,7 @@ RUN npm run build
 # ─── Runner ──────────────────────────────────────────────────────────────────
 FROM base AS runner
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends openssl \
+    && apt-get install -y --no-install-recommends openssl gosu \
     && rm -rf /var/lib/apt/lists/*
 
 # Non-root user
@@ -72,7 +72,9 @@ COPY --chown=nextjs:nodejs docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh \
     && chmod +x /usr/local/bin/docker-entrypoint.sh
 
-USER nextjs
+# Run as root so the entrypoint can fix ownership on bind-mounted volumes
+# before dropping privileges to nextjs for the actual app.
+USER root
 
 ENV PORT=3026 \
     HOSTNAME=0.0.0.0 \
