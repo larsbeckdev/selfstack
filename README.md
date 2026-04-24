@@ -21,6 +21,7 @@ heavier homelab dashboards, designed to be deployed in a single container.
 ### Sharing & access control
 - **Public boards** reachable via `/board/<username>/<slug>` (viewer-only)
 - **Board members** with per-board roles: owner / editor / viewer
+- **Organizations** to group users and share boards within a team (owner / admin / editor / member roles)
 - Global roles: `user`, `editor` (edit any board), `admin` (full access)
 - Copyable share link with app-URL awareness (works behind reverse proxies)
 
@@ -43,9 +44,21 @@ heavier homelab dashboards, designed to be deployed in a single container.
 
 ### Admin panel
 - User CRUD with one-time password generation and welcome email
-- System settings (registration toggle, public app URL)
+- **Organization management** (create, edit, add/remove members, change roles)
+- **System health page** (DB, uploads, SMTP reachability, memory, uptime)
+- System settings (registration toggle, public app URL, legal texts)
 - **SMTP configuration UI** with test-email send
 - Role management
+
+### Demo mode
+- Single-flag deployment (`NEXT_PUBLIC_DEMO_MODE=true`)
+- Database is wiped + re-seeded with demo content on boot and every `DEMO_RESET_MINUTES` (default 60)
+- All settings mutations are blocked server-side
+- Bottom banner announces demo status, localized and reacts to the language toggle
+
+### Privacy
+- Sends `noindex, nofollow` headers and `/robots.txt` with `Disallow: /` by default
+- Opt in to crawlers with `ALLOW_SEARCH_INDEXING="true"`
 
 ### Self-hosted
 - SQLite database (better-sqlite3 adapter), no external services required
@@ -84,7 +97,13 @@ Open <http://localhost:3026> and sign in with the seeded admin:
 
 Data is stored in two named volumes (`selfstack-data` for the SQLite
 database, `selfstack-uploads` for user-uploaded icons) so your content
-survives container rebuilds.
+survives container rebuilds. The entrypoint also repairs ownership on
+boot, so bind-mounts (e.g. `./selfstack-data:/data`) work out of the
+box if you prefer those for backups.
+
+On every start the container runs `prisma db push` (idempotent schema
+sync) and seeds an admin user on first boot — a fresh `docker compose
+up -d --build` is enough, no manual migration step.
 
 ### Environment variables
 
@@ -96,6 +115,9 @@ survives container rebuilds.
 | `PORT` | `3026` | HTTP port inside the container. |
 | `APP_URL` | *(unset)* | Public base URL (e.g. `https://dash.example.com`). Used for share links and email links. Can also be set in the admin UI. |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` / `SMTP_SECURE` | *(unset)* | Fallback SMTP config. Admin UI values override env. |
+| `ALLOW_SEARCH_INDEXING` | `false` | Set to `"true"` to drop the `noindex` meta tag and allow `/robots.txt` crawling. |
+| `NEXT_PUBLIC_DEMO_MODE` | `false` | Set to `"true"` to enable demo mode (auto-reset + mutation lock). |
+| `DEMO_RESET_MINUTES` | `60` | How often the demo database is wiped + re-seeded. |
 
 ## Local development (without Docker)
 
@@ -141,12 +163,17 @@ Runs on port 3026.
 ## URL scheme
 
 - `/dashboard` — user overview of all accessible boards
+- `/board` — list of public boards
 - `/board/<username>/<slug>` — a user's board (e.g. `/board/maxmuster/dashboard`)
-- `/board/<slug>` — admin-created system boards (no username prefix)
+- `/board/<orgslug>/<slug>` — an organization-owned board (e.g. `/board/acme/team`)
+- `/board/<slug>` — admin-created system boards (no prefix)
 - `/settings` · `/settings/appearance` · `/settings/account` · `/settings/boards`
-- `/admin/users` · `/admin/settings` (admin only)
+- `/admin/users` · `/admin/organizations` · `/admin/settings` · `/admin/health` (admin only)
 
 Public boards are reachable at the same path without authentication.
+
+> **Note:** Board slugs cannot start with `@` — segments beginning with `@`
+> are reserved by Next.js App Router for parallel route slots.
 
 ## Project Structure
 
@@ -158,7 +185,7 @@ src/
 │   │   ├── dashboard/      # Dashboard overview
 │   │   ├── settings/       # User settings (general, appearance, account, boards)
 │   │   ├── media/          # Uploaded icon management
-│   │   └── admin/          # Admin panel
+│   │   └── admin/          # Admin panel (users, organizations, settings, health)
 │   ├── (auth)/             # Login (with 2FA step) & register
 │   ├── api/
 │   │   ├── tile-status/    # Tile status ping endpoint
