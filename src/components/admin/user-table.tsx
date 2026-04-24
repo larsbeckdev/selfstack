@@ -654,6 +654,84 @@ export function UserTable({
         </CardContent>
       </Card>
 
+      {/* Edit user dialog */}
+      <Dialog
+        open={editUser !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditUser(null);
+        }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("admin.editUserTitle")}</DialogTitle>
+            <DialogDescription>{t("admin.editUserDesc")}</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-user-name">{t("common.name")}</Label>
+              <Input
+                id="edit-user-name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-user-username">{t("common.username")}</Label>
+              <Input
+                id="edit-user-username"
+                value={editUsername}
+                onChange={(e) =>
+                  setEditUsername(
+                    e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""),
+                  )
+                }
+                pattern="[a-z0-9]+(?:-[a-z0-9]+)*"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                {t("admin.usernameHelp")}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-user-email">{t("common.email")}</Label>
+              <Input
+                id="edit-user-email"
+                type="email"
+                value={editEmail}
+                onChange={(e) => setEditEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{t("admin.role")}</Label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">{t("admin.roleUser")}</SelectItem>
+                  <SelectItem value="editor">
+                    {t("admin.roleEditor")}
+                  </SelectItem>
+                  <SelectItem value="admin">{t("admin.roleAdmin")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditUser(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={editLoading}>
+                {editLoading ? t("common.saving") : t("common.save")}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {/* Password display dialog */}
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
         <DialogContent>
