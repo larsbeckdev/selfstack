@@ -21,6 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/locale-provider";
 
 const lucideNames = Object.keys(icons).map((name) =>
   name
@@ -73,6 +74,7 @@ export function IconPicker({
   iconUrl?: string | null;
   onIconUrlChange?: (url: string | null) => void;
 }) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [library, setLibrary] = useState<IconLibrary>(() => {
@@ -221,7 +223,7 @@ export function IconPicker({
               onWheel={(e) => e.stopPropagation()}>
               {library === "selfhst" && selfhstLoading ? (
                 <p className="py-6 text-center text-xs text-muted-foreground">
-                  Lädt...
+                  {t("common.loading")}
                 </p>
               ) : (
                 <div className="grid grid-cols-8 gap-1">
@@ -260,7 +262,7 @@ export function IconPicker({
                   })}
                   {filtered.length === 0 && (
                     <p className="col-span-8 py-4 text-center text-sm text-muted-foreground">
-                      Kein Icon gefunden
+                      {t("iconPicker.noneFound")}
                     </p>
                   )}
                 </div>
@@ -270,7 +272,7 @@ export function IconPicker({
           <TabsContent value="media" className="mt-2">
             <div className="pb-2">
               <Input
-                placeholder="Medien suchen..."
+                placeholder={t("iconPicker.searchMedia")}
                 value={mediaSearch}
                 onChange={(e) => setMediaSearch(e.target.value)}
               />
@@ -280,11 +282,11 @@ export function IconPicker({
               onWheel={(e) => e.stopPropagation()}>
               {mediaLoading ? (
                 <p className="py-6 text-center text-xs text-muted-foreground">
-                  Lädt...
+                  {t("common.loading")}
                 </p>
               ) : filteredMedia.length === 0 ? (
                 <p className="py-6 text-center text-xs text-muted-foreground">
-                  Keine Dateien gefunden
+                  {t("iconPicker.noFilesFound")}
                 </p>
               ) : (
                 <div className="grid grid-cols-5 gap-1">
@@ -347,11 +349,11 @@ export function IconPicker({
               <Upload className="size-8 text-muted-foreground" />
               <p className="text-sm text-muted-foreground text-center">
                 {uploading
-                  ? "Wird hochgeladen..."
-                  : "Klicken oder Datei hierher ziehen"}
+                  ? t("iconPicker.uploading")
+                  : t("iconPicker.dropHint")}
               </p>
               <p className="text-xs text-muted-foreground">
-                PNG, JPG, WEBP, SVG, ICO (max. 512 KB)
+                {t("iconPicker.uploadConstraints")}
               </p>
             </div>
             {(uploadPreview || iconUrl) && (
@@ -365,7 +367,7 @@ export function IconPicker({
                   }}
                 />
                 <span className="text-xs text-muted-foreground truncate flex-1">
-                  {uploadName || "Hochgeladenes Icon"}
+                  {uploadName || t("iconPicker.uploadedIcon")}
                 </span>
                 <Button
                   variant="ghost"
@@ -375,14 +377,14 @@ export function IconPicker({
                     setUploadName(null);
                     onIconUrlChange?.(null);
                   }}>
-                  Entfernen
+                  {t("iconPicker.remove")}
                 </Button>
               </div>
             )}
           </TabsContent>
           <TabsContent value="url" className="mt-2 space-y-3">
             <div className="space-y-2">
-              <Label htmlFor="icon-url">Icon-URL</Label>
+              <Label htmlFor="icon-url">{t("iconPicker.urlLabel")}</Label>
               <Input
                 id="icon-url"
                 type="url"
@@ -402,7 +404,7 @@ export function IconPicker({
                   }}
                 />
                 <span className="text-xs text-muted-foreground truncate">
-                  Vorschau
+                  {t("iconPicker.preview")}
                 </span>
               </div>
             )}
@@ -414,7 +416,7 @@ export function IconPicker({
                 onIconUrlChange?.(urlInput || null);
                 setOpen(false);
               }}>
-              Übernehmen
+              {t("iconPicker.apply")}
             </Button>
             {iconUrl && (
               <Button
@@ -425,7 +427,7 @@ export function IconPicker({
                   setUrlInput("");
                   onIconUrlChange?.(null);
                 }}>
-                URL entfernen
+                {t("iconPicker.removeUrl")}
               </Button>
             )}
           </TabsContent>

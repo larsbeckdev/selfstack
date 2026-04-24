@@ -50,7 +50,7 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
     const existing = await db.user.findUnique({
       where: { email: parsed.email },
     });
-    if (existing) throw new Error("E-Mail wird bereits verwendet");
+    if (existing) throw new Error("Email is already in use");
   }
 
   const usernameChanged = parsed.username !== dbUser.username;
@@ -58,7 +58,7 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
     const existing = await db.user.findUnique({
       where: { username: parsed.username },
     });
-    if (existing) throw new Error("Username wird bereits verwendet");
+    if (existing) throw new Error("Username is already in use");
   }
 
   await db.$transaction(async (tx) => {
@@ -112,7 +112,7 @@ export async function changePassword(
   if (!dbUser) throw new Error("User not found");
 
   const valid = await bcrypt.compare(parsed.currentPassword, dbUser.password);
-  if (!valid) throw new Error("Aktuelles Passwort ist falsch");
+  if (!valid) throw new Error("Current password is incorrect");
 
   const hashed = await bcrypt.hash(parsed.newPassword, 12);
   await db.user.update({
@@ -176,10 +176,10 @@ export async function confirmTwoFactorEnrollment(token: string) {
     select: { twoFactorSecret: true, twoFactorEnabled: true },
   });
   if (!dbUser?.twoFactorSecret) {
-    throw new Error("Keine laufende 2FA-Einrichtung");
+    throw new Error("No pending 2FA setup");
   }
   if (!verifyTotp(dbUser.twoFactorSecret, token)) {
-    throw new Error("Ungültiger Code");
+    throw new Error("Invalid code");
   }
   await db.user.update({
     where: { id: user.id },
@@ -195,7 +195,7 @@ export async function disableTwoFactor(password: string) {
   if (!dbUser) throw new Error("User not found");
 
   const ok = await bcrypt.compare(password, dbUser.password);
-  if (!ok) throw new Error("Passwort ist falsch");
+  if (!ok) throw new Error("Password is incorrect");
 
   await db.user.update({
     where: { id: user.id },
@@ -263,14 +263,14 @@ export async function adminUpdateUser(
     where: { id: parsed.userId },
     select: { id: true, email: true, username: true, role: true },
   });
-  if (!target) throw new Error("Benutzer nicht gefunden");
+  if (!target) throw new Error("User not found");
 
   if (parsed.email !== target.email) {
     const existing = await db.user.findUnique({
       where: { email: parsed.email },
     });
     if (existing && existing.id !== target.id) {
-      throw new Error("E-Mail wird bereits verwendet");
+      throw new Error("Email is already in use");
     }
   }
 
@@ -344,7 +344,7 @@ export async function deleteUser(userId: string) {
   assertNotDemo();
 
   if (userId === user.id) {
-    throw new Error("Du kannst dich nicht selbst löschen");
+    throw new Error("You cannot delete yourself");
   }
 
   await db.user.delete({ where: { id: userId } });
@@ -365,7 +365,7 @@ export async function adminCreateUser(data: {
   const username = data.username.trim().toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(username)) {
     throw new Error(
-      "Username: nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt",
+      "Username: only lowercase letters, numbers and hyphens allowed",
     );
   }
 
@@ -373,8 +373,8 @@ export async function adminCreateUser(data: {
     db.user.findUnique({ where: { email: data.email } }),
     db.user.findUnique({ where: { username } }),
   ]);
-  if (existingEmail) throw new Error("E-Mail wird bereits verwendet");
-  if (existingUsername) throw new Error("Username wird bereits verwendet");
+  if (existingEmail) throw new Error("Email is already in use");
+  if (existingUsername) throw new Error("Username is already in use");
 
   if (!["user", "editor", "admin"].includes(data.role)) {
     throw new Error("Invalid role");
@@ -418,7 +418,7 @@ export async function adminResetPassword(userId: string) {
   assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
-  if (!target) throw new Error("Benutzer nicht gefunden");
+  if (!target) throw new Error("User not found");
 
   const plainPassword = generatePassword();
   const hashedPassword = await bcrypt.hash(plainPassword, 12);
@@ -437,7 +437,7 @@ export async function adminSendPasswordEmail(userId: string, password: string) {
   assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
-  if (!target) throw new Error("Benutzer nicht gefunden");
+  if (!target) throw new Error("User not found");
 
   const loginUrl = `${await getAppUrl()}/login`;
   await sendPasswordResetEmail(target.email, target.name, password, loginUrl);

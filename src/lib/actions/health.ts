@@ -159,7 +159,7 @@ async function checkAppUrl(): Promise<HealthCheck> {
     return {
       id: "app-url",
       status: "error",
-      message: err instanceof Error ? err.message : "Ungültige App-URL",
+      message: err instanceof Error ? err.message : "Invalid app URL",
     };
   }
 }

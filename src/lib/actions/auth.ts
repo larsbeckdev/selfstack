@@ -14,27 +14,27 @@ import {
 import { isRegistrationEnabled } from "@/lib/actions/settings";
 
 const loginSchema = z.object({
-  email: z.string().email("Ungültige E-Mail-Adresse"),
-  password: z.string().min(1, "Passwort ist erforderlich"),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const registerSchema = z
   .object({
-    name: z.string().min(2, "Name muss mindestens 2 Zeichen haben"),
+    name: z.string().min(2, "Name must be at least 2 characters"),
     username: z
       .string()
-      .min(2, "Username muss mindestens 2 Zeichen haben")
+      .min(2, "Username must be at least 2 characters")
       .max(40)
       .regex(
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
-        "Nur Kleinbuchstaben, Zahlen und Bindestriche",
+        "Only lowercase letters, numbers and hyphens",
       ),
-    email: z.string().email("Ungültige E-Mail-Adresse"),
-    password: z.string().min(8, "Passwort muss mindestens 8 Zeichen haben"),
-    confirmPassword: z.string().min(1, "Passwort-Bestätigung ist erforderlich"),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(1, "Password confirmation is required"),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwörter stimmen nicht überein",
+    message: "Passwords do not match",
     path: ["confirmPassword"],
   });
 
@@ -63,7 +63,7 @@ export async function login(
   });
 
   if (!user || !(await bcrypt.compare(result.data.password, user.password))) {
-    return { error: "Ungültige Anmeldedaten" };
+    return { error: "Invalid credentials" };
   }
 
   if (user.twoFactorEnabled && user.twoFactorSecret) {
@@ -86,23 +86,23 @@ export async function loginVerify2FA(
 ): Promise<AuthState> {
   const token = String(formData.get("token") ?? "").trim();
   if (!/^\d{6}$/.test(token)) {
-    return { error: "Code muss 6 Ziffern haben" };
+    return { error: "Code must be 6 digits" };
   }
 
   const userId = await readPendingTwoFactor();
   if (!userId) {
-    return { error: "Sitzung abgelaufen, bitte erneut anmelden" };
+    return { error: "Session expired, please sign in again" };
   }
 
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
     await clearPendingTwoFactor();
-    return { error: "2FA nicht aktiv" };
+    return { error: "2FA not active" };
   }
 
   const { verifyTotp } = await import("@/lib/totp");
   if (!verifyTotp(user.twoFactorSecret, token)) {
-    return { error: "Ungültiger Code" };
+    return { error: "Invalid code" };
   }
 
   await clearPendingTwoFactor();
@@ -126,7 +126,7 @@ export async function register(
   // Check if registration is enabled
   const regEnabled = await isRegistrationEnabled();
   if (!regEnabled) {
-    return { error: "Registrierung ist derzeit deaktiviert" };
+    return { error: "Registration is currently disabled" };
   }
 
   const raw = {
@@ -148,10 +148,10 @@ export async function register(
   ]);
 
   if (existingEmail) {
-    return { error: "E-Mail-Adresse wird bereits verwendet" };
+    return { error: "Email address is already in use" };
   }
   if (existingUsername) {
-    return { error: "Username wird bereits verwendet" };
+    return { error: "Username is already in use" };
   }
 
   const hashedPassword = await bcrypt.hash(result.data.password, 12);
@@ -168,7 +168,7 @@ export async function register(
   // Create default board for new user
   await db.board.create({
     data: {
-      name: "Mein Dashboard",
+      name: "My Dashboard",
       slug: `${result.data.username}/dashboard`,
       userId: user.id,
       order: 0,
@@ -187,10 +187,10 @@ export async function logout() {
 export async function forceChangePassword(newPassword: string) {
   const { getSession } = await import("@/lib/auth");
   const session = await getSession();
-  if (!session) throw new Error("Nicht angemeldet");
+  if (!session) throw new Error("Not signed in");
 
   if (newPassword.length < 8) {
-    throw new Error("Passwort muss mindestens 8 Zeichen haben");
+    throw new Error("Password must be at least 8 characters");
   }
 
   const hashed = await bcrypt.hash(newPassword, 12);

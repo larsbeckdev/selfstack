@@ -246,7 +246,7 @@ export async function seedDemoData(): Promise<void> {
                 icon: "book",
                 color: "#000000",
                 url: "https://developer.mozilla.org",
-                description: "Referenz für Web-Standards",
+                description: "Reference for web standards",
               },
               {
                 name: "Next.js Docs",
@@ -368,7 +368,7 @@ export async function seedDemoData(): Promise<void> {
                 icon: "monitor",
                 color: "#c50000",
                 url: "https://frontendmasters.com",
-                description: "Video-Kurse für Webentwicklung",
+                description: "Video courses for web development",
               },
               {
                 name: "egghead.io",
@@ -382,12 +382,12 @@ export async function seedDemoData(): Promise<void> {
                 icon: "graduation-cap",
                 color: "#0056d2",
                 url: "https://coursera.org",
-                description: "Universitätskurse online",
+                description: "University courses online",
               },
             ],
           },
           {
-            name: "Bücher",
+            name: "Books",
             icon: "book",
             tiles: [
               {
@@ -473,7 +473,7 @@ export async function seedDemoData(): Promise<void> {
     order: 0,
     categories: [
       {
-        name: "Täglich",
+        name: "Daily",
         icon: "sun",
         color: "#f59e0b",
         groups: [
@@ -566,21 +566,21 @@ export async function seedDemoData(): Promise<void> {
                 icon: "user-plus",
                 color: "#10b981",
                 url: "https://example.com/onboarding",
-                description: "Schritt-für-Schritt Einarbeitung",
+                description: "Step-by-step onboarding",
               },
               {
                 name: "Incident Response",
                 icon: "alert-triangle",
                 color: "#ef4444",
                 url: "https://example.com/incidents",
-                description: "Was tun bei Ausfällen",
+                description: "What to do during outages",
               },
               {
                 name: "Release-Checkliste",
                 icon: "check-square",
                 color: "#6366f1",
                 url: "https://example.com/release",
-                description: "Vor jedem Deploy prüfen",
+                description: "Check before each deploy",
               },
             ],
           },

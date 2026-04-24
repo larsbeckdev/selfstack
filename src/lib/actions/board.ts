@@ -105,7 +105,7 @@ const boardSchema = z.object({
     .max(200)
     .regex(
       /^[a-z0-9]+(?:[-/][a-z0-9]+)*$/,
-      "Nur Kleinbuchstaben, Zahlen, Bindestriche und Schrägstriche",
+      "Only lowercase letters, numbers, hyphens and slashes",
     )
     .optional(),
   icon: z.string().default("layout-dashboard"),
@@ -1082,12 +1082,12 @@ export async function addBoardMember(
   await requireBoardAccess(boardId, "owner");
 
   const targetUser = await db.user.findUnique({ where: { id: userId } });
-  if (!targetUser) throw new Error("Benutzer nicht gefunden");
+  if (!targetUser) throw new Error("User not found");
 
   const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
   if (board.userId === targetUser.id) {
-    throw new Error("Der Besitzer kann nicht als Mitglied hinzugefügt werden");
+    throw new Error("The owner cannot be added as a member");
   }
 
   const existing = await db.boardMember.findUnique({

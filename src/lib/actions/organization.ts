@@ -153,7 +153,7 @@ export async function updateOrganization(
   if (!org) throw new Error("Organisation nicht gefunden");
 
   if (data.slug && data.slug !== org.slug) {
-    if (!slugRegex.test(data.slug)) throw new Error("Ungültiger Slug");
+    if (!slugRegex.test(data.slug)) throw new Error("Invalid slug");
     const existing = await db.organization.findUnique({
       where: { slug: data.slug },
       select: { id: true },

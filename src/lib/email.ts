@@ -101,7 +101,7 @@ function baseLayout(content: string): string {
       ${content}
     </div>
     <div class="footer">
-      <p>Diese E-Mail wurde automatisch von Selfstack versendet.</p>
+      <p>This email was sent automatically by Selfstack.</p>
     </div>
   </div>
 </body>
@@ -115,28 +115,28 @@ export async function sendWelcomeEmail(
   loginUrl: string,
 ) {
   const html = baseLayout(`
-    <p>Hallo <strong>${escapeHtml(name)}</strong>,</p>
-    <p>Ein Konto wurde für dich auf Selfstack erstellt. Hier sind deine Zugangsdaten:</p>
+    <p>Hello <strong>${escapeHtml(name)}</strong>,</p>
+    <p>An account has been created for you on Selfstack. Here are your credentials:</p>
     <div class="code-box">
-      <div class="label">E-Mail</div>
+      <div class="label">Email</div>
       <div class="value">${escapeHtml(to)}</div>
     </div>
     <div class="code-box">
-      <div class="label">Einmalpasswort</div>
+      <div class="label">One-time password</div>
       <div class="value">${escapeHtml(password)}</div>
     </div>
-    <p>Du wirst bei der ersten Anmeldung aufgefordert, dein Passwort zu ändern.</p>
+    <p>You will be prompted to change your password on first sign-in.</p>
     <p style="text-align: center; margin: 28px 0;">
-      <a href="${escapeHtml(loginUrl)}" class="btn">Jetzt anmelden</a>
+      <a href="${escapeHtml(loginUrl)}" class="btn">Sign in now</a>
     </p>
-    <p class="muted">Falls du diese E-Mail nicht erwartet hast, kannst du sie ignorieren.</p>
+    <p class="muted">If you did not expect this email, you can safely ignore it.</p>
   `);
 
   const { transporter, from } = await getTransporter();
   await transporter.sendMail({
     from,
     to,
-    subject: "Dein Selfstack-Konto wurde erstellt",
+    subject: "Your Selfstack account has been created",
     html,
   });
 }
@@ -148,15 +148,15 @@ export async function sendPasswordResetEmail(
   loginUrl: string,
 ) {
   const html = baseLayout(`
-    <p>Hallo <strong>${escapeHtml(name)}</strong>,</p>
-    <p>Dein Passwort wurde von einem Administrator zurückgesetzt. Hier ist dein neues Passwort:</p>
+    <p>Hello <strong>${escapeHtml(name)}</strong>,</p>
+    <p>Your password has been reset by an administrator. Here is your new password:</p>
     <div class="code-box">
-      <div class="label">Neues Passwort</div>
+      <div class="label">New password</div>
       <div class="value">${escapeHtml(newPassword)}</div>
     </div>
-    <p>Du wirst bei der nächsten Anmeldung aufgefordert, dein Passwort zu ändern.</p>
+    <p>You will be prompted to change your password on next sign-in.</p>
     <p style="text-align: center; margin: 28px 0;">
-      <a href="${escapeHtml(loginUrl)}" class="btn">Jetzt anmelden</a>
+      <a href="${escapeHtml(loginUrl)}" class="btn">Sign in now</a>
     </p>
   `);
 
@@ -164,7 +164,7 @@ export async function sendPasswordResetEmail(
   await transporter.sendMail({
     from,
     to,
-    subject: "Dein Selfstack-Passwort wurde zurückgesetzt",
+    subject: "Your Selfstack password has been reset",
     html,
   });
 }
@@ -188,13 +188,13 @@ export function generatePassword(length = 12): string {
 export async function sendTestEmail(to: string): Promise<void> {
   const { transporter, from } = await getTransporter();
   const html = baseLayout(`
-    <p>Dies ist eine <strong>Test-E-Mail</strong> von Selfstack.</p>
-    <p class="muted">Wenn du diese Nachricht erhältst, ist die SMTP-Konfiguration korrekt.</p>
+    <p>This is a <strong>test email</strong> from Selfstack.</p>
+    <p class="muted">If you receive this message, the SMTP configuration is correct.</p>
   `);
   await transporter.sendMail({
     from,
     to,
-    subject: "Selfstack SMTP-Test",
+    subject: "Selfstack SMTP test",
     html,
   });
 }

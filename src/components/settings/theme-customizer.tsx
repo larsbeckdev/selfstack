@@ -16,6 +16,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { ColorPicker } from "@/components/ui/color-picker";
 import { toast } from "sonner";
+import { useTranslation } from "@/components/locale-provider";
+import type { TranslationKey } from "@/lib/i18n";
 import {
   saveThemePreference,
   getThemePreference,
@@ -178,26 +180,27 @@ function ThemePreview({
   );
 }
 
-const colorEditorVars = [
-  { key: "primary", label: "Primär" },
-  { key: "primary-foreground", label: "Primär Text" },
-  { key: "background", label: "Hintergrund" },
-  { key: "foreground", label: "Text" },
-  { key: "card", label: "Karte" },
-  { key: "card-foreground", label: "Karte Text" },
-  { key: "secondary", label: "Sekundär" },
-  { key: "secondary-foreground", label: "Sekundär Text" },
-  { key: "muted", label: "Gedämpft" },
-  { key: "muted-foreground", label: "Gedämpft Text" },
-  { key: "accent", label: "Akzent" },
-  { key: "accent-foreground", label: "Akzent Text" },
-  { key: "destructive", label: "Destruktiv" },
-  { key: "border", label: "Rahmen" },
-  { key: "input", label: "Eingabe" },
-  { key: "ring", label: "Ring" },
+const colorEditorVars: { key: string; labelKey: TranslationKey }[] = [
+  { key: "primary", labelKey: "settings.colorPrimary" },
+  { key: "primary-foreground", labelKey: "settings.colorPrimaryFg" },
+  { key: "background", labelKey: "settings.colorBackground" },
+  { key: "foreground", labelKey: "settings.colorForeground" },
+  { key: "card", labelKey: "settings.colorCard" },
+  { key: "card-foreground", labelKey: "settings.colorCardFg" },
+  { key: "secondary", labelKey: "settings.colorSecondary" },
+  { key: "secondary-foreground", labelKey: "settings.colorSecondaryFg" },
+  { key: "muted", labelKey: "settings.colorMuted" },
+  { key: "muted-foreground", labelKey: "settings.colorMutedFg" },
+  { key: "accent", labelKey: "settings.colorAccent" },
+  { key: "accent-foreground", labelKey: "settings.colorAccentFg" },
+  { key: "destructive", labelKey: "settings.colorDestructive" },
+  { key: "border", labelKey: "settings.colorBorder" },
+  { key: "input", labelKey: "settings.colorInput" },
+  { key: "ring", labelKey: "settings.colorRing" },
 ] as const;
 
 export function ThemeCustomizer() {
+  const { t } = useTranslation();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const mounted = useSyncExternalStore(
     () => () => {},
@@ -263,7 +266,9 @@ export function ThemeCustomizer() {
     setCustomColors({});
     notifyThemeChange(key, {});
     saveThemePreference(key, null).catch(() => {});
-    toast.success(`Theme "${themePresets[key].label}" aktiviert`);
+    toast.success(
+      `${t("settings.themeActivated")}: ${themePresets[key].label}`,
+    );
   };
 
   const handleColorChange = (varName: string, value: string) => {
@@ -280,7 +285,7 @@ export function ThemeCustomizer() {
     applyCurrentTheme();
     notifyThemeChange(activePreset, {});
     saveThemePreference(activePreset, null).catch(() => {});
-    toast.success("Farbanpassungen zurückgesetzt");
+    toast.success(t("settings.colorsReset"));
   };
 
   if (!mounted) return null;
@@ -296,10 +301,8 @@ export function ThemeCustomizer() {
       {/* Mode Toggle */}
       <Card>
         <CardHeader>
-          <CardTitle>Erscheinungsbild</CardTitle>
-          <CardDescription>
-            Wähle zwischen hellem, dunklem oder System-Modus
-          </CardDescription>
+          <CardTitle>{t("settings.themeMode")}</CardTitle>
+          <CardDescription>{t("settings.themeModeDesc")}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
@@ -308,21 +311,21 @@ export function ThemeCustomizer() {
               size="sm"
               onClick={() => setTheme("light")}>
               <Sun className="mr-2 size-4" />
-              Hell
+              {t("settings.themeLight")}
             </Button>
             <Button
               variant={theme === "dark" ? "default" : "outline"}
               size="sm"
               onClick={() => setTheme("dark")}>
               <Moon className="mr-2 size-4" />
-              Dunkel
+              {t("settings.themeDark")}
             </Button>
             <Button
               variant={theme === "system" ? "default" : "outline"}
               size="sm"
               onClick={() => setTheme("system")}>
               <Monitor className="mr-2 size-4" />
-              System
+              {t("settings.themeSystem")}
             </Button>
           </div>
         </CardContent>
@@ -331,9 +334,9 @@ export function ThemeCustomizer() {
       {/* Theme Presets */}
       <Card>
         <CardHeader>
-          <CardTitle>Theme Vorlagen</CardTitle>
+          <CardTitle>{t("settings.themePresets")}</CardTitle>
           <CardDescription>
-            Wähle ein vorgefertigtes Farbschema — inspiriert von tweakcn
+            {t("settings.themePresetsDescFull")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -355,22 +358,26 @@ export function ThemeCustomizer() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>Farben anpassen</CardTitle>
+            <CardTitle>{t("settings.themeColors")}</CardTitle>
             <CardDescription>
-              Passe einzelne Farben individuell an (
-              {currentMode === "dark" ? "Dunkel" : "Hell"}-Modus)
+              {t("settings.themeColorsDescMode").replace(
+                "{mode}",
+                currentMode === "dark"
+                  ? t("settings.themeDark")
+                  : t("settings.themeLight"),
+              )}
             </CardDescription>
           </div>
           {Object.keys(customColors).length > 0 && (
             <Button variant="ghost" size="sm" onClick={resetCustomColors}>
               <RotateCcw className="mr-2 size-3.5" />
-              Zurücksetzen
+              {t("common.reset")}
             </Button>
           )}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-            {colorEditorVars.map(({ key, label }) => {
+            {colorEditorVars.map(({ key, labelKey }) => {
               const currentValue =
                 customColors[key] ||
                 presetColors[key] ||
@@ -387,7 +394,7 @@ export function ThemeCustomizer() {
                     allowNone={false}
                     size="sm"
                   />
-                  <Label className="text-xs">{label}</Label>
+                  <Label className="text-xs">{t(labelKey)}</Label>
                 </div>
               );
             })}
