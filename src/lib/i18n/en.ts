@@ -442,12 +442,27 @@ const en: Record<TranslationKey, string> = {
   // Errors
   "error.generic": "An error occurred",
   "error.notFound": "Page not found",
+  "error.backToDashboard": "Back to dashboard",
   "error.updateFailed": "Update failed",
   "error.createFailed": "Creation failed",
   "error.deleteFailed": "Deletion failed",
   "error.duplicateFailed": "Duplication failed",
   "error.changeFailed": "Change failed",
   "error.copyFailed": "Copy failed",
+
+  // Icon picker
+  "iconPicker.noneFound": "No icon found",
+  "iconPicker.noFilesFound": "No files found",
+  "iconPicker.uploading": "Uploading...",
+  "iconPicker.dropHint": "Click or drop a file here",
+  "iconPicker.uploadConstraints": "PNG, JPG, WEBP, SVG, ICO (max. 512 KB)",
+  "iconPicker.uploadedIcon": "Uploaded icon",
+  "iconPicker.remove": "Remove",
+  "iconPicker.urlLabel": "Icon URL",
+  "iconPicker.preview": "Preview",
+  "iconPicker.apply": "Apply",
+  "iconPicker.removeUrl": "Remove URL",
+  "iconPicker.searchMedia": "Search media...",
 
   // Media
   "media.loadFailed": "Failed to load media",
