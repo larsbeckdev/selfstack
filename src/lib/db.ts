@@ -9,7 +9,10 @@ const globalForPrisma = globalThis as unknown as {
 // Prisma CLI resolves file: URLs relative to the schema file (prisma/),
 // but better-sqlite3 resolves relative to CWD (project root).
 // We need to adjust the path so both point to the same file.
-const rawUrl = process.env.DATABASE_URL!;
+// Fall back to a harmless placeholder during build time — DATABASE_URL is
+// only set at runtime in the Docker image, and Next.js 16 imports route
+// modules during "Collecting page data" without executing queries.
+const rawUrl = process.env.DATABASE_URL ?? "file:./dev.db";
 const dbUrl = rawUrl.startsWith("file:./")
   ? `file:${path.join("prisma", rawUrl.slice(7))}`
   : rawUrl;
