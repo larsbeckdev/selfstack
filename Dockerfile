@@ -32,6 +32,11 @@ ENV DATABASE_URL="file:./dev.db" \
 # Generate Prisma client for the build
 RUN npx prisma generate
 
+# Create an empty SQLite DB with the full schema so Next.js can prerender
+# pages that hit the database without erroring. This file is discarded —
+# only the .next/ output gets copied to the runner stage.
+RUN npx prisma db push --skip-generate --accept-data-loss
+
 # Build the Next.js app (standalone output)
 RUN npm run build
 
