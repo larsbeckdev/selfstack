@@ -17,6 +17,16 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Selfstack",
   description: "Personal Dashboard",
+  robots: {
+    index: false,
+    follow: false,
+    nocache: true,
+    googleBot: {
+      index: false,
+      follow: false,
+      noimageindex: true,
+    },
+  },
 };
 
 export default async function RootLayout({
