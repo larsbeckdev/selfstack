@@ -293,6 +293,10 @@ const en: Record<TranslationKey, string> = {
   "admin.overview": "Overview",
   "admin.users": "Users",
   "admin.organizations": "Organizations",
+  "admin.audit": "Audit log",
+  "admin.auditDesc":
+    "Logins, logouts and failed sign-in attempts (last 200 entries).",
+  "admin.auditEmpty": "No entries yet.",
   "admin.systemSettings": "System",
   "admin.health": "Health check",
   "admin.healthAllGood": "All systems operational",

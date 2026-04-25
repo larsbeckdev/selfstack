@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, Users, Cog, Building2, HeartPulse } from "lucide-react";
+import {
+  BarChart3,
+  Users,
+  Cog,
+  Building2,
+  HeartPulse,
+  ScrollText,
+} from "lucide-react";
 import { useTranslation } from "@/components/locale-provider";
 import { canManageSystem } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
@@ -20,6 +27,7 @@ export function AdminNav({ role }: { role: string }) {
       label: t("admin.organizations"),
       icon: Building2,
     },
+    { href: "/admin/audit", label: t("admin.audit"), icon: ScrollText },
     // System settings & health are superadmin-only.
     ...(isSuper
       ? [

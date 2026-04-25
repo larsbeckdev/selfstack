@@ -12,6 +12,7 @@ import {
   clearPendingTwoFactor,
 } from "@/lib/auth";
 import { isRegistrationEnabled } from "@/lib/actions/settings";
+import { logAudit } from "@/lib/audit";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -63,6 +64,12 @@ export async function login(
   });
 
   if (!user || !(await bcrypt.compare(result.data.password, user.password))) {
+    await logAudit({
+      event: "login.failed",
+      userId: user?.id ?? null,
+      email: result.data.email,
+      message: user ? "wrong password" : "unknown email",
+    });
     return { error: "Invalid credentials" };
   }
 
@@ -72,6 +79,11 @@ export async function login(
   }
 
   await createSession(user.id);
+  await logAudit({
+    event: "login.success",
+    userId: user.id,
+    email: user.email,
+  });
 
   if (user.mustChangePassword) {
     redirect("/change-password");
@@ -102,11 +114,22 @@ export async function loginVerify2FA(
 
   const { verifyTotp } = await import("@/lib/totp");
   if (!verifyTotp(user.twoFactorSecret, token)) {
+    await logAudit({
+      event: "login.2fa.failed",
+      userId: user.id,
+      email: user.email,
+    });
     return { error: "Invalid code" };
   }
 
   await clearPendingTwoFactor();
   await createSession(user.id);
+  await logAudit({
+    event: "login.success",
+    userId: user.id,
+    email: user.email,
+    message: "2fa",
+  });
 
   if (user.mustChangePassword) {
     redirect("/change-password");
@@ -184,10 +207,24 @@ export async function register(
   }
 
   await createSession(user.id);
+  await logAudit({
+    event: "register",
+    userId: user.id,
+    email: user.email,
+  });
   redirect("/dashboard");
 }
 
 export async function logout() {
+  const { getSession } = await import("@/lib/auth");
+  const data = await getSession();
+  if (data) {
+    await logAudit({
+      event: "logout",
+      userId: data.user.id,
+      email: data.user.email,
+    });
+  }
   await deleteSession();
   redirect("/login");
 }

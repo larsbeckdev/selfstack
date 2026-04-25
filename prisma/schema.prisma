@@ -173,3 +173,21 @@ model OrganizationMember {
 
   @@unique([orgId, userId])
 }
+
+/// Append-only audit trail for security relevant events
+/// (logins, logouts, failed attempts, registrations).
+/// userId is nullable because failed logins may not match a user.
+model AuditLog {
+  id        String   @id @default(cuid())
+  event     String // login.success | login.failed | login.2fa.failed | logout | register
+  userId    String?
+  email     String?
+  ip        String?
+  userAgent String?
+  message   String?
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@index([event])
+}

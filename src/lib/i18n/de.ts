@@ -295,6 +295,10 @@ const de = {
   "admin.overview": "Übersicht",
   "admin.users": "Benutzer",
   "admin.organizations": "Organisationen",
+  "admin.audit": "Protokoll",
+  "admin.auditDesc":
+    "Anmeldungen, Abmeldungen und fehlgeschlagene Login-Versuche (letzte 200 Einträge).",
+  "admin.auditEmpty": "Noch keine Einträge.",
   "admin.systemSettings": "System",
   "admin.health": "Healthcheck",
   "admin.healthAllGood": "Alles läuft",
