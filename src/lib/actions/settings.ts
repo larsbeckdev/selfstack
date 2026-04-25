@@ -4,7 +4,15 @@ import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { db } from "@/lib/db";
-import { requireAuth, requireAdmin } from "@/lib/auth";
+import { requireAuth, requireAdmin, requireSuperAdmin } from "@/lib/auth";
+import {
+  asRole,
+  assignableRoles,
+  canModifyUser,
+  hasRole,
+  ROLES,
+  type Role,
+} from "@/lib/permissions";
 import { assertNotDemo } from "@/lib/demo";
 import {
   sendWelcomeEmail,
@@ -73,8 +81,8 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
     });
 
     // Cascade-rename board slugs that started with the old username/.
-    // Admin-owned system boards (no "/" in slug) stay untouched.
-    if (usernameChanged && dbUser.role !== "admin" && dbUser.username) {
+    // Admin/superadmin-owned system boards (no "/" in slug) stay untouched.
+    if (usernameChanged && !hasRole(dbUser.role, "admin") && dbUser.username) {
       const oldPrefix = `${dbUser.username}/`;
       const boards = await tx.board.findMany({
         where: { userId: user.id, slug: { startsWith: oldPrefix } },
@@ -249,13 +257,13 @@ const adminUpdateUserSchema = z.object({
     .max(40)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   email: z.string().email(),
-  role: z.enum(["user", "editor", "admin"]),
+  role: z.enum(ROLES),
 });
 
 export async function adminUpdateUser(
   data: z.infer<typeof adminUpdateUserSchema>,
 ) {
-  await requireAdmin();
+  const { user: actor } = await requireAdmin();
   assertNotDemo();
   const parsed = adminUpdateUserSchema.parse(data);
 
@@ -264,6 +272,16 @@ export async function adminUpdateUser(
     select: { id: true, email: true, username: true, role: true },
   });
   if (!target) throw new Error("User not found");
+
+  // Admins cannot touch superadmin accounts. Superadmin can touch anyone.
+  if (!canModifyUser(actor.role, target.role)) {
+    throw new Error("Forbidden");
+  }
+  // Admins can only assign roles in their assignable set (no superadmin).
+  const allowedRoles = assignableRoles(actor.role);
+  if (!allowedRoles.includes(parsed.role)) {
+    throw new Error("Diese Rolle darfst du nicht vergeben");
+  }
 
   if (parsed.email !== target.email) {
     const existing = await db.user.findUnique({
@@ -296,7 +314,7 @@ export async function adminUpdateUser(
     });
 
     // Cascade-rename board slugs prefixed with the old username.
-    if (usernameChanged && target.role !== "admin" && target.username) {
+    if (usernameChanged && !hasRole(target.role, "admin") && target.username) {
       const oldPrefix = `${target.username}/`;
       const boards = await tx.board.findMany({
         where: { userId: target.id, slug: { startsWith: oldPrefix } },
@@ -324,11 +342,21 @@ export async function adminUpdateUser(
 }
 
 export async function updateUserRole(userId: string, role: string) {
-  await requireAdmin();
+  const { user: actor } = await requireAdmin();
   assertNotDemo();
 
-  if (!["user", "editor", "admin"].includes(role)) {
-    throw new Error("Invalid role");
+  const allowed = assignableRoles(actor.role);
+  if (!allowed.includes(role as Role)) {
+    throw new Error("Diese Rolle darfst du nicht vergeben");
+  }
+
+  const target = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!target) throw new Error("User not found");
+  if (!canModifyUser(actor.role, target.role)) {
+    throw new Error("Forbidden");
   }
 
   await db.user.update({
@@ -340,11 +368,20 @@ export async function updateUserRole(userId: string, role: string) {
 }
 
 export async function deleteUser(userId: string) {
-  const { user } = await requireAdmin();
+  const { user: actor } = await requireAdmin();
   assertNotDemo();
 
-  if (userId === user.id) {
+  if (userId === actor.id) {
     throw new Error("You cannot delete yourself");
+  }
+
+  const target = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!target) throw new Error("User not found");
+  if (!canModifyUser(actor.role, target.role)) {
+    throw new Error("Forbidden");
   }
 
   await db.user.delete({ where: { id: userId } });
@@ -359,7 +396,7 @@ export async function adminCreateUser(data: {
   role: string;
   sendEmail?: boolean;
 }): Promise<{ generatedPassword?: string }> {
-  await requireAdmin();
+  const { user: actor } = await requireAdmin();
   assertNotDemo();
 
   const username = data.username.trim().toLowerCase();
@@ -376,9 +413,11 @@ export async function adminCreateUser(data: {
   if (existingEmail) throw new Error("Email is already in use");
   if (existingUsername) throw new Error("Username is already in use");
 
-  if (!["user", "editor", "admin"].includes(data.role)) {
-    throw new Error("Invalid role");
+  const allowed = assignableRoles(actor.role);
+  if (!allowed.includes(data.role as Role)) {
+    throw new Error("Diese Rolle darfst du nicht vergeben");
   }
+  const role = asRole(data.role);
 
   const plainPassword = data.password || generatePassword();
   const hashedPassword = await bcrypt.hash(plainPassword, 12);
@@ -390,19 +429,22 @@ export async function adminCreateUser(data: {
       username,
       email: data.email,
       password: hashedPassword,
-      role: data.role,
+      role,
       mustChangePassword: mustChange,
     },
   });
 
-  await db.board.create({
-    data: {
-      name: "Mein Dashboard",
-      slug: `${username}/dashboard`,
-      userId: user.id,
-      order: 0,
-    },
-  });
+  // Only seed a starter board for users that are allowed to have one.
+  if (hasRole(role, "member")) {
+    await db.board.create({
+      data: {
+        name: "Mein Dashboard",
+        slug: `${username}/dashboard`,
+        userId: user.id,
+        order: 0,
+      },
+    });
+  }
 
   if (data.sendEmail) {
     const loginUrl = `${await getAppUrl()}/login`;
@@ -414,11 +456,14 @@ export async function adminCreateUser(data: {
 }
 
 export async function adminResetPassword(userId: string) {
-  await requireAdmin();
+  const { user: actor } = await requireAdmin();
   assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
   if (!target) throw new Error("User not found");
+  if (!canModifyUser(actor.role, target.role)) {
+    throw new Error("Forbidden");
+  }
 
   const plainPassword = generatePassword();
   const hashedPassword = await bcrypt.hash(plainPassword, 12);
@@ -433,11 +478,14 @@ export async function adminResetPassword(userId: string) {
 }
 
 export async function adminSendPasswordEmail(userId: string, password: string) {
-  await requireAdmin();
+  const { user: actor } = await requireAdmin();
   assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
   if (!target) throw new Error("User not found");
+  if (!canModifyUser(actor.role, target.role)) {
+    throw new Error("Forbidden");
+  }
 
   const loginUrl = `${await getAppUrl()}/login`;
   await sendPasswordResetEmail(target.email, target.name, password, loginUrl);
@@ -545,7 +593,7 @@ export async function getSystemSetting(key: string): Promise<string | null> {
 }
 
 export async function setSystemSetting(key: string, value: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   assertNotDemo();
 
   await db.systemSetting.upsert({
@@ -591,7 +639,7 @@ const SMTP_KEY_MAP = {
 } as const;
 
 export async function getSmtpSettings(): Promise<SmtpSettings> {
-  await requireAdmin();
+  await requireSuperAdmin();
   const cfg = await loadSmtpConfig();
   return {
     host: cfg.host,
@@ -616,7 +664,7 @@ const smtpInputSchema = z.object({
 export async function updateSmtpSettings(
   input: z.infer<typeof smtpInputSchema>,
 ) {
-  await requireAdmin();
+  await requireSuperAdmin();
   assertNotDemo();
   const parsed = smtpInputSchema.parse(input);
 
@@ -674,7 +722,7 @@ export async function updateSmtpSettings(
 }
 
 export async function sendTestSmtpEmail(to: string) {
-  await requireAdmin();
+  await requireSuperAdmin();
   assertNotDemo();
   const parsed = z.string().email().parse(to);
   await sendTestEmail(parsed);

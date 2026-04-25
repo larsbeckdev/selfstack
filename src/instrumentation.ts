@@ -6,8 +6,17 @@
  * `DEMO_RESET_MINUTES` (default 60).
  */
 export async function register() {
-  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") return;
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  // Always run the idempotent role migration on startup so legacy "user"
+  // values get mapped to the new role system and the first user is promoted
+  // to superadmin.
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") {
+    const { migrateRolesV2 } = await import("./lib/role-migration");
+    await migrateRolesV2();
+  }
+
+  if (process.env.NEXT_PUBLIC_DEMO_MODE !== "true") return;
 
   const { seedDemoData } = await import("./lib/demo-seed");
   const { getDemoResetMinutes } = await import("./lib/demo");

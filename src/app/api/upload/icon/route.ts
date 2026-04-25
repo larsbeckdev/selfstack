@@ -2,45 +2,39 @@ import { existsSync, mkdirSync } from "fs";
 import { writeFile } from "fs/promises";
 import path from "path";
 import { requireAuth } from "@/lib/auth";
-
-const ALLOWED_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/jpg",
-  "image/webp",
-  "image/svg+xml",
-  "image/x-icon",
-  "image/vnd.microsoft.icon",
-]);
-
-const ALLOWED_EXTENSIONS = new Set([
-  ".png",
-  ".jpg",
-  ".jpeg",
-  ".webp",
-  ".svg",
-  ".ico",
-]);
+import { db } from "@/lib/db";
+import { canViewAllBoards } from "@/lib/permissions";
+import {
+  ALLOWED_IMAGE_EXTENSIONS,
+  ALLOWED_IMAGE_TYPES,
+  sanitizeFilename,
+  scopeFolder,
+  scopePublicPrefix,
+  uniqueFilename,
+  type MediaScope,
+} from "@/lib/media-paths";
 
 const MAX_FILE_SIZE = 512 * 1024; // 512 KB
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "icons");
-
 export async function POST(request: Request) {
+  let session;
   try {
-    await requireAuth();
+    session = await requireAuth();
   } catch {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const formData = await request.formData();
   const file = formData.get("file") as File | null;
+  const orgIdRaw = formData.get("orgId");
+  const orgId =
+    typeof orgIdRaw === "string" && orgIdRaw.trim() ? orgIdRaw.trim() : null;
 
   if (!file) {
     return Response.json({ error: "No file provided" }, { status: 400 });
   }
 
-  if (!ALLOWED_TYPES.has(file.type)) {
+  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
     return Response.json(
       { error: "File type not allowed. Use PNG, JPG, WEBP, SVG, or ICO." },
       { status: 400 },
@@ -55,21 +49,49 @@ export async function POST(request: Request) {
   }
 
   const ext = path.extname(file.name).toLowerCase();
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
+  if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
     return Response.json({ error: "Invalid file extension" }, { status: 400 });
   }
 
-  // Generate unique filename: timestamp + random + original extension
-  const uniqueName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-
-  if (!existsSync(UPLOAD_DIR)) {
-    mkdirSync(UPLOAD_DIR, { recursive: true });
+  // Resolve scope: org upload requires membership (or global view rights).
+  let scope: MediaScope;
+  if (orgId) {
+    const userRole = session.user.role;
+    if (!canViewAllBoards(userRole)) {
+      const membership = await db.organizationMember.findUnique({
+        where: { orgId_userId: { orgId, userId: session.user.id } },
+      });
+      if (!membership) {
+        return Response.json(
+          { error: "Not a member of this organization" },
+          { status: 403 },
+        );
+      }
+    } else {
+      const org = await db.organization.findUnique({ where: { id: orgId } });
+      if (!org)
+        return Response.json(
+          { error: "Organization not found" },
+          { status: 404 },
+        );
+    }
+    scope = { kind: "org", orgId };
+  } else {
+    scope = { kind: "user", userId: session.user.id };
   }
 
-  const filePath = path.join(UPLOAD_DIR, uniqueName);
+  const folder = scopeFolder(scope);
+  if (!existsSync(folder)) {
+    mkdirSync(folder, { recursive: true });
+  }
+
+  const sanitized = sanitizeFilename(file.name);
+  const finalName = uniqueFilename(folder, sanitized, (p) => existsSync(p));
+  const filePath = path.join(folder, finalName);
+
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  // Basic SVG sanitization: reject if it contains script tags or event handlers
+  // Basic SVG sanitization: reject if it contains script tags or event handlers.
   if (ext === ".svg") {
     const svgContent = buffer.toString("utf-8");
     if (
@@ -86,7 +108,13 @@ export async function POST(request: Request) {
 
   await writeFile(filePath, buffer);
 
-  const url = `/uploads/icons/${uniqueName}`;
+  const url = `${scopePublicPrefix(scope)}/${finalName}`;
 
-  return Response.json({ url, originalName: file.name });
+  return Response.json({
+    url,
+    name: finalName,
+    originalName: file.name,
+    scope: scope.kind,
+    orgId: scope.kind === "org" ? scope.orgId : null,
+  });
 }

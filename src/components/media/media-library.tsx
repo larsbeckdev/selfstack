@@ -42,9 +42,13 @@ import { toast } from "sonner";
 type MediaFile = {
   name: string;
   url: string;
+  path: string;
   size: number;
   type: string;
   createdAt: string;
+  scope: "user" | "org" | "legacy";
+  orgId?: string;
+  orgName?: string;
 };
 
 type SortBy =
@@ -149,14 +153,14 @@ export function MediaLibrary() {
       const res = await fetch("/api/media", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: file.name }),
+        body: JSON.stringify({ path: file.path }),
       });
       if (!res.ok) {
         toast.error(t("error.deleteFailed"));
         return;
       }
       toast.success(t("media.deleted"));
-      setFiles((prev) => prev.filter((f) => f.name !== file.name));
+      setFiles((prev) => prev.filter((f) => f.path !== file.path));
     } catch {
       toast.error(t("error.deleteFailed"));
     }

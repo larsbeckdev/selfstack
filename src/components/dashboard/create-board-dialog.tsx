@@ -7,6 +7,7 @@ import { getOrganizations } from "@/lib/actions/organization";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoHint } from "@/components/ui/info-hint";
 import {
   Dialog,
   DialogContent,
@@ -30,10 +31,11 @@ type OrgOption = { id: string; name: string; slug: string };
 
 export function CreateBoardDialog({
   children,
-  isAdmin = false,
+  canPickOrg = false,
 }: {
   children: ReactNode;
-  isAdmin?: boolean;
+  /** When true, render the org-owner picker. Admin/superadmin only. */
+  canPickOrg?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -46,7 +48,7 @@ export function CreateBoardDialog({
   const { t } = useTranslation();
 
   useEffect(() => {
-    if (!open || !isAdmin) return;
+    if (!open || !canPickOrg) return;
     let cancelled = false;
     (async () => {
       try {
@@ -60,7 +62,7 @@ export function CreateBoardDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, isAdmin]);
+  }, [open, canPickOrg]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,7 +70,7 @@ export function CreateBoardDialog({
 
     setLoading(true);
     try {
-      const orgId = isAdmin && ownerKey !== "system" ? ownerKey : null;
+      const orgId = canPickOrg && ownerKey !== "system" ? ownerKey : null;
       await createBoard({
         name,
         icon,
@@ -81,8 +83,8 @@ export function CreateBoardDialog({
       setName("");
       setIcon("layout-dashboard");
       setOwnerKey("system");
-    } catch {
-      toast.error(t("error.createFailed"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("error.createFailed"));
     } finally {
       setLoading(false);
     }
@@ -97,7 +99,10 @@ export function CreateBoardDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="board-name">{t("common.name")}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="board-name">{t("common.name")}</Label>
+              <InfoHint>{t("validation.nameRule")}</InfoHint>
+            </div>
             <Input
               id="board-name"
               value={name}
@@ -106,7 +111,7 @@ export function CreateBoardDialog({
               required
             />
           </div>
-          {isAdmin && (
+          {canPickOrg && (
             <div className="space-y-2">
               <Label>{t("org.ownerLabel")}</Label>
               <Select value={ownerKey} onValueChange={setOwnerKey}>

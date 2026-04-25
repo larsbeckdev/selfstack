@@ -1,6 +1,12 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import {
+  canEditAnyOrgBoard,
+  canViewAllBoards,
+  canViewBoards,
+} from "@/lib/permissions";
 import { AppSidebar } from "@/components/layout/app-sidebar";
 import { AppHeader } from "@/components/layout/app-header";
 import { SidebarInset } from "@/components/ui/sidebar";
@@ -41,22 +47,49 @@ export default async function AppLayout({
   // - Own boards + boards they're a member of
   // - Boards of organizations they belong to
   // - Global editors additionally see all org boards
-  // Admins do NOT see every board here — they manage other users' boards
-  // through the admin UI instead, keeping the sidebar focused on "my" boards.
+  // Admins/superadmins do NOT see every board here — they manage other
+  // users' boards through the admin UI instead, keeping the sidebar focused
+  // on "my" boards.
+  // Guests have no boards at all.
   const role = session.user.role;
-  const boardWhere = {
-    OR: [
-      { userId: session.user.id },
-      { members: { some: { userId: session.user.id } } },
-      role === "editor"
-        ? { orgId: { not: null } }
-        : {
-            organization: {
-              is: { members: { some: { userId: session.user.id } } },
-            },
+  let boardWhere: Prisma.BoardWhereInput;
+  if (!canViewBoards(role)) {
+    boardWhere = { id: "__none__" };
+  } else if (canViewAllBoards(role)) {
+    // Even though admins technically can see everything, keep the sidebar
+    // focused on boards they personally interact with.
+    boardWhere = {
+      OR: [
+        { userId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+        {
+          organization: {
+            is: { members: { some: { userId: session.user.id } } },
           },
-    ],
-  };
+        },
+      ],
+    };
+  } else if (canEditAnyOrgBoard(role)) {
+    boardWhere = {
+      OR: [
+        { userId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+        { orgId: { not: null } },
+      ],
+    };
+  } else {
+    boardWhere = {
+      OR: [
+        { userId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+        {
+          organization: {
+            is: { members: { some: { userId: session.user.id } } },
+          },
+        },
+      ],
+    };
+  }
 
   const boards = await db.board.findMany({
     where: boardWhere,

@@ -4,6 +4,16 @@ import { revalidatePath, refresh } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth } from "@/lib/auth";
+import { entityNameSchema } from "@/lib/validation";
+import {
+  canCreateOrgBoards,
+  canCreatePersonalBoards,
+  canDeleteAnyOrgBoard,
+  canEditAnyOrgBoard,
+  canViewAllBoards,
+  canViewBoards,
+  hasRole,
+} from "@/lib/permissions";
 import {
   CATEGORY_COLS,
   getCategoryInnerCols,
@@ -36,8 +46,8 @@ async function getBoardRole(
   });
   if (!board) return null;
 
-  // Global admin: full access everywhere.
-  if (globalRole === "admin") return "owner";
+  // Global admin/superadmin: full access everywhere.
+  if (canViewAllBoards(globalRole)) return "owner";
 
   // Owner (creator) has full access.
   if (board.userId === userId) return "owner";
@@ -48,8 +58,17 @@ async function getBoardRole(
   });
   if (member) return member.role as BoardRole;
 
-  // Global editor can edit any ORG board, but not private user boards.
-  if (globalRole === "editor" && board.orgId) return "editor";
+  // Editor (global): can edit any ORG board.
+  if (canEditAnyOrgBoard(globalRole) && board.orgId) return "editor";
+
+  // Viewer/member: can READ any ORG board of an org they belong to.
+  if (board.orgId && canViewBoards(globalRole)) {
+    const orgMember = await db.organizationMember.findFirst({
+      where: { orgId: board.orgId, userId },
+      select: { id: true },
+    });
+    if (orgMember) return "viewer";
+  }
   return null;
 }
 
@@ -69,10 +88,14 @@ async function requireBoardAccess(
 }
 
 function boardAccessWhere(userId: string, globalRole?: string) {
-  // Global admin: all boards.
-  if (globalRole === "admin") return {};
-  // Global editor: own, member-of, and every org board.
-  if (globalRole === "editor") {
+  // Guest: no boards at all.
+  if (!canViewBoards(globalRole)) {
+    return { id: "__none__" };
+  }
+  // Global admin/superadmin: all boards.
+  if (canViewAllBoards(globalRole)) return {};
+  // Global editor: own + member-of + every org board (read+edit).
+  if (canEditAnyOrgBoard(globalRole)) {
     return {
       OR: [
         { userId },
@@ -81,9 +104,17 @@ function boardAccessWhere(userId: string, globalRole?: string) {
       ],
     };
   }
-  // Regular user: own + explicitly shared.
+  // Viewer/member: own + explicitly shared + boards of orgs they belong to.
   return {
-    OR: [{ userId }, { members: { some: { userId } } }],
+    OR: [
+      { userId },
+      { members: { some: { userId } } },
+      {
+        organization: {
+          is: { members: { some: { userId } } },
+        },
+      },
+    ],
   };
 }
 
@@ -98,7 +129,7 @@ const iconUrlSchema = z
   .optional();
 
 const boardSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: entityNameSchema,
   slug: z
     .string()
     .min(1)
@@ -124,6 +155,18 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     where: { id: user.id },
     select: { username: true, role: true },
   });
+  if (!dbUser) throw new Error("User not found");
+
+  const wantsOrgBoard = !!parsed.orgId;
+  if (wantsOrgBoard) {
+    if (!canCreateOrgBoards(dbUser.role)) {
+      throw new Error("Du darfst keine Boards für eine Organisation erstellen");
+    }
+  } else {
+    if (!canCreatePersonalBoards(dbUser.role)) {
+      throw new Error("Du darfst keine Boards erstellen");
+    }
+  }
 
   const baseName = parsed.name
     .toLowerCase()
@@ -131,24 +174,24 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     .replace(/^-|-$/g, "");
 
   // Determine slug prefix based on ownership type.
-  // - Admin + orgId       → `<orgSlug>/`    (org board)
-  // - Admin + no orgId    → ``               (system board, no prefix)
-  // - Regular user        → `<username>/`    (personal user board)
+  // - admin/superadmin + orgId    → `<orgSlug>/`    (org board)
+  // - admin/superadmin + no orgId → ``               (system board, no prefix)
+  // - everyone else               → `<username>/`   (personal user board)
   //
   // NOTE: we intentionally do NOT use an `@` prefix on org slugs because
   // Next.js App Router treats URL segments starting with `@` as parallel
   // route slots, which breaks `/board/@org/...` navigation.
   let prefix = "";
   let orgId: string | null = null;
-  if (dbUser?.role === "admin" && parsed.orgId) {
+  if (wantsOrgBoard) {
     const org = await db.organization.findUnique({
-      where: { id: parsed.orgId },
+      where: { id: parsed.orgId! },
       select: { id: true, slug: true },
     });
     if (!org) throw new Error("Organisation nicht gefunden");
     prefix = `${org.slug}/`;
     orgId = org.id;
-  } else if (dbUser?.role !== "admin" && dbUser?.username) {
+  } else if (!hasRole(dbUser.role, "admin") && dbUser.username) {
     prefix = `${dbUser.username}/`;
   }
 
@@ -186,7 +229,8 @@ export async function updateBoard(
   boardId: string,
   data: Partial<z.infer<typeof boardSchema>>,
 ) {
-  await requireBoardAccess(boardId, "owner");
+  // Editors may edit org boards (cannot delete). Owners always allowed.
+  await requireBoardAccess(boardId, "editor");
 
   const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
@@ -215,10 +259,26 @@ export async function updateBoard(
 }
 
 export async function deleteBoard(boardId: string) {
-  await requireBoardAccess(boardId, "owner");
-
+  const { user } = await requireAuth();
   const board = await db.board.findUnique({ where: { id: boardId } });
   if (!board) throw new Error("Board not found");
+
+  // Three legal delete paths:
+  //   1) You own the board personally (userId === current user).
+  //   2) The board is org-owned and you are admin/superadmin globally.
+  //   3) You are admin/superadmin and want to delete a foreign personal
+  //      board (covered by the canViewAllBoards branch).
+  // Editors explicitly cannot delete org boards.
+  const isOwner = board.userId === user.id;
+  const isOrgBoard = !!board.orgId;
+  const allowed =
+    isOwner ||
+    (isOrgBoard && canDeleteAnyOrgBoard(user.role)) ||
+    (!isOrgBoard && canViewAllBoards(user.role));
+
+  if (!allowed) {
+    throw new Error("Insufficient permissions");
+  }
 
   await db.board.delete({ where: { id: boardId } });
   revalidatePath("/dashboard");
@@ -305,7 +365,7 @@ export async function getPublicBoard(slug: string) {
 // ─── Category Actions ────────────────────────────────────────────────────────
 
 const categorySchema = z.object({
-  name: z.string().min(1).max(100),
+  name: entityNameSchema,
   icon: z.string().default("folder"),
   iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1").optional(),
@@ -382,7 +442,7 @@ export async function deleteCategory(categoryId: string) {
 // ─── Group Actions ───────────────────────────────────────────────────────────
 
 const groupSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: entityNameSchema,
   icon: z.string().default("grid-3x3"),
   iconUrl: iconUrlSchema,
   bgColor: z.string().nullable().optional(),
@@ -507,7 +567,7 @@ export async function deleteGroup(groupId: string) {
 // ─── Tile Actions ────────────────────────────────────────────────────────────
 
 const tileSchema = z.object({
-  name: z.string().min(1).max(100),
+  name: entityNameSchema,
   icon: z.string().default("square"),
   iconUrl: iconUrlSchema,
   color: z.string().default("#6366f1"),

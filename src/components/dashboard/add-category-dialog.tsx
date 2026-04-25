@@ -6,6 +6,7 @@ import { createCategory } from "@/lib/actions/board";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoHint } from "@/components/ui/info-hint";
 import {
   Dialog,
   DialogContent,
@@ -73,7 +74,10 @@ export function AddCategoryDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="cat-name">{t("common.name")}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="cat-name">{t("common.name")}</Label>
+              <InfoHint>{t("validation.nameRule")}</InfoHint>
+            </div>
             <Input
               id="cat-name"
               value={name}

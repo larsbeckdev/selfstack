@@ -156,24 +156,32 @@ export async function register(
 
   const hashedPassword = await bcrypt.hash(result.data.password, 12);
 
+  // First user becomes superadmin and gets a starter board. Everyone else
+  // registers as "guest" — boards must be unlocked by an admin.
+  const userCount = await db.user.count();
+  const isFirstUser = userCount === 0;
+
   const user = await db.user.create({
     data: {
       name: result.data.name,
       username: result.data.username,
       email: result.data.email,
       password: hashedPassword,
+      role: isFirstUser ? "superadmin" : "guest",
     },
   });
 
-  // Create default board for new user
-  await db.board.create({
-    data: {
-      name: "My Dashboard",
-      slug: `${result.data.username}/dashboard`,
-      userId: user.id,
-      order: 0,
-    },
-  });
+  // Only seed a default board for users that can actually own one.
+  if (isFirstUser) {
+    await db.board.create({
+      data: {
+        name: "My Dashboard",
+        slug: `${result.data.username}/dashboard`,
+        userId: user.id,
+        order: 0,
+      },
+    });
+  }
 
   await createSession(user.id);
   redirect("/dashboard");

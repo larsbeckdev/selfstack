@@ -15,7 +15,7 @@ model User {
   name               String
   password           String
   image              String?
-  role               String   @default("user") // user | editor | admin
+  role               String   @default("guest") // guest | viewer | member | editor | admin | superadmin
   locale             String   @default("de")
   emailVerified      Boolean  @default(false)
   mustChangePassword Boolean  @default(false)

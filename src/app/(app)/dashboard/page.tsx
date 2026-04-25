@@ -1,7 +1,13 @@
+import type { Prisma } from "@/generated/prisma/client";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
+import {
+  canEditAnyOrgBoard,
+  canViewAllBoards,
+  canViewBoards,
+} from "@/lib/permissions";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { Globe, Lock } from "lucide-react";
 import {
@@ -19,20 +25,38 @@ export default async function DashboardPage() {
   const t = await getTranslator();
 
   const role = session.user.role;
-  const boards = await db.board.findMany({
-    where: {
+
+  // Build the same access predicate as `boardAccessWhere` in board actions.
+  let where: Prisma.BoardWhereInput;
+  if (!canViewBoards(role)) {
+    // Guests see no boards.
+    where = { id: "__none__" };
+  } else if (canViewAllBoards(role)) {
+    where = {};
+  } else if (canEditAnyOrgBoard(role)) {
+    where = {
       OR: [
         { userId: session.user.id },
         { members: { some: { userId: session.user.id } } },
-        role === "editor"
-          ? { orgId: { not: null } }
-          : {
-              organization: {
-                is: { members: { some: { userId: session.user.id } } },
-              },
-            },
+        { orgId: { not: null } },
       ],
-    },
+    };
+  } else {
+    where = {
+      OR: [
+        { userId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+        {
+          organization: {
+            is: { members: { some: { userId: session.user.id } } },
+          },
+        },
+      ],
+    };
+  }
+
+  const boards = await db.board.findMany({
+    where,
     orderBy: { order: "asc" },
     include: {
       _count: {

@@ -17,6 +17,11 @@ import {
 } from "lucide-react";
 import { DynamicIcon } from "@/components/dynamic-icon";
 import { useTranslation } from "@/components/locale-provider";
+import {
+  canAccessAdminArea,
+  canCreateOrgBoards,
+  canCreatePersonalBoards,
+} from "@/lib/permissions";
 import type { SessionUser } from "@/types";
 import type { Board } from "@/generated/prisma/client";
 
@@ -168,11 +173,13 @@ export function AppSidebar({
         <SidebarGroup>
           <SidebarGroupLabel className="flex items-center justify-between">
             {t("nav.boards")}
-            <CreateBoardDialog isAdmin={user.role === "admin"}>
-              <button className="rounded-md p-0.5 hover:bg-accent">
-                <Plus className="size-3.5" />
-              </button>
-            </CreateBoardDialog>
+            {canCreatePersonalBoards(user.role) && (
+              <CreateBoardDialog canPickOrg={canCreateOrgBoards(user.role)}>
+                <button className="rounded-md p-0.5 hover:bg-accent">
+                  <Plus className="size-3.5" />
+                </button>
+              </CreateBoardDialog>
+            )}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -234,7 +241,7 @@ export function AppSidebar({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {user.role === "admin" && (
+              {canAccessAdminArea(user.role) && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild

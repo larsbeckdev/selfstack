@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAuth, requireAdmin } from "@/lib/auth";
+import { canViewAllBoards } from "@/lib/permissions";
 import { assertNotDemo } from "@/lib/demo";
 
 // ─── Schemas ────────────────────────────────────────────────────────────────
@@ -38,7 +39,7 @@ export async function getOrgRole(
   userId: string,
   globalRole?: string,
 ): Promise<OrgRole | null> {
-  if (globalRole === "admin") return "owner";
+  if (canViewAllBoards(globalRole)) return "owner";
   const m = await db.organizationMember.findUnique({
     where: { orgId_userId: { orgId, userId } },
     select: { role: true },
@@ -100,7 +101,7 @@ export async function getOrganization(orgId: string) {
  */
 export async function getMyOrganizations() {
   const { user } = await requireAuth();
-  if (user.role === "admin") {
+  if (canViewAllBoards(user.role)) {
     return db.organization.findMany({
       orderBy: { name: "asc" },
     });

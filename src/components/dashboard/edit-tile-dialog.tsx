@@ -7,6 +7,7 @@ import type { Tile } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoHint } from "@/components/ui/info-hint";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -88,13 +89,16 @@ export function EditTileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{t("tile.edit")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-tile-name">{t("common.name")}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="edit-tile-name">{t("common.name")}</Label>
+              <InfoHint>{t("validation.nameRule")}</InfoHint>
+            </div>
             <Input
               id="edit-tile-name"
               value={name}

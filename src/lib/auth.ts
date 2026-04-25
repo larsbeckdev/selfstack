@@ -1,6 +1,12 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { db } from "./db";
+import {
+  canAccessAdminArea,
+  canManageSystem,
+  hasRole,
+  type Role,
+} from "./permissions";
 
 const secret = new TextEncoder().encode(
   process.env.JWT_SECRET || "fallback-secret-change-me",
@@ -89,7 +95,25 @@ export async function requireAuth() {
 
 export async function requireAdmin() {
   const data = await requireAuth();
-  if (data.user.role !== "admin") {
+  if (!canAccessAdminArea(data.user.role)) {
+    throw new Error("Forbidden");
+  }
+  return data;
+}
+
+/** Superadmin only — for system settings, SMTP, health, registration toggle. */
+export async function requireSuperAdmin() {
+  const data = await requireAuth();
+  if (!canManageSystem(data.user.role)) {
+    throw new Error("Forbidden");
+  }
+  return data;
+}
+
+/** Generic minimum-role gate. */
+export async function requireRole(min: Role) {
+  const data = await requireAuth();
+  if (!hasRole(data.user.role, min)) {
     throw new Error("Forbidden");
   }
   return data;

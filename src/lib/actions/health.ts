@@ -4,7 +4,7 @@ import fs from "fs/promises";
 import path from "path";
 import net from "net";
 import { db } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireSuperAdmin } from "@/lib/auth";
 import { loadSmtpConfig } from "@/lib/email";
 import { getAppUrl } from "@/lib/actions/settings";
 
@@ -242,7 +242,7 @@ function checkMemory(): HealthCheck {
 }
 
 export async function getSystemHealth(): Promise<SystemHealth> {
-  await requireAdmin();
+  await requireSuperAdmin();
 
   const [database, databaseFile, uploads, appUrl, smtp] = await Promise.all([
     checkDatabase(),

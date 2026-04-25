@@ -1,4 +1,4 @@
-# Selfstack
+ # Selfstack
 
 **Selfstack** is a free and open-source, self-hosted dashboard builder for
 organizing your bookmarks, services, and homelab tools into customizable

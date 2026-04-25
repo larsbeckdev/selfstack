@@ -7,6 +7,7 @@ import type { Group } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoHint } from "@/components/ui/info-hint";
 import {
   Dialog,
   DialogContent,
@@ -70,7 +71,10 @@ export function EditGroupDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-grp-name">{t("common.name")}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="edit-grp-name">{t("common.name")}</Label>
+              <InfoHint>{t("validation.nameRule")}</InfoHint>
+            </div>
             <Input
               id="edit-grp-name"
               value={name}

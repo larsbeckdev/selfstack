@@ -9,9 +9,10 @@ import {
   MoreHorizontal,
   Pencil,
   Shield,
+  ShieldCheck,
   Trash2,
-  UserMinus,
   UserPlus,
+  UserMinus,
   User as UserIcon,
   Building2,
 } from "lucide-react";
@@ -30,10 +31,10 @@ import {
   removeOrgMember,
   getUserOrganizations,
 } from "@/lib/actions/organization";
+import { assignableRoles, canModifyUser, type Role } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
@@ -106,17 +107,23 @@ type OrgRole = (typeof ORG_ROLES)[number];
 export function UserTable({
   users,
   organizations,
+  currentUserRole,
+  currentUserId,
 }: {
   users: UserRow[];
   organizations: OrgOption[];
+  currentUserRole: string;
+  currentUserId: string;
 }) {
   const { t, locale } = useTranslation();
+  const allowedRoles = assignableRoles(currentUserRole);
+  const defaultRole: Role = "guest";
   const [createOpen, setCreateOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newUsername, setNewUsername] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [newRole, setNewRole] = useState("user");
+  const [newRole, setNewRole] = useState<string>(defaultRole);
   const [generatePw, setGeneratePw] = useState(true);
   const [sendEmail, setSendEmail] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -131,7 +138,7 @@ export function UserTable({
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editRole, setEditRole] = useState("user");
+  const [editRole, setEditRole] = useState<string>(defaultRole);
   const [editLoading, setEditLoading] = useState(false);
 
   const openEdit = (user: UserRow) => {
@@ -152,7 +159,7 @@ export function UserTable({
         name: editName,
         username: editUsername,
         email: editEmail,
-        role: editRole as "user" | "editor" | "admin",
+        role: editRole as Role,
       });
       toast.success(t("admin.userUpdated"));
       setEditUser(null);
@@ -277,12 +284,34 @@ export function UserTable({
           ? t("org.roleEditor")
           : t("org.roleMember");
 
+  const globalRoleLabel = (r: string): string => {
+    switch (r) {
+      case "superadmin":
+        return t("admin.roleSuperAdmin");
+      case "admin":
+        return t("admin.roleAdmin");
+      case "editor":
+        return t("admin.roleEditor");
+      case "member":
+        return t("admin.roleMember");
+      case "viewer":
+        return t("admin.roleViewer");
+      case "guest":
+        return t("admin.roleGuest");
+      default:
+        return r;
+    }
+  };
+
+  const globalRoleIcon = (r: string) =>
+    r === "superadmin" ? ShieldCheck : r === "admin" ? Shield : UserIcon;
+
   const resetForm = () => {
     setNewName("");
     setNewUsername("");
     setNewEmail("");
     setNewPassword("");
-    setNewRole("user");
+    setNewRole(defaultRole);
     setGeneratePw(true);
     setSendEmail(false);
   };
@@ -469,15 +498,11 @@ export function UserTable({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="user">
-                        {t("admin.roleUser")}
-                      </SelectItem>
-                      <SelectItem value="editor">
-                        {t("admin.roleEditor")}
-                      </SelectItem>
-                      <SelectItem value="admin">
-                        {t("admin.roleAdmin")}
-                      </SelectItem>
+                      {allowedRoles.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {globalRoleLabel(r)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -526,19 +551,48 @@ export function UserTable({
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={user.role === "admin" ? "default" : "secondary"}>
-                      {user.role === "admin" ? (
-                        <Shield className="mr-1 size-3" />
-                      ) : (
-                        <UserIcon className="mr-1 size-3" />
-                      )}
-                      {user.role === "admin"
-                        ? t("admin.roleAdminShort")
-                        : user.role === "editor"
-                          ? t("admin.roleEditor")
-                          : t("admin.roleUser")}
-                    </Badge>
+                    {(() => {
+                      const Icon = globalRoleIcon(user.role);
+                      const isSelf = user.id === currentUserId;
+                      const canModify = canModifyUser(
+                        currentUserRole,
+                        user.role,
+                      );
+                      const editable = canModify && !isSelf;
+                      // Make sure the user's current role is selectable in the
+                      // dropdown so it remains the visible value.
+                      const options = Array.from(
+                        new Set([user.role as Role, ...allowedRoles]),
+                      );
+                      return (
+                        <Select
+                          value={user.role}
+                          disabled={!editable}
+                          onValueChange={(r) => handleRoleChange(user.id, r)}>
+                          <SelectTrigger
+                            size="sm"
+                            className="h-8 w-auto min-w-36 gap-2 border-transparent bg-transparent px-2 hover:bg-accent disabled:opacity-100 disabled:cursor-default">
+                            <span className="inline-flex items-center gap-1.5">
+                              <Icon className="size-3.5" />
+                              <span>{globalRoleLabel(user.role)}</span>
+                            </span>
+                          </SelectTrigger>
+                          <SelectContent align="end" position="popper">
+                            {options.map((r) => {
+                              const ItemIcon = globalRoleIcon(r);
+                              return (
+                                <SelectItem key={r} value={r}>
+                                  <span className="inline-flex items-center gap-2">
+                                    <ItemIcon className="size-3.5" />
+                                    {globalRoleLabel(r)}
+                                  </span>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell>
                     <Button
@@ -557,95 +611,92 @@ export function UserTable({
                     )}
                   </TableCell>
                   <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="size-8">
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => openEdit(user)}>
-                          <Pencil className="mr-2 size-3.5" />
-                          {t("admin.editUser")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => openBoards(user)}
-                          disabled={user._count.boards === 0}>
-                          <LayoutDashboard className="mr-2 size-3.5" />
-                          {t("admin.viewBoards")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openOrgs(user)}>
-                          <Building2 className="mr-2 size-3.5" />
-                          {t("admin.manageOrgs")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {user.role !== "user" && (
-                          <DropdownMenuItem
-                            onClick={() => handleRoleChange(user.id, "user")}>
-                            <UserIcon className="mr-2 size-3.5" />
-                            {t("admin.makeUser")}
-                          </DropdownMenuItem>
-                        )}
-                        {user.role !== "editor" && (
-                          <DropdownMenuItem
-                            onClick={() => handleRoleChange(user.id, "editor")}>
-                            <UserIcon className="mr-2 size-3.5" />
-                            {t("admin.makeEditor")}
-                          </DropdownMenuItem>
-                        )}
-                        {user.role !== "admin" && (
-                          <DropdownMenuItem
-                            onClick={() => handleRoleChange(user.id, "admin")}>
-                            <Shield className="mr-2 size-3.5" />
-                            {t("admin.makeAdmin")}
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleResetPassword(user)}>
-                          <KeyRound className="mr-2 size-3.5" />
-                          {t("admin.resetPassword")}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleSendResetEmail(user)}>
-                          <Mail className="mr-2 size-3.5" />
-                          {t("admin.sendPasswordEmail")}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
+                    {(() => {
+                      const canModify = canModifyUser(
+                        currentUserRole,
+                        user.role,
+                      );
+                      const isSelf = user.id === currentUserId;
+                      return (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8">
+                              <MoreHorizontal className="size-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              className="text-destructive"
-                              onSelect={(e) => e.preventDefault()}>
-                              <Trash2 className="mr-2 size-3.5" />
-                              {t("common.delete")}
+                              onClick={() => openEdit(user)}
+                              disabled={!canModify}>
+                              <Pencil className="mr-2 size-3.5" />
+                              {t("admin.editUser")}
                             </DropdownMenuItem>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                {t("admin.deleteUserTitle")}
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {t("admin.deleteUserDesc").replace(
-                                  "{name}",
-                                  user.name,
-                                )}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>
-                                {t("common.cancel")}
-                              </AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDelete(user.id)}>
-                                {t("common.delete")}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                            <DropdownMenuItem
+                              onClick={() => openBoards(user)}
+                              disabled={user._count.boards === 0}>
+                              <LayoutDashboard className="mr-2 size-3.5" />
+                              {t("admin.viewBoards")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => openOrgs(user)}
+                              disabled={!canModify}>
+                              <Building2 className="mr-2 size-3.5" />
+                              {t("admin.manageOrgs")}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleResetPassword(user)}
+                              disabled={!canModify}>
+                              <KeyRound className="mr-2 size-3.5" />
+                              {t("admin.resetPassword")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleSendResetEmail(user)}
+                              disabled={!canModify}>
+                              <Mail className="mr-2 size-3.5" />
+                              {t("admin.sendPasswordEmail")}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  disabled={!canModify || isSelf}
+                                  onSelect={(e) => e.preventDefault()}>
+                                  <Trash2 className="mr-2 size-3.5" />
+                                  {t("common.delete")}
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    {t("admin.deleteUserTitle")}
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t("admin.deleteUserDesc").replace(
+                                      "{name}",
+                                      user.name,
+                                    )}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>
+                                    {t("common.cancel")}
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleDelete(user.id)}>
+                                    {t("common.delete")}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      );
+                    })()}
                   </TableCell>
                 </TableRow>
               ))}
@@ -709,11 +760,11 @@ export function UserTable({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">{t("admin.roleUser")}</SelectItem>
-                  <SelectItem value="editor">
-                    {t("admin.roleEditor")}
-                  </SelectItem>
-                  <SelectItem value="admin">{t("admin.roleAdmin")}</SelectItem>
+                  {allowedRoles.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {globalRoleLabel(r)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -853,11 +904,11 @@ export function UserTable({
           </DialogHeader>
 
           {/* Add-to-org row */}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_9rem_auto] sm:items-end">
-            <div className="space-y-2">
+          <div className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-end">
+            <div className="min-w-0 flex-1 space-y-2">
               <Label>{t("org.pickOrg")}</Label>
               <Select value={addOrgId} onValueChange={setAddOrgId}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder={t("org.pickOrg")} />
                 </SelectTrigger>
                 <SelectContent>
@@ -875,12 +926,12 @@ export function UserTable({
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 sm:w-40">
               <Label>{t("org.memberRole")}</Label>
               <Select
                 value={addOrgRole}
                 onValueChange={(v) => setAddOrgRole(v as OrgRole)}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -892,7 +943,10 @@ export function UserTable({
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddUserOrg} disabled={!addOrgId}>
+            <Button
+              onClick={handleAddUserOrg}
+              disabled={!addOrgId}
+              className="sm:w-auto">
               <UserPlus className="mr-2 size-4" />
               {t("org.addMember")}
             </Button>
@@ -907,64 +961,51 @@ export function UserTable({
               {t("admin.userNoOrgs")}
             </p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-8" />
-                  <TableHead>{t("org.name")}</TableHead>
-                  <TableHead>{t("org.slug")}</TableHead>
-                  <TableHead>{t("org.memberRole")}</TableHead>
-                  <TableHead className="w-12" />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {userOrgs.map((m) => (
-                  <TableRow key={m.id}>
-                    <TableCell>
-                      <DynamicIcon
-                        name={m.organization.icon}
-                        iconUrl={m.organization.iconUrl}
-                        className="size-4"
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">
+            <ul className="divide-y rounded-lg border">
+              {userOrgs.map((m) => (
+                <li
+                  key={m.id}
+                  className="flex flex-wrap items-center gap-3 p-3">
+                  <DynamicIcon
+                    name={m.organization.icon}
+                    iconUrl={m.organization.iconUrl}
+                    className="size-4 shrink-0"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-medium">
                       {m.organization.name}
-                    </TableCell>
-                    <TableCell className="font-mono text-xs text-muted-foreground">
+                    </div>
+                    <div className="truncate font-mono text-xs text-muted-foreground">
                       @{m.organization.slug}
-                    </TableCell>
-                    <TableCell>
-                      <Select
-                        value={m.role}
-                        onValueChange={(v) =>
-                          handleChangeUserOrgRole(m.orgId, v as OrgRole)
-                        }>
-                        <SelectTrigger className="h-8 w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ORG_ROLES.map((r) => (
-                            <SelectItem key={r} value={r}>
-                              {orgRoleLabel(r)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="size-8"
-                        onClick={() => handleRemoveUserOrg(m.orgId)}
-                        title={t("org.removeMember")}>
-                        <UserMinus className="size-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                    </div>
+                  </div>
+                  <Select
+                    value={m.role}
+                    onValueChange={(v) =>
+                      handleChangeUserOrgRole(m.orgId, v as OrgRole)
+                    }>
+                    <SelectTrigger size="sm" className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent align="end" position="popper">
+                      {ORG_ROLES.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {orgRoleLabel(r)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8"
+                    onClick={() => handleRemoveUserOrg(m.orgId)}
+                    title={t("org.removeMember")}>
+                    <UserMinus className="size-4" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
           )}
         </DialogContent>
       </Dialog>

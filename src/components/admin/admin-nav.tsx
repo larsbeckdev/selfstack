@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BarChart3, Users, Cog, Building2, HeartPulse } from "lucide-react";
 import { useTranslation } from "@/components/locale-provider";
+import { canManageSystem } from "@/lib/permissions";
 import { cn } from "@/lib/utils";
 
-export function AdminNav() {
+export function AdminNav({ role }: { role: string }) {
   const pathname = usePathname();
   const { t } = useTranslation();
+  const isSuper = canManageSystem(role);
 
   const links = [
     { href: "/admin", label: t("admin.overview"), icon: BarChart3 },
@@ -18,8 +20,17 @@ export function AdminNav() {
       label: t("admin.organizations"),
       icon: Building2,
     },
-    { href: "/admin/settings", label: t("admin.systemSettings"), icon: Cog },
-    { href: "/admin/health", label: t("admin.health"), icon: HeartPulse },
+    // System settings & health are superadmin-only.
+    ...(isSuper
+      ? [
+          {
+            href: "/admin/settings",
+            label: t("admin.systemSettings"),
+            icon: Cog,
+          },
+          { href: "/admin/health", label: t("admin.health"), icon: HeartPulse },
+        ]
+      : []),
   ];
 
   return (

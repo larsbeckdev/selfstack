@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { canAccessAdminArea } from "@/lib/permissions";
 import { AdminNav } from "@/components/admin/admin-nav";
 
 export default async function AdminLayout({
@@ -9,7 +10,7 @@ export default async function AdminLayout({
 }) {
   const session = await getSession();
   if (!session) redirect("/login");
-  if (session.user.role !== "admin") redirect("/dashboard");
+  if (!canAccessAdminArea(session.user.role)) redirect("/dashboard");
 
   return (
     <div className="space-y-6">
@@ -20,7 +21,7 @@ export default async function AdminLayout({
         </p>
       </div>
       <div className="flex flex-col gap-6 md:flex-row">
-        <AdminNav />
+        <AdminNav role={session.user.role} />
         <div className="flex-1">{children}</div>
       </div>
     </div>

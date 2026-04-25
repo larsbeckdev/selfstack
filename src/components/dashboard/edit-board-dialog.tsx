@@ -7,6 +7,7 @@ import type { Board } from "@/generated/prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoHint } from "@/components/ui/info-hint";
 import {
   Dialog,
   DialogContent,
@@ -86,7 +87,10 @@ export function EditBoardDialog({
         </DialogHeader>
         <form onSubmit={handleSave} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="edit-board-name">{t("common.name")}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="edit-board-name">{t("common.name")}</Label>
+              <InfoHint>{t("validation.nameRule")}</InfoHint>
+            </div>
             <Input
               id="edit-board-name"
               value={name}

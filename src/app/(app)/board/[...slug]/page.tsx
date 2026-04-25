@@ -1,6 +1,11 @@
 import { notFound } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
+import {
+  canEditAnyOrgBoard,
+  canViewAllBoards,
+  canViewBoards,
+} from "@/lib/permissions";
 import { BoardView } from "@/components/dashboard/board-view";
 import type { BoardRole, BoardWithContents } from "@/types";
 
@@ -35,19 +40,34 @@ export default async function BoardPage({
     return <BoardView board={publicBoard as BoardWithContents} forceReadonly />;
   }
 
-  const isPrivileged =
-    session.user.role === "admin" || session.user.role === "editor";
+  const isAllSeeing = canViewAllBoards(session.user.role);
+  const isOrgEditor = canEditAnyOrgBoard(session.user.role);
+
+  // Build the same access filter as `boardAccessWhere` in board actions.
+  // Guests cannot access any board through this route; fall through to
+  // the public-board fallback below.
+  const accessOr = canViewBoards(session.user.role)
+    ? [
+        { userId: session.user.id },
+        { members: { some: { userId: session.user.id } } },
+        ...(isOrgEditor
+          ? [{ orgId: { not: null } as const }]
+          : [
+              {
+                organization: {
+                  is: { members: { some: { userId: session.user.id } } },
+                },
+              } as const,
+            ]),
+      ]
+    : null;
 
   const board = await db.board.findFirst({
-    where: isPrivileged
+    where: isAllSeeing
       ? { slug }
-      : {
-          slug,
-          OR: [
-            { userId: session.user.id },
-            { members: { some: { userId: session.user.id } } },
-          ],
-        },
+      : accessOr
+        ? { slug, OR: accessOr }
+        : { id: "__none__" }, // guest
     include: {
       categories: {
         orderBy: [{ y: "asc" }, { x: "asc" }],
@@ -97,9 +117,9 @@ export default async function BoardPage({
     boardRole = "owner";
   } else if (board.members[0]) {
     boardRole = board.members[0].role as BoardRole;
-  } else if (session.user.role === "admin") {
+  } else if (isAllSeeing) {
     boardRole = "owner";
-  } else if (session.user.role === "editor") {
+  } else if (isOrgEditor && board.orgId) {
     boardRole = "editor";
   }
 

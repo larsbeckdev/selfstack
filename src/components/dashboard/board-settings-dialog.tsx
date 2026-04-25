@@ -30,6 +30,7 @@ import { copyToClipboard } from "@/lib/clipboard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InfoHint } from "@/components/ui/info-hint";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -79,7 +80,7 @@ export function BoardSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg overflow-hidden">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("board.settings")}</DialogTitle>
         </DialogHeader>
@@ -256,7 +257,10 @@ function GeneralTab({
       {isOwner && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="settings-board-name">{t("common.name")}</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="settings-board-name">{t("common.name")}</Label>
+              <InfoHint>{t("validation.nameRule")}</InfoHint>
+            </div>
             <Input
               id="settings-board-name"
               value={name}
