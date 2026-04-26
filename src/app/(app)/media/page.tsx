@@ -1,10 +1,17 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { MediaLibrary } from "@/components/media/media-library";
 
 export default async function MediaPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  const u = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { mediaView: true },
+  });
+  const initialView = u?.mediaView === "list" ? "list" : "grid";
 
   return (
     <div className="space-y-6">
@@ -14,7 +21,10 @@ export default async function MediaPage() {
           Hochgeladene Icons und Bilder verwalten
         </p>
       </div>
-      <MediaLibrary />
+      <MediaLibrary
+        initialView={initialView}
+        currentUserId={session.user.id}
+      />
     </div>
   );
 }

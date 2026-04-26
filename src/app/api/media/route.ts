@@ -23,6 +23,10 @@ export type MediaFile = {
   type: string;
   createdAt: string;
   scope: "user" | "org" | "legacy";
+  /** Set when scope === "user": owner user id. */
+  userId?: string;
+  /** Set when scope === "user": owner display name (best-effort, may be empty if user was deleted). */
+  userName?: string;
   /** Set when scope === "org". */
   orgId?: string;
   /** Set when scope === "org": display name of the organization. */
@@ -46,6 +50,7 @@ function getMediaType(ext: string): string {
 function listFolder(
   scope: MediaScope,
   orgInfo?: { id: string; name: string },
+  userInfo?: { id: string; name: string },
 ): MediaFile[] {
   const folder = scopeFolder(scope);
   if (!existsSync(folder)) return [];
@@ -76,6 +81,10 @@ function listFolder(
         out.orgId = orgInfo.id;
         out.orgName = orgInfo.name;
       }
+      if (scope.kind === "user") {
+        out.userId = scope.userId;
+        if (userInfo) out.userName = userInfo.name;
+      }
       return out;
     });
 }
@@ -100,13 +109,30 @@ export async function GET() {
   if (isAllSeeing) {
     const usersRoot = path.join(ICONS_DIR, "users");
     if (existsSync(usersRoot)) {
-      for (const entry of readdirSync(usersRoot, { withFileTypes: true })) {
-        if (!entry.isDirectory()) continue;
-        files.push(...listFolder({ kind: "user", userId: entry.name }));
+      const dirs = readdirSync(usersRoot, { withFileTypes: true })
+        .filter((e) => e.isDirectory())
+        .map((e) => e.name);
+      const users = dirs.length
+        ? await db.user.findMany({
+            where: { id: { in: dirs } },
+            select: { id: true, name: true },
+          })
+        : [];
+      const userMap = new Map(users.map((u) => [u.id, u]));
+      for (const userId of dirs) {
+        files.push(
+          ...listFolder({ kind: "user", userId }, undefined, userMap.get(userId)),
+        );
       }
     }
   } else {
-    files.push(...listFolder({ kind: "user", userId: session.user.id }));
+    files.push(
+      ...listFolder(
+        { kind: "user", userId: session.user.id },
+        undefined,
+        { id: session.user.id, name: session.user.name },
+      ),
+    );
   }
 
   // 2) Org scope — list every org folder the user is a member of (or all for admins+).

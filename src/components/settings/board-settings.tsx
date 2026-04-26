@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Globe,
   Lock,
@@ -112,6 +113,7 @@ function BoardSettingsRow({
   const [loading, setLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const { t } = useTranslation();
+  const router = useRouter();
 
   const toggleVisibility = async (checked: boolean) => {
     setLoading(true);
@@ -145,6 +147,7 @@ function BoardSettingsRow({
     try {
       await deleteBoard(board.id);
       toast.success(t("board.deleted"));
+      router.refresh();
     } catch {
       toast.error(t("error.deleteFailed"));
     }
@@ -263,7 +266,9 @@ function BoardSettingsRow({
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete}>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={handleDelete}>
                 {t("common.delete")}
               </AlertDialogAction>
             </AlertDialogFooter>

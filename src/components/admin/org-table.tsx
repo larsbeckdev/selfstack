@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Building2,
   MoreHorizontal,
@@ -120,6 +121,7 @@ export function OrgTable({
   allUsers: UserRow[];
 }) {
   const { t } = useTranslation();
+  const router = useRouter();
 
   // Create
   const [createOpen, setCreateOpen] = useState(false);
@@ -203,6 +205,7 @@ export function OrgTable({
     try {
       await deleteOrganization(orgId);
       toast.success(t("org.deleted"));
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("common.error"));
     }
@@ -362,6 +365,7 @@ export function OrgTable({
                                   {t("common.cancel")}
                                 </AlertDialogCancel>
                                 <AlertDialogAction
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   onClick={() => handleDelete(org.id)}>
                                   {t("common.delete")}
                                 </AlertDialogAction>

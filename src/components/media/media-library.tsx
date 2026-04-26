@@ -10,9 +10,13 @@ import {
   List,
   ArrowUpDown,
   Image as ImageIcon,
+  User as UserIcon,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { setMediaView } from "@/lib/actions/settings";
 import {
   Select,
   SelectContent,
@@ -47,6 +51,8 @@ type MediaFile = {
   type: string;
   createdAt: string;
   scope: "user" | "org" | "legacy";
+  userId?: string;
+  userName?: string;
   orgId?: string;
   orgName?: string;
 };
@@ -84,18 +90,48 @@ function getExtension(name: string): string {
   return name.split(".").pop()?.toLowerCase() || "";
 }
 
-export function MediaLibrary() {
+export function MediaLibrary({
+  initialView = "grid",
+  currentUserId,
+}: {
+  initialView?: ViewMode;
+  currentUserId: string;
+}) {
   const { t, locale } = useTranslation();
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<SortBy>("date-desc");
-  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [viewMode, setViewMode] = useState<ViewMode>(initialView);
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [uploading, setUploading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MediaFile | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initialFetchDone = useRef(false);
+
+  const changeView = (v: ViewMode) => {
+    if (v === viewMode) return;
+    setViewMode(v);
+    void setMediaView(v).catch(() => {
+      /* non-blocking; UI stays on chosen view */
+    });
+  };
+
+  function ownerLabel(file: MediaFile): {
+    icon: "user" | "org" | null;
+    text: string;
+  } {
+    if (file.scope === "org")
+      return { icon: "org", text: file.orgName ?? t("media.ownerOrg") };
+    if (file.scope === "user") {
+      const isMe = file.userId === currentUserId;
+      return {
+        icon: "user",
+        text: isMe ? t("media.ownerYou") : (file.userName ?? "\u2014"),
+      };
+    }
+    return { icon: null, text: t("media.ownerLegacy") };
+  }
 
   const fetchFiles = async () => {
     try {
@@ -259,14 +295,14 @@ export function MediaLibrary() {
             variant={viewMode === "grid" ? "secondary" : "ghost"}
             size="icon"
             className="size-8 rounded-r-none"
-            onClick={() => setViewMode("grid")}>
+            onClick={() => changeView("grid")}>
             <Grid3x3 className="size-4" />
           </Button>
           <Button
             variant={viewMode === "list" ? "secondary" : "ghost"}
             size="icon"
             className="size-8 rounded-l-none"
-            onClick={() => setViewMode("list")}>
+            onClick={() => changeView("list")}>
             <List className="size-4" />
           </Button>
         </div>
@@ -332,9 +368,31 @@ export function MediaLibrary() {
                   </TooltipTrigger>
                   <TooltipContent>{file.name}</TooltipContent>
                 </Tooltip>
-                <p className="text-[10px] text-muted-foreground">
-                  {formatBytes(file.size)}
-                </p>
+                <div className="mt-0.5 flex items-center justify-between gap-1">
+                  <p className="text-[10px] text-muted-foreground">
+                    {formatBytes(file.size)}
+                  </p>
+                  {(() => {
+                    const o = ownerLabel(file);
+                    return (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="secondary"
+                            className="flex max-w-[60%] items-center gap-1 px-1 py-0 text-[9px] font-normal">
+                            {o.icon === "org" ? (
+                              <Building2 className="size-2.5 shrink-0" />
+                            ) : o.icon === "user" ? (
+                              <UserIcon className="size-2.5 shrink-0" />
+                            ) : null}
+                            <span className="truncate">{o.text}</span>
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>{o.text}</TooltipContent>
+                      </Tooltip>
+                    );
+                  })()}
+                </div>
               </div>
               <div className="absolute right-1 top-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
@@ -357,19 +415,22 @@ export function MediaLibrary() {
         </div>
       ) : (
         <div className="rounded-md border">
-          <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 text-xs font-medium text-muted-foreground sm:grid-cols-[auto_1fr_auto_auto_auto] sm:gap-4 sm:px-4">
+          <div className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 text-xs font-medium text-muted-foreground sm:grid-cols-[auto_1fr_auto_auto_auto_auto] sm:gap-4 sm:px-4">
             <span className="w-8" />
             <span>{t("media.name")}</span>
+            <span className="hidden w-32 sm:inline">{t("media.owner")}</span>
             <span className="w-16 text-right sm:w-20">{t("media.size")}</span>
             <span className="hidden w-32 text-right sm:inline">
               {t("media.date")}
             </span>
             <span className="w-16 sm:w-20" />
           </div>
-          {filtered.map((file) => (
+          {filtered.map((file) => {
+            const o = ownerLabel(file);
+            return (
             <div
               key={file.name}
-              className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto_auto_auto] sm:gap-4 sm:px-4">
+              className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] sm:gap-4 sm:px-4">
               <div className="flex size-8 items-center justify-center rounded bg-muted/30">
                 <img
                   src={file.url}
@@ -384,6 +445,14 @@ export function MediaLibrary() {
                 </TooltipTrigger>
                 <TooltipContent>{file.name}</TooltipContent>
               </Tooltip>
+              <span className="hidden w-32 items-center gap-1 text-xs text-muted-foreground sm:inline-flex">
+                {o.icon === "org" ? (
+                  <Building2 className="size-3 shrink-0" />
+                ) : o.icon === "user" ? (
+                  <UserIcon className="size-3 shrink-0" />
+                ) : null}
+                <span className="truncate">{o.text}</span>
+              </span>
               <span className="w-16 text-right text-xs text-muted-foreground sm:w-20">
                 {formatBytes(file.size)}
               </span>
@@ -407,7 +476,8 @@ export function MediaLibrary() {
                 </Button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

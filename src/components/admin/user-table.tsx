@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Copy,
   KeyRound,
@@ -117,6 +118,7 @@ export function UserTable({
   currentUserId: string;
 }) {
   const { t, locale } = useTranslation();
+  const router = useRouter();
   const allowedRoles = assignableRoles(currentUserRole);
   const defaultRole: Role = "guest";
   const [createOpen, setCreateOpen] = useState(false);
@@ -362,6 +364,7 @@ export function UserTable({
     try {
       await deleteUser(userId);
       toast.success(t("admin.userDeleted"));
+      router.refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : t("common.error"));
     }
@@ -689,6 +692,7 @@ export function UserTable({
                                     {t("common.cancel")}
                                   </AlertDialogCancel>
                                   <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                     onClick={() => handleDelete(user.id)}>
                                     {t("common.delete")}
                                   </AlertDialogAction>

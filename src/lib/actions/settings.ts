@@ -557,6 +557,17 @@ export async function setUserTheme(theme: string) {
   });
 }
 
+export async function setMediaView(view: "grid" | "list") {
+  const { user } = await requireAuth();
+  if (view !== "grid" && view !== "list") {
+    throw new Error("Invalid view");
+  }
+  await db.user.update({
+    where: { id: user.id },
+    data: { mediaView: view },
+  });
+}
+
 // ─── Locale Actions ─────────────────────────────────────────────────────────
 
 export async function updateLocale(locale: string) {

@@ -523,6 +523,10 @@ const en: Record<TranslationKey, string> = {
   "media.deleteTitle": "Delete file?",
   "media.deleteDesc":
     '"{name}" will be permanently deleted. Icons using this file will no longer display.',
+  "media.owner": "Owner",
+  "media.ownerYou": "You",
+  "media.ownerOrg": "Organization",
+  "media.ownerLegacy": "System",
 
   // Grid system (board redesign)
   "common.done": "Done",

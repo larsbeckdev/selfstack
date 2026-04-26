@@ -139,7 +139,9 @@ export function AccountSettings({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteAccount}>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={handleDeleteAccount}>
                   {t("settings.deleteConfirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>

@@ -411,7 +411,9 @@ function GeneralTab({
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete}>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleDelete}>
                     {t("common.delete")}
                   </AlertDialogAction>
                 </AlertDialogFooter>

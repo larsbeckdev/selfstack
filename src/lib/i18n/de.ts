@@ -529,6 +529,10 @@ const de = {
   "media.deleteTitle": "Datei löschen?",
   "media.deleteDesc":
     '"{name}" wird unwiderruflich gelöscht. Icons, die diese Datei verwenden, werden danach nicht mehr angezeigt.',
+  "media.owner": "Besitzer",
+  "media.ownerYou": "Du",
+  "media.ownerOrg": "Organisation",
+  "media.ownerLegacy": "System",
 
   // Grid system (board redesign)
   "common.done": "Fertig",
