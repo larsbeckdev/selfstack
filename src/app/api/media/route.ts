@@ -121,17 +121,20 @@ export async function GET() {
       const userMap = new Map(users.map((u) => [u.id, u]));
       for (const userId of dirs) {
         files.push(
-          ...listFolder({ kind: "user", userId }, undefined, userMap.get(userId)),
+          ...listFolder(
+            { kind: "user", userId },
+            undefined,
+            userMap.get(userId),
+          ),
         );
       }
     }
   } else {
     files.push(
-      ...listFolder(
-        { kind: "user", userId: session.user.id },
-        undefined,
-        { id: session.user.id, name: session.user.name },
-      ),
+      ...listFolder({ kind: "user", userId: session.user.id }, undefined, {
+        id: session.user.id,
+        name: session.user.name,
+      }),
     );
   }
 

@@ -428,54 +428,54 @@ export function MediaLibrary({
           {filtered.map((file) => {
             const o = ownerLabel(file);
             return (
-            <div
-              key={file.name}
-              className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] sm:gap-4 sm:px-4">
-              <div className="flex size-8 items-center justify-center rounded bg-muted/30">
-                <img
-                  src={file.url}
-                  alt={file.name}
-                  className="max-h-6 max-w-6 object-contain"
-                  loading="lazy"
-                />
+              <div
+                key={file.name}
+                className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b px-3 py-2 last:border-b-0 hover:bg-muted/50 sm:grid-cols-[auto_1fr_auto_auto_auto_auto] sm:gap-4 sm:px-4">
+                <div className="flex size-8 items-center justify-center rounded bg-muted/30">
+                  <img
+                    src={file.url}
+                    alt={file.name}
+                    className="max-h-6 max-w-6 object-contain"
+                    loading="lazy"
+                  />
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="truncate text-sm">{file.name}</span>
+                  </TooltipTrigger>
+                  <TooltipContent>{file.name}</TooltipContent>
+                </Tooltip>
+                <span className="hidden w-32 items-center gap-1 text-xs text-muted-foreground sm:inline-flex">
+                  {o.icon === "org" ? (
+                    <Building2 className="size-3 shrink-0" />
+                  ) : o.icon === "user" ? (
+                    <UserIcon className="size-3 shrink-0" />
+                  ) : null}
+                  <span className="truncate">{o.text}</span>
+                </span>
+                <span className="w-16 text-right text-xs text-muted-foreground sm:w-20">
+                  {formatBytes(file.size)}
+                </span>
+                <span className="hidden w-32 text-right text-xs text-muted-foreground sm:inline">
+                  {formatDate(file.createdAt, locale)}
+                </span>
+                <div className="flex w-16 justify-end gap-1 sm:w-20">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7"
+                    onClick={() => handleDownload(file)}>
+                    <Download className="size-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-7 text-destructive hover:text-destructive"
+                    onClick={() => setDeleteTarget(file)}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
               </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="truncate text-sm">{file.name}</span>
-                </TooltipTrigger>
-                <TooltipContent>{file.name}</TooltipContent>
-              </Tooltip>
-              <span className="hidden w-32 items-center gap-1 text-xs text-muted-foreground sm:inline-flex">
-                {o.icon === "org" ? (
-                  <Building2 className="size-3 shrink-0" />
-                ) : o.icon === "user" ? (
-                  <UserIcon className="size-3 shrink-0" />
-                ) : null}
-                <span className="truncate">{o.text}</span>
-              </span>
-              <span className="w-16 text-right text-xs text-muted-foreground sm:w-20">
-                {formatBytes(file.size)}
-              </span>
-              <span className="hidden w-32 text-right text-xs text-muted-foreground sm:inline">
-                {formatDate(file.createdAt, locale)}
-              </span>
-              <div className="flex w-16 justify-end gap-1 sm:w-20">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  onClick={() => handleDownload(file)}>
-                  <Download className="size-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7 text-destructive hover:text-destructive"
-                  onClick={() => setDeleteTarget(file)}>
-                  <Trash2 className="size-3.5" />
-                </Button>
-              </div>
-            </div>
             );
           })}
         </div>

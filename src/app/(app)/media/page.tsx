@@ -21,10 +21,7 @@ export default async function MediaPage() {
           Hochgeladene Icons und Bilder verwalten
         </p>
       </div>
-      <MediaLibrary
-        initialView={initialView}
-        currentUserId={session.user.id}
-      />
+      <MediaLibrary initialView={initialView} currentUserId={session.user.id} />
     </div>
   );
 }
