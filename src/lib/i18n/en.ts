@@ -91,6 +91,12 @@ const en: Record<TranslationKey, string> = {
   "dashboard.title": "Dashboard",
   "dashboard.welcome": "Welcome",
   "dashboard.welcomeBack": "Welcome back",
+  "dashboard.col.board": "Board",
+  "dashboard.col.owner": "Owner",
+  "dashboard.col.scope": "Scope",
+  "dashboard.col.visibility": "Visibility",
+  "dashboard.ownerYou": "You",
+  "dashboard.scopePersonal": "Personal",
   "dashboard.noBoards": "No boards created yet",
   "dashboard.noBoardsTitle": "No boards yet",
   "dashboard.noBoardsDesc":

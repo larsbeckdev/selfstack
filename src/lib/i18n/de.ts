@@ -90,6 +90,12 @@ const de = {
   "dashboard.title": "Dashboard",
   "dashboard.welcome": "Willkommen",
   "dashboard.welcomeBack": "Willkommen zurück",
+  "dashboard.col.board": "Board",
+  "dashboard.col.owner": "Besitzer",
+  "dashboard.col.scope": "Bereich",
+  "dashboard.col.visibility": "Sichtbarkeit",
+  "dashboard.ownerYou": "Du",
+  "dashboard.scopePersonal": "Persönlich",
   "dashboard.noBoards": "Noch keine Boards erstellt",
   "dashboard.noBoardsTitle": "Keine Boards vorhanden",
   "dashboard.noBoardsDesc":

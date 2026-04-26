@@ -9,7 +9,7 @@ import {
   canViewBoards,
 } from "@/lib/permissions";
 import { DynamicIcon } from "@/components/dynamic-icon";
-import { Globe, Lock } from "lucide-react";
+import { Globe, Lock, Building2, User as UserIcon } from "lucide-react";
 import {
   Card,
   CardDescription,
@@ -17,6 +17,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getTranslator } from "@/lib/i18n/server";
 
 export default async function DashboardPage() {
@@ -59,10 +67,9 @@ export default async function DashboardPage() {
     where,
     orderBy: { order: "asc" },
     include: {
-      _count: {
-        select: { categories: true },
-      },
+      _count: { select: { categories: true } },
       organization: { select: { id: true, name: true, slug: true } },
+      user: { select: { id: true, name: true, username: true } },
     },
   });
 
@@ -77,46 +84,91 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {boards.map((board) => (
-          <Link key={board.id} href={`/board/${board.slug}`}>
-            <Card className="transition-colors hover:bg-accent/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <DynamicIcon name={board.icon} className="size-5" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{board.name}</CardTitle>
-                      <CardDescription>
-                        {board._count.categories} {t("public.categories")}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <Badge variant={board.isPublic ? "default" : "secondary"}>
-                    {board.isPublic ? (
-                      <Globe className="mr-1 size-3" />
-                    ) : (
-                      <Lock className="mr-1 size-3" />
-                    )}
-                    {board.isPublic ? t("common.public") : t("common.private")}
-                  </Badge>
-                </div>
-              </CardHeader>
-            </Card>
-          </Link>
-        ))}
-
-        {boards.length === 0 && (
-          <Card className="col-span-full">
-            <CardHeader className="text-center">
-              <CardTitle>{t("dashboard.noBoardsTitle")}</CardTitle>
-              <CardDescription>{t("dashboard.noBoardsDesc")}</CardDescription>
-            </CardHeader>
-          </Card>
-        )}
-      </div>
+      {boards.length === 0 ? (
+        <Card>
+          <CardHeader className="text-center">
+            <CardTitle>{t("dashboard.noBoardsTitle")}</CardTitle>
+            <CardDescription>{t("dashboard.noBoardsDesc")}</CardDescription>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card className="overflow-hidden p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("dashboard.col.board")}</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  {t("dashboard.col.owner")}
+                </TableHead>
+                <TableHead className="hidden sm:table-cell">
+                  {t("dashboard.col.scope")}
+                </TableHead>
+                <TableHead className="hidden lg:table-cell text-right">
+                  {t("public.categories")}
+                </TableHead>
+                <TableHead className="text-right">
+                  {t("dashboard.col.visibility")}
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {boards.map((board) => {
+                const isOwn = board.userId === session.user.id;
+                const ownerLabel = isOwn
+                  ? t("dashboard.ownerYou")
+                  : (board.user?.name ?? "—");
+                return (
+                  <TableRow key={board.id} className="cursor-pointer">
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/board/${board.slug}`}
+                        className="flex items-center gap-3">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                          <DynamicIcon name={board.icon} className="size-4" />
+                        </span>
+                        <span className="min-w-0 truncate">{board.name}</span>
+                      </Link>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground">
+                      <span className="inline-flex items-center gap-1.5">
+                        <UserIcon className="size-3.5" />
+                        {ownerLabel}
+                      </span>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {board.organization ? (
+                        <Badge variant="outline" className="gap-1">
+                          <Building2 className="size-3" />
+                          {board.organization.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {t("dashboard.scopePersonal")}
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-right tabular-nums text-muted-foreground">
+                      {board._count.categories}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Badge variant={board.isPublic ? "default" : "secondary"}>
+                        {board.isPublic ? (
+                          <Globe className="mr-1 size-3" />
+                        ) : (
+                          <Lock className="mr-1 size-3" />
+                        )}
+                        {board.isPublic
+                          ? t("common.public")
+                          : t("common.private")}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </Card>
+      )}
     </div>
   );
 }
