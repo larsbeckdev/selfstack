@@ -135,8 +135,15 @@ export function OrgTable({
   const [editSlug, setEditSlug] = useState("");
   const [editIcon, setEditIcon] = useState("building-2");
 
-  // Members
-  const [membersOrg, setMembersOrg] = useState<OrgRow | null>(null);
+  // Members — derived from `orgs` so revalidatePath updates show live.
+  const [membersOrgId, setMembersOrgId] = useState<string | null>(null);
+  const membersOrg = useMemo(
+    () =>
+      membersOrgId ? (orgs.find((o) => o.id === membersOrgId) ?? null) : null,
+    [orgs, membersOrgId],
+  );
+  const setMembersOrg = (org: OrgRow | null) =>
+    setMembersOrgId(org?.id ?? null);
   const [addUserId, setAddUserId] = useState("");
   const [addRole, setAddRole] = useState<Role>("member");
 
