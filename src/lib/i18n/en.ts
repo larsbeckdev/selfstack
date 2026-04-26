@@ -6,6 +6,8 @@ const en: Record<TranslationKey, string> = {
   "common.saving": "Saving...",
   "common.cancel": "Cancel",
   "common.delete": "Delete",
+  "common.deleting": "Deleting...",
+  "common.errorGeneric": "Something went wrong",
   "common.edit": "Edit",
   "common.language": "Language",
   "common.create": "Create",
@@ -95,8 +97,14 @@ const en: Record<TranslationKey, string> = {
   "dashboard.col.owner": "Owner",
   "dashboard.col.scope": "Scope",
   "dashboard.col.visibility": "Visibility",
+  "dashboard.col.updated": "Updated",
+  "dashboard.col.actions": "Actions",
   "dashboard.ownerYou": "You",
   "dashboard.scopePersonal": "Personal",
+  "dashboard.deleteBoardTitle": "Delete board?",
+  "dashboard.deleteBoardDesc":
+    "The board “{name}” and all categories, groups and tiles within will be permanently deleted.",
+  "dashboard.deleteBoardSuccess": "Board deleted",
   "dashboard.noBoards": "No boards created yet",
   "dashboard.noBoardsTitle": "No boards yet",
   "dashboard.noBoardsDesc":

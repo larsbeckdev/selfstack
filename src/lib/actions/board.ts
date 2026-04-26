@@ -94,17 +94,10 @@ function boardAccessWhere(userId: string, globalRole?: string) {
   }
   // Global admin/superadmin: all boards.
   if (canViewAllBoards(globalRole)) return {};
-  // Global editor: own + member-of + every org board (read+edit).
-  if (canEditAnyOrgBoard(globalRole)) {
-    return {
-      OR: [
-        { userId },
-        { members: { some: { userId } } },
-        { orgId: { not: null } },
-      ],
-    };
-  }
-  // Viewer/member: own + explicitly shared + boards of orgs they belong to.
+  // Editors and below see: own + explicitly shared + boards of orgs they
+  // belong to. Editors gain *edit* rights on those org boards but only on
+  // ones they actually have access to via membership — they don’t see
+  // boards of orgs they aren’t in.
   return {
     OR: [
       { userId },
@@ -1121,10 +1114,26 @@ export async function getBoardMembers(boardId: string) {
     where: { id: boardId },
     select: {
       userId: true,
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          image: true,
+        },
+      },
       members: {
         include: {
-          user: { select: { id: true, name: true, email: true, image: true } },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              email: true,
+              image: true,
+            },
+          },
         },
         orderBy: { role: "asc" },
       },
@@ -1158,7 +1167,15 @@ export async function addBoardMember(
   const member = await db.boardMember.create({
     data: { boardId, userId: targetUser.id, role },
     include: {
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          image: true,
+        },
+      },
     },
   });
 
@@ -1179,7 +1196,15 @@ export async function updateBoardMemberRole(
     where: { id: memberId },
     data: { role },
     include: {
-      user: { select: { id: true, name: true, email: true, image: true } },
+      user: {
+        select: {
+          id: true,
+          name: true,
+          username: true,
+          email: true,
+          image: true,
+        },
+      },
     },
   });
 
@@ -1225,7 +1250,13 @@ export async function getAvailableUsersForBoard(boardId: string) {
 
   return db.user.findMany({
     where,
-    select: { id: true, name: true, email: true, image: true },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      email: true,
+      image: true,
+    },
     orderBy: { name: "asc" },
   });
 }

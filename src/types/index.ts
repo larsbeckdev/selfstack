@@ -22,7 +22,13 @@ export type BoardWithContents = Board & {
 };
 
 export type BoardMemberWithUser = BoardMember & {
-  user: { id: string; name: string; email: string; image: string | null };
+  user: {
+    id: string;
+    name: string;
+    username: string | null;
+    email: string;
+    image: string | null;
+  };
 };
 
 export type CategoryWithGroups = Category & {

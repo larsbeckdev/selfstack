@@ -4,6 +4,8 @@ const de = {
   "common.saving": "Speichern...",
   "common.cancel": "Abbrechen",
   "common.delete": "Löschen",
+  "common.deleting": "Löschen...",
+  "common.errorGeneric": "Etwas ist schiefgelaufen",
   "common.edit": "Bearbeiten",
   "common.language": "Sprache",
   "common.create": "Erstellen",
@@ -94,8 +96,14 @@ const de = {
   "dashboard.col.owner": "Besitzer",
   "dashboard.col.scope": "Bereich",
   "dashboard.col.visibility": "Sichtbarkeit",
+  "dashboard.col.updated": "Aktualisiert",
+  "dashboard.col.actions": "Aktionen",
   "dashboard.ownerYou": "Du",
   "dashboard.scopePersonal": "Persönlich",
+  "dashboard.deleteBoardTitle": "Board löschen?",
+  "dashboard.deleteBoardDesc":
+    "Das Board „{name}“ und alle enthaltenen Kategorien, Gruppen und Kacheln werden unwiderruflich gelöscht.",
+  "dashboard.deleteBoardSuccess": "Board gelöscht",
   "dashboard.noBoards": "Noch keine Boards erstellt",
   "dashboard.noBoardsTitle": "Keine Boards vorhanden",
   "dashboard.noBoardsDesc":

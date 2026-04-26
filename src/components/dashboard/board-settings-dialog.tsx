@@ -430,12 +430,19 @@ function MembersTab({ boardId }: { boardId: string }) {
   const [owner, setOwner] = useState<{
     id: string;
     name: string;
+    username: string | null;
     email: string;
     image: string | null;
   } | null>(null);
   const [members, setMembers] = useState<BoardMemberWithUser[]>([]);
   const [availableUsers, setAvailableUsers] = useState<
-    { id: string; name: string; email: string; image: string | null }[]
+    {
+      id: string;
+      name: string;
+      username: string | null;
+      email: string;
+      image: string | null;
+    }[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState("");

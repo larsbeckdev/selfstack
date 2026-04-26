@@ -4,7 +4,8 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import {
-  canEditAnyOrgBoard,
+  canDeleteAnyOrgBoard,
+  canDeleteOthersBoards,
   canViewAllBoards,
   canViewBoards,
 } from "@/lib/permissions";
@@ -25,31 +26,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTranslator } from "@/lib/i18n/server";
+import { DeleteBoardButton } from "@/components/dashboard/delete-board-button";
+import { getLocale, getTranslator } from "@/lib/i18n/server";
 
 export default async function DashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
   const t = await getTranslator();
+  const locale = await getLocale();
+  const dateFmt = new Intl.DateTimeFormat(locale, { dateStyle: "medium" });
 
   const role = session.user.role;
 
-  // Build the same access predicate as `boardAccessWhere` in board actions.
+  // Mirrors `boardAccessWhere` in board actions.
   let where: Prisma.BoardWhereInput;
   if (!canViewBoards(role)) {
     // Guests see no boards.
     where = { id: "__none__" };
   } else if (canViewAllBoards(role)) {
     where = {};
-  } else if (canEditAnyOrgBoard(role)) {
-    where = {
-      OR: [
-        { userId: session.user.id },
-        { members: { some: { userId: session.user.id } } },
-        { orgId: { not: null } },
-      ],
-    };
   } else {
+    // Viewer/member/editor: own + explicitly shared + org-boards of orgs
+    // they belong to. Editors do NOT see boards of orgs they aren’t in.
     where = {
       OR: [
         { userId: session.user.id },
@@ -106,8 +104,14 @@ export default async function DashboardPage() {
                 <TableHead className="hidden lg:table-cell text-right">
                   {t("public.categories")}
                 </TableHead>
+                <TableHead className="hidden xl:table-cell">
+                  {t("dashboard.col.updated")}
+                </TableHead>
                 <TableHead className="text-right">
                   {t("dashboard.col.visibility")}
+                </TableHead>
+                <TableHead className="w-[1%] text-right">
+                  <span className="sr-only">{t("dashboard.col.actions")}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -117,8 +121,13 @@ export default async function DashboardPage() {
                 const ownerLabel = isOwn
                   ? t("dashboard.ownerYou")
                   : (board.user?.name ?? "—");
+                const isOrgBoard = !!board.orgId;
+                const canDelete =
+                  isOwn ||
+                  (isOrgBoard && canDeleteAnyOrgBoard(role)) ||
+                  (!isOrgBoard && canDeleteOthersBoards(role));
                 return (
-                  <TableRow key={board.id} className="cursor-pointer">
+                  <TableRow key={board.id}>
                     <TableCell className="font-medium">
                       <Link
                         href={`/board/${board.slug}`}
@@ -150,6 +159,9 @@ export default async function DashboardPage() {
                     <TableCell className="hidden lg:table-cell text-right tabular-nums text-muted-foreground">
                       {board._count.categories}
                     </TableCell>
+                    <TableCell className="hidden xl:table-cell text-muted-foreground tabular-nums">
+                      {dateFmt.format(board.updatedAt)}
+                    </TableCell>
                     <TableCell className="text-right">
                       <Badge variant={board.isPublic ? "default" : "secondary"}>
                         {board.isPublic ? (
@@ -161,6 +173,14 @@ export default async function DashboardPage() {
                           ? t("common.public")
                           : t("common.private")}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {canDelete && (
+                        <DeleteBoardButton
+                          boardId={board.id}
+                          boardName={board.name}
+                        />
+                      )}
                     </TableCell>
                   </TableRow>
                 );
