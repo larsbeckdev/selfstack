@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import {
   Card,
   CardContent,
@@ -74,6 +75,7 @@ export function ChangePasswordForm() {
               minLength={8}
               autoFocus
             />
+            <PasswordStrength value={newPassword} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="confirm-password">

@@ -106,7 +106,7 @@ export function EditBoardDialog({
           <div className="space-y-2">
             <Label htmlFor="edit-board-slug">{t("board.slug")}</Label>
             <div className="flex items-center gap-0">
-              <span className="flex h-9 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
+              <span className="flex h-8 items-center rounded-l-md border border-r-0 bg-muted px-3 text-xs text-muted-foreground whitespace-nowrap">
                 /board/{ownerPrefix ? `${ownerPrefix}/` : ""}
               </span>
               <Input

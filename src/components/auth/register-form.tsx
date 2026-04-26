@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Layers } from "lucide-react";
 import { register, type AuthState } from "@/lib/actions/auth";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import {
   Card,
   CardContent,
@@ -24,6 +26,7 @@ export function RegisterForm() {
     {},
   );
   const { t } = useTranslation();
+  const [password, setPassword] = useState("");
 
   return (
     <Card>
@@ -96,7 +99,10 @@ export function RegisterForm() {
               name="password"
               placeholder={t("auth.passwordPlaceholder")}
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
+            <PasswordStrength value={password} />
             {state.fieldErrors?.password && (
               <p className="text-sm text-destructive">
                 {state.fieldErrors.password[0]}

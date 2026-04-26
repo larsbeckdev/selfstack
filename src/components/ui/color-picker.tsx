@@ -4,10 +4,11 @@ import * as React from "react";
 import { Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { ColorPickerPanel } from "@/components/ui/color-picker-panel";
 import { useTranslation } from "@/components/locale-provider";
 import { SHADCN_SWATCH_HEXES } from "@/lib/shadcn-palette";
@@ -55,8 +56,8 @@ export function ColorPicker({
   const displayText = value ? value.toUpperCase() : t("colorPicker.none");
 
   return (
-    <Popover open={open} onOpenChange={disabled ? undefined : setOpen}>
-      <PopoverTrigger asChild>
+    <Dialog open={open} onOpenChange={disabled ? undefined : setOpen}>
+      <DialogTrigger asChild>
         <button
           type="button"
           disabled={disabled}
@@ -91,13 +92,13 @@ export function ColorPicker({
             </span>
           )}
         </button>
-      </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="w-auto p-0"
-        // The native EyeDropper overlay steals focus; prevent Radix from
-        // closing the popover when that happens.
-        onFocusOutside={(e) => e.preventDefault()}>
+      </DialogTrigger>
+      <DialogContent
+        showCloseButton={false}
+        className="w-auto max-w-[min(20rem,calc(100%-2rem))] p-0">
+        <DialogTitle className="sr-only">
+          {label ?? t("colorPicker.none")}
+        </DialogTitle>
         <ColorPickerPanel
           value={value ?? "#7c3aed"}
           onChange={(v) => onChange(v)}
@@ -119,7 +120,7 @@ export function ColorPicker({
             </Button>
           </div>
         )}
-      </PopoverContent>
-    </Popover>
+      </DialogContent>
+    </Dialog>
   );
 }

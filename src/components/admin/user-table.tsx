@@ -36,6 +36,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PasswordStrength } from "@/components/ui/password-strength";
 import {
   Card,
   CardContent,
@@ -488,6 +489,7 @@ export function UserTable({
                       required
                       minLength={8}
                     />
+                    <PasswordStrength value={newPassword} />
                   </div>
                 )}
 
