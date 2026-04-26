@@ -94,7 +94,7 @@ export async function GET() {
   try {
     session = await requireAuth();
   } catch {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Nicht angemeldet" }, { status: 401 });
   }
 
   if (!existsSync(ICONS_DIR)) {
@@ -175,7 +175,7 @@ export async function DELETE(request: Request) {
   try {
     session = await requireAuth();
   } catch {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Nicht angemeldet" }, { status: 401 });
   }
 
   const body = (await request.json().catch(() => null)) as {
@@ -183,18 +183,18 @@ export async function DELETE(request: Request) {
     path?: string;
   } | null;
   if (!body) {
-    return Response.json({ error: "Invalid request" }, { status: 400 });
+    return Response.json({ error: "Ungültige Anfrage" }, { status: 400 });
   }
 
   // Accept either a {path: "users/<id>/<file>"} relative path or a legacy {name: "<file>"}.
   const input = body.path || body.name;
   if (!input || typeof input !== "string") {
-    return Response.json({ error: "Invalid file" }, { status: 400 });
+    return Response.json({ error: "Ungültige Datei" }, { status: 400 });
   }
 
   const parsed = parseIconPath(input);
   if (!parsed) {
-    return Response.json({ error: "Invalid file path" }, { status: 400 });
+    return Response.json({ error: "Ungültiger Dateipfad" }, { status: 400 });
   }
 
   // Authorize per scope.
@@ -202,13 +202,13 @@ export async function DELETE(request: Request) {
   const isAllSeeing = canViewAllBoards(role);
   if (!isAllSeeing) {
     if (parsed.scope.kind === "legacy") {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+      return Response.json({ error: "Keine Berechtigung" }, { status: 403 });
     }
     if (
       parsed.scope.kind === "user" &&
       parsed.scope.userId !== session.user.id
     ) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
+      return Response.json({ error: "Keine Berechtigung" }, { status: 403 });
     }
     if (parsed.scope.kind === "org") {
       const membership = await db.organizationMember.findUnique({
@@ -221,7 +221,7 @@ export async function DELETE(request: Request) {
         select: { role: true },
       });
       if (!membership) {
-        return Response.json({ error: "Forbidden" }, { status: 403 });
+        return Response.json({ error: "Keine Berechtigung" }, { status: 403 });
       }
     }
   }
@@ -233,11 +233,11 @@ export async function DELETE(request: Request) {
   const resolved = path.resolve(filePath);
   const root = path.resolve(ICONS_DIR);
   if (!resolved.startsWith(root + path.sep) && resolved !== root) {
-    return Response.json({ error: "Invalid file path" }, { status: 400 });
+    return Response.json({ error: "Ungültiger Dateipfad" }, { status: 400 });
   }
 
   if (!existsSync(filePath)) {
-    return Response.json({ error: "File not found" }, { status: 404 });
+    return Response.json({ error: "Datei nicht gefunden" }, { status: 404 });
   }
 
   unlinkSync(filePath);

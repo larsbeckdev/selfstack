@@ -68,14 +68,14 @@ export async function GET(request: Request) {
   try {
     await requireAuth();
   } catch {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Nicht angemeldet" }, { status: 401 });
   }
 
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
   if (!id) {
-    return Response.json({ error: "Missing id" }, { status: 400 });
+    return Response.json({ error: "ID fehlt" }, { status: 400 });
   }
 
   const tile = await db.tile.findUnique({
@@ -84,21 +84,21 @@ export async function GET(request: Request) {
   });
 
   if (!tile) {
-    return Response.json({ error: "Not found" }, { status: 404 });
+    return Response.json({ error: "Nicht gefunden" }, { status: 404 });
   }
 
   if (!tile.statusCheck || !tile.url) {
-    return Response.json({ error: "Status check disabled" }, { status: 400 });
+    return Response.json({ error: "Statusprüfung deaktiviert" }, { status: 400 });
   }
 
   let target: URL;
   try {
     target = new URL(tile.url);
   } catch {
-    return Response.json({ error: "Invalid URL" }, { status: 400 });
+    return Response.json({ error: "Ungültige URL" }, { status: 400 });
   }
   if (target.protocol !== "http:" && target.protocol !== "https:") {
-    return Response.json({ error: "Unsupported protocol" }, { status: 400 });
+    return Response.json({ error: "Nicht unterstütztes Protokoll" }, { status: 400 });
   }
 
   const started = Date.now();

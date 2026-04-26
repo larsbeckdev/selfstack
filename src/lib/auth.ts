@@ -88,7 +88,7 @@ export async function deleteSession() {
 export async function requireAuth() {
   const data = await getSession();
   if (!data) {
-    throw new Error("Unauthorized");
+    throw new Error("Nicht angemeldet");
   }
   return data;
 }
@@ -96,7 +96,7 @@ export async function requireAuth() {
 export async function requireAdmin() {
   const data = await requireAuth();
   if (!canAccessAdminArea(data.user.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
   return data;
 }
@@ -105,7 +105,7 @@ export async function requireAdmin() {
 export async function requireSuperAdmin() {
   const data = await requireAuth();
   if (!canManageSystem(data.user.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
   return data;
 }
@@ -114,7 +114,7 @@ export async function requireSuperAdmin() {
 export async function requireRole(min: Role) {
   const data = await requireAuth();
   if (!hasRole(data.user.role, min)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
   return data;
 }

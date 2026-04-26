@@ -70,7 +70,7 @@ export async function login(
       email: result.data.email,
       message: user ? "wrong password" : "unknown email",
     });
-    return { error: "Invalid credentials" };
+    return { error: "Ungültige Anmeldedaten" };
   }
 
   if (user.twoFactorEnabled && user.twoFactorSecret) {
@@ -98,18 +98,18 @@ export async function loginVerify2FA(
 ): Promise<AuthState> {
   const token = String(formData.get("token") ?? "").trim();
   if (!/^\d{6}$/.test(token)) {
-    return { error: "Code must be 6 digits" };
+    return { error: "Code muss 6 Ziffern haben" };
   }
 
   const userId = await readPendingTwoFactor();
   if (!userId) {
-    return { error: "Session expired, please sign in again" };
+    return { error: "Sitzung abgelaufen, bitte erneut anmelden" };
   }
 
   const user = await db.user.findUnique({ where: { id: userId } });
   if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
     await clearPendingTwoFactor();
-    return { error: "2FA not active" };
+    return { error: "2FA nicht aktiv" };
   }
 
   const { verifyTotp } = await import("@/lib/totp");
@@ -119,7 +119,7 @@ export async function loginVerify2FA(
       userId: user.id,
       email: user.email,
     });
-    return { error: "Invalid code" };
+    return { error: "Ungültiger Code" };
   }
 
   await clearPendingTwoFactor();
@@ -149,7 +149,7 @@ export async function register(
   // Check if registration is enabled
   const regEnabled = await isRegistrationEnabled();
   if (!regEnabled) {
-    return { error: "Registration is currently disabled" };
+    return { error: "Registrierung ist derzeit deaktiviert" };
   }
 
   const raw = {
@@ -171,10 +171,10 @@ export async function register(
   ]);
 
   if (existingEmail) {
-    return { error: "Email address is already in use" };
+    return { error: "E-Mail-Adresse wird bereits verwendet" };
   }
   if (existingUsername) {
-    return { error: "Username is already in use" };
+    return { error: "Benutzername wird bereits verwendet" };
   }
 
   const hashedPassword = await bcrypt.hash(result.data.password, 12);
@@ -232,10 +232,10 @@ export async function logout() {
 export async function forceChangePassword(newPassword: string) {
   const { getSession } = await import("@/lib/auth");
   const session = await getSession();
-  if (!session) throw new Error("Not signed in");
+  if (!session) throw new Error("Nicht angemeldet");
 
   if (newPassword.length < 8) {
-    throw new Error("Password must be at least 8 characters");
+    throw new Error("Passwort muss mindestens 8 Zeichen lang sein");
   }
 
   const hashed = await bcrypt.hash(newPassword, 12);

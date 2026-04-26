@@ -154,7 +154,7 @@ export async function updateOrganization(
   if (!org) throw new Error("Organisation nicht gefunden");
 
   if (data.slug && data.slug !== org.slug) {
-    if (!slugRegex.test(data.slug)) throw new Error("Invalid slug");
+    if (!slugRegex.test(data.slug)) throw new Error("Ungültiger Slug");
     const existing = await db.organization.findUnique({
       where: { slug: data.slug },
       select: { id: true },
@@ -226,7 +226,7 @@ export async function addOrgMember(
 ) {
   await requireAdmin();
   assertNotDemo();
-  if (!ORG_ROLES.includes(role)) throw new Error("Invalid role");
+  if (!ORG_ROLES.includes(role)) throw new Error("Ungültige Rolle");
   await db.organizationMember.upsert({
     where: { orgId_userId: { orgId, userId } },
     update: { role },
@@ -242,7 +242,7 @@ export async function updateOrgMemberRole(
 ) {
   await requireAdmin();
   assertNotDemo();
-  if (!ORG_ROLES.includes(role)) throw new Error("Invalid role");
+  if (!ORG_ROLES.includes(role)) throw new Error("Ungültige Rolle");
   await db.organizationMember.update({
     where: { orgId_userId: { orgId, userId } },
     data: { role },

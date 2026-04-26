@@ -52,13 +52,13 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
     where: { id: user.id },
     select: { email: true, username: true, role: true },
   });
-  if (!dbUser) throw new Error("User not found");
+  if (!dbUser) throw new Error("Benutzer nicht gefunden");
 
   if (parsed.email !== dbUser.email) {
     const existing = await db.user.findUnique({
       where: { email: parsed.email },
     });
-    if (existing) throw new Error("Email is already in use");
+    if (existing) throw new Error("E-Mail wird bereits verwendet");
   }
 
   const usernameChanged = parsed.username !== dbUser.username;
@@ -66,7 +66,7 @@ export async function updateProfile(data: z.infer<typeof updateProfileSchema>) {
     const existing = await db.user.findUnique({
       where: { username: parsed.username },
     });
-    if (existing) throw new Error("Username is already in use");
+    if (existing) throw new Error("Benutzername wird bereits verwendet");
   }
 
   await db.$transaction(async (tx) => {
@@ -117,10 +117,10 @@ export async function changePassword(
   const parsed = changePasswordSchema.parse(data);
 
   const dbUser = await db.user.findUnique({ where: { id: user.id } });
-  if (!dbUser) throw new Error("User not found");
+  if (!dbUser) throw new Error("Benutzer nicht gefunden");
 
   const valid = await bcrypt.compare(parsed.currentPassword, dbUser.password);
-  if (!valid) throw new Error("Current password is incorrect");
+  if (!valid) throw new Error("Aktuelles Passwort ist falsch");
 
   const hashed = await bcrypt.hash(parsed.newPassword, 12);
   await db.user.update({
@@ -164,7 +164,7 @@ export async function beginTwoFactorEnrollment(): Promise<{
     where: { id: user.id },
     select: { email: true },
   });
-  if (!dbUser) throw new Error("User not found");
+  if (!dbUser) throw new Error("Benutzer nicht gefunden");
 
   await db.user.update({
     where: { id: user.id },
@@ -184,10 +184,10 @@ export async function confirmTwoFactorEnrollment(token: string) {
     select: { twoFactorSecret: true, twoFactorEnabled: true },
   });
   if (!dbUser?.twoFactorSecret) {
-    throw new Error("No pending 2FA setup");
+    throw new Error("Keine ausstehende 2FA-Einrichtung");
   }
   if (!verifyTotp(dbUser.twoFactorSecret, token)) {
-    throw new Error("Invalid code");
+    throw new Error("Ungültiger Code");
   }
   await db.user.update({
     where: { id: user.id },
@@ -200,10 +200,10 @@ export async function disableTwoFactor(password: string) {
   assertNotDemo();
   const { user } = await requireAuth();
   const dbUser = await db.user.findUnique({ where: { id: user.id } });
-  if (!dbUser) throw new Error("User not found");
+  if (!dbUser) throw new Error("Benutzer nicht gefunden");
 
   const ok = await bcrypt.compare(password, dbUser.password);
-  if (!ok) throw new Error("Password is incorrect");
+  if (!ok) throw new Error("Passwort ist falsch");
 
   await db.user.update({
     where: { id: user.id },
@@ -271,11 +271,11 @@ export async function adminUpdateUser(
     where: { id: parsed.userId },
     select: { id: true, email: true, username: true, role: true },
   });
-  if (!target) throw new Error("User not found");
+  if (!target) throw new Error("Benutzer nicht gefunden");
 
   // Admins cannot touch superadmin accounts. Superadmin can touch anyone.
   if (!canModifyUser(actor.role, target.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
   // Admins can only assign roles in their assignable set (no superadmin).
   const allowedRoles = assignableRoles(actor.role);
@@ -288,7 +288,7 @@ export async function adminUpdateUser(
       where: { email: parsed.email },
     });
     if (existing && existing.id !== target.id) {
-      throw new Error("Email is already in use");
+      throw new Error("E-Mail wird bereits verwendet");
     }
   }
 
@@ -298,7 +298,7 @@ export async function adminUpdateUser(
       where: { username: parsed.username },
     });
     if (existing && existing.id !== target.id) {
-      throw new Error("Username wird bereits verwendet");
+      throw new Error("Benutzername wird bereits verwendet");
     }
   }
 
@@ -354,9 +354,9 @@ export async function updateUserRole(userId: string, role: string) {
     where: { id: userId },
     select: { role: true },
   });
-  if (!target) throw new Error("User not found");
+  if (!target) throw new Error("Benutzer nicht gefunden");
   if (!canModifyUser(actor.role, target.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
 
   await db.user.update({
@@ -372,16 +372,16 @@ export async function deleteUser(userId: string) {
   assertNotDemo();
 
   if (userId === actor.id) {
-    throw new Error("You cannot delete yourself");
+    throw new Error("Du kannst dich nicht selbst löschen");
   }
 
   const target = await db.user.findUnique({
     where: { id: userId },
     select: { role: true },
   });
-  if (!target) throw new Error("User not found");
+  if (!target) throw new Error("Benutzer nicht gefunden");
   if (!canModifyUser(actor.role, target.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
 
   await db.user.delete({ where: { id: userId } });
@@ -402,7 +402,7 @@ export async function adminCreateUser(data: {
   const username = data.username.trim().toLowerCase();
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(username)) {
     throw new Error(
-      "Username: only lowercase letters, numbers and hyphens allowed",
+      "Benutzername: nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt",
     );
   }
 
@@ -410,8 +410,8 @@ export async function adminCreateUser(data: {
     db.user.findUnique({ where: { email: data.email } }),
     db.user.findUnique({ where: { username } }),
   ]);
-  if (existingEmail) throw new Error("Email is already in use");
-  if (existingUsername) throw new Error("Username is already in use");
+  if (existingEmail) throw new Error("E-Mail wird bereits verwendet");
+  if (existingUsername) throw new Error("Benutzername wird bereits verwendet");
 
   const allowed = assignableRoles(actor.role);
   if (!allowed.includes(data.role as Role)) {
@@ -460,9 +460,9 @@ export async function adminResetPassword(userId: string) {
   assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
-  if (!target) throw new Error("User not found");
+  if (!target) throw new Error("Benutzer nicht gefunden");
   if (!canModifyUser(actor.role, target.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
 
   const plainPassword = generatePassword();
@@ -482,9 +482,9 @@ export async function adminSendPasswordEmail(userId: string, password: string) {
   assertNotDemo();
 
   const target = await db.user.findUnique({ where: { id: userId } });
-  if (!target) throw new Error("User not found");
+  if (!target) throw new Error("Benutzer nicht gefunden");
   if (!canModifyUser(actor.role, target.role)) {
-    throw new Error("Forbidden");
+    throw new Error("Keine Berechtigung");
   }
 
   const loginUrl = `${await getAppUrl()}/login`;
@@ -549,7 +549,7 @@ export async function setSidebarOpen(open: boolean) {
 export async function setUserTheme(theme: string) {
   const { user } = await requireAuth();
   if (!["light", "dark", "system"].includes(theme)) {
-    throw new Error("Invalid theme");
+    throw new Error("Ungültiges Theme");
   }
   await db.user.update({
     where: { id: user.id },
@@ -560,7 +560,7 @@ export async function setUserTheme(theme: string) {
 export async function setMediaView(view: "grid" | "list") {
   const { user } = await requireAuth();
   if (view !== "grid" && view !== "list") {
-    throw new Error("Invalid view");
+    throw new Error("Ungültige Ansicht");
   }
   await db.user.update({
     where: { id: user.id },
@@ -574,7 +574,7 @@ export async function updateLocale(locale: string) {
   const { user } = await requireAuth();
 
   if (!["de", "en"].includes(locale)) {
-    throw new Error("Invalid locale");
+    throw new Error("Ungültige Sprache");
   }
 
   await db.user.update({

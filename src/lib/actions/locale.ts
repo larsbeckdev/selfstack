@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 
 export async function setLocaleCookie(locale: string) {
   if (!["de", "en"].includes(locale)) {
-    throw new Error("Invalid locale");
+    throw new Error("Ungültige Sprache");
   }
 
   const cookieStore = await cookies();

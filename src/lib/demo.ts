@@ -21,7 +21,7 @@ export function isDemoMode(): boolean {
 export function assertNotDemo(): void {
   if (DEMO_MODE) {
     throw new Error(
-      "Demo mode active: this action is disabled. Changes are reset periodically.",
+      "Demo-Modus aktiv: Diese Aktion ist deaktiviert. Änderungen werden regelmäßig zurückgesetzt.",
     );
   }
 }

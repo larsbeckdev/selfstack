@@ -78,11 +78,11 @@ async function requireBoardAccess(
 ) {
   const { user } = await requireAuth();
   const role = await getBoardRole(boardId, user.id, user.role);
-  if (!role) throw new Error("Board not found");
+  if (!role) throw new Error("Board nicht gefunden");
 
   const hierarchy: BoardRole[] = ["viewer", "editor", "owner"];
   if (hierarchy.indexOf(role) < hierarchy.indexOf(minRole)) {
-    throw new Error("Insufficient permissions");
+    throw new Error("Keine ausreichenden Berechtigungen");
   }
   return { user, role };
 }
@@ -148,7 +148,7 @@ export async function createBoard(data: z.infer<typeof boardSchema>) {
     where: { id: user.id },
     select: { username: true, role: true },
   });
-  if (!dbUser) throw new Error("User not found");
+  if (!dbUser) throw new Error("Benutzer nicht gefunden");
 
   const wantsOrgBoard = !!parsed.orgId;
   if (wantsOrgBoard) {
@@ -226,14 +226,14 @@ export async function updateBoard(
   await requireBoardAccess(boardId, "editor");
 
   const board = await db.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   if (data.slug && data.slug !== board.slug) {
     const existing = await db.board.findUnique({
       where: { slug: data.slug },
     });
     if (existing && existing.id !== boardId) {
-      throw new Error("Slug already in use");
+      throw new Error("Slug bereits vergeben");
     }
   }
 
@@ -254,7 +254,7 @@ export async function updateBoard(
 export async function deleteBoard(boardId: string) {
   const { user } = await requireAuth();
   const board = await db.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   // Three legal delete paths:
   //   1) You own the board personally (userId === current user).
@@ -270,7 +270,7 @@ export async function deleteBoard(boardId: string) {
     (!isOrgBoard && canViewAllBoards(user.role));
 
   if (!allowed) {
-    throw new Error("Insufficient permissions");
+    throw new Error("Keine ausreichenden Berechtigungen");
   }
 
   await db.board.delete({ where: { id: boardId } });
@@ -282,7 +282,7 @@ export async function resetBoardColors(boardId: string) {
   await requireBoardAccess(boardId, "editor");
 
   const board = await db.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   await db.$transaction([
     db.category.updateMany({
@@ -377,7 +377,7 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
   await requireBoardAccess(parsed.boardId, "editor");
 
   const board = await db.board.findUnique({ where: { id: parsed.boardId } });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   const maxY = await db.category.aggregate({
     where: { boardId: parsed.boardId },
@@ -407,7 +407,7 @@ export async function updateCategory(
   const category = await db.category.findUnique({
     where: { id: categoryId },
   });
-  if (!category) throw new Error("Category not found");
+  if (!category) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(category.boardId, "editor");
 
   const updated = await db.category.update({
@@ -424,7 +424,7 @@ export async function deleteCategory(categoryId: string) {
   const category = await db.category.findUnique({
     where: { id: categoryId },
   });
-  if (!category) throw new Error("Category not found");
+  if (!category) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(category.boardId, "editor");
 
   await db.category.delete({ where: { id: categoryId } });
@@ -455,7 +455,7 @@ export async function createGroup(data: z.infer<typeof groupSchema>) {
     where: { id: parsed.categoryId },
     include: { board: true },
   });
-  if (!category) throw new Error("Category not found");
+  if (!category) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(category.boardId, "editor");
 
   const maxY = await db.group.aggregate({
@@ -487,7 +487,7 @@ export async function updateGroup(
     where: { id: groupId },
     include: { category: true, tiles: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
 
   const updated = await db.group.update({
@@ -549,7 +549,7 @@ export async function deleteGroup(groupId: string) {
     where: { id: groupId },
     include: { category: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
 
   await db.group.delete({ where: { id: groupId } });
@@ -582,7 +582,7 @@ export async function createTile(data: z.infer<typeof tileSchema>) {
     where: { id: parsed.groupId },
     include: { category: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
 
   const maxY = await db.tile.aggregate({
@@ -616,7 +616,7 @@ export async function updateTile(
     where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
-  if (!tile) throw new Error("Tile not found");
+  if (!tile) throw new Error("Kachel nicht gefunden");
   await requireBoardAccess(tile.group.category.boardId, "editor");
 
   const updated = await db.tile.update({
@@ -641,7 +641,7 @@ export async function deleteTile(tileId: string) {
     where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
-  if (!tile) throw new Error("Tile not found");
+  if (!tile) throw new Error("Kachel nicht gefunden");
   await requireBoardAccess(tile.group.category.boardId, "editor");
 
   await db.tile.delete({ where: { id: tileId } });
@@ -703,16 +703,16 @@ export async function moveTileToGroup(
     where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
-  if (!tile) throw new Error("Tile not found");
+  if (!tile) throw new Error("Kachel nicht gefunden");
   await requireBoardAccess(tile.group.category.boardId, "editor");
 
   const target = await db.group.findUnique({
     where: { id: newGroupId },
     include: { category: true },
   });
-  if (!target) throw new Error("Target group not found");
+  if (!target) throw new Error("Ziel-Gruppe nicht gefunden");
   if (target.category.boardId !== tile.group.category.boardId) {
-    throw new Error("Cannot move tile across boards");
+    throw new Error("Kacheln können nicht zwischen Boards verschoben werden");
   }
 
   await db.tile.update({
@@ -735,15 +735,15 @@ export async function moveGroupToCategory(
     where: { id: groupId },
     include: { category: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
 
   const target = await db.category.findUnique({
     where: { id: newCategoryId },
   });
-  if (!target) throw new Error("Target category not found");
+  if (!target) throw new Error("Ziel-Kategorie nicht gefunden");
   if (target.boardId !== group.category.boardId) {
-    throw new Error("Cannot move group across boards");
+    throw new Error("Gruppen können nicht zwischen Boards verschoben werden");
   }
 
   await db.group.update({
@@ -762,7 +762,7 @@ export async function duplicateTile(tileId: string) {
     where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
-  if (!tile) throw new Error("Tile not found");
+  if (!tile) throw new Error("Kachel nicht gefunden");
   await requireBoardAccess(tile.group.category.boardId, "editor");
 
   const siblings = await db.tile.findMany({
@@ -840,7 +840,7 @@ export async function duplicateGroup(groupId: string) {
       tiles: { orderBy: [{ y: "asc" }, { x: "asc" }] },
     },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
 
   const maxY = await db.group.aggregate({
@@ -896,7 +896,7 @@ export async function duplicateCategory(categoryId: string) {
       },
     },
   });
-  if (!category) throw new Error("Category not found");
+  if (!category) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(category.boardId, "editor");
 
   // Find a free slot for the copy: prefer right → left → below of the original,
@@ -1025,7 +1025,7 @@ export async function duplicateBoard(boardId: string) {
       },
     },
   });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   const slug =
     board.name
@@ -1139,7 +1139,7 @@ export async function getBoardMembers(boardId: string) {
       },
     },
   });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
   return { owner: board.user, members: board.members };
 }
 
@@ -1151,12 +1151,12 @@ export async function addBoardMember(
   await requireBoardAccess(boardId, "owner");
 
   const targetUser = await db.user.findUnique({ where: { id: userId } });
-  if (!targetUser) throw new Error("User not found");
+  if (!targetUser) throw new Error("Benutzer nicht gefunden");
 
   const board = await db.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
   if (board.userId === targetUser.id) {
-    throw new Error("The owner cannot be added as a member");
+    throw new Error("Der Besitzer kann nicht als Mitglied hinzugefügt werden");
   }
 
   const existing = await db.boardMember.findUnique({
@@ -1234,7 +1234,7 @@ export async function getAvailableUsersForBoard(boardId: string) {
       members: { select: { userId: true } },
     },
   });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   const excludeIds = [board.userId, ...board.members.map((m) => m.userId)];
 
@@ -1293,7 +1293,7 @@ export async function reorderCategories(boardId: string, orderedIds: string[]) {
 
 export async function reorderGroups(categoryId: string, orderedIds: string[]) {
   const cat = await db.category.findUnique({ where: { id: categoryId } });
-  if (!cat) throw new Error("Category not found");
+  if (!cat) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(cat.boardId, "editor");
   await db.$transaction(
     orderedIds.map((id, i) =>
@@ -1309,7 +1309,7 @@ export async function reorderTiles(groupId: string, orderedIds: string[]) {
     where: { id: groupId },
     include: { category: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
   await db.$transaction(
     orderedIds.map((id, i) =>
@@ -1321,11 +1321,11 @@ export async function reorderTiles(groupId: string, orderedIds: string[]) {
 }
 
 export async function setCategoryWidth(categoryId: string, width: number) {
-  if (![1, 2, 3, 4].includes(width)) throw new Error("Invalid width");
+  if (![1, 2, 3, 4].includes(width)) throw new Error("Ungültige Breite");
   const category = await db.category.findUnique({
     where: { id: categoryId },
   });
-  if (!category) throw new Error("Category not found");
+  if (!category) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(category.boardId, "editor");
   // Clamp x so that x + width stays within the 4-col grid.
   const newX = Math.min(category.x, 4 - width);
@@ -1343,7 +1343,7 @@ export async function setBoardLayoutMode(
 ) {
   await requireBoardAccess(boardId, "editor");
   const board = await db.board.findUnique({ where: { id: boardId } });
-  if (!board) throw new Error("Board not found");
+  if (!board) throw new Error("Board nicht gefunden");
 
   // When switching to free mode for the first time, assign each category a
   // unique (x, y) so they don't all stack at the origin.
@@ -1379,11 +1379,11 @@ export async function setCategoryPosition(
   y: number,
 ) {
   if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
-    throw new Error("Invalid position");
+    throw new Error("Ungültige Position");
   const category = await db.category.findUnique({
     where: { id: categoryId },
   });
-  if (!category) throw new Error("Category not found");
+  if (!category) throw new Error("Kategorie nicht gefunden");
   await requireBoardAccess(category.boardId, "editor");
   await db.category.update({ where: { id: categoryId }, data: { x, y } });
   await revalidateBoard(category.boardId);
@@ -1397,19 +1397,19 @@ export async function setGroupPosition(
   categoryId?: string,
 ) {
   if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
-    throw new Error("Invalid position");
+    throw new Error("Ungültige Position");
   const group = await db.group.findUnique({
     where: { id: groupId },
     include: { category: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
   const data: { x: number; y: number; categoryId?: string } = { x, y };
   if (categoryId && categoryId !== group.categoryId) {
     const target = await db.category.findUnique({ where: { id: categoryId } });
-    if (!target) throw new Error("Target category not found");
+    if (!target) throw new Error("Ziel-Kategorie nicht gefunden");
     if (target.boardId !== group.category.boardId)
-      throw new Error("Cross-board move not allowed");
+      throw new Error("Verschieben zwischen Boards nicht erlaubt");
     data.categoryId = categoryId;
   }
   await db.group.update({ where: { id: groupId }, data });
@@ -1418,12 +1418,12 @@ export async function setGroupPosition(
 }
 
 export async function setGroupWidth(groupId: string, width: number) {
-  if (width !== 1 && width !== 2) throw new Error("Invalid width");
+  if (width !== 1 && width !== 2) throw new Error("Ungültige Breite");
   const group = await db.group.findUnique({
     where: { id: groupId },
     include: { category: true },
   });
-  if (!group) throw new Error("Group not found");
+  if (!group) throw new Error("Gruppe nicht gefunden");
   await requireBoardAccess(group.category.boardId, "editor");
   const newX = width === 2 ? 0 : Math.min(group.x ?? 0, 1);
   await db.group.update({
@@ -1436,12 +1436,12 @@ export async function setGroupWidth(groupId: string, width: number) {
 
 export async function setTilePosition(tileId: string, x: number, y: number) {
   if (!Number.isInteger(x) || !Number.isInteger(y) || x < 0 || y < 0)
-    throw new Error("Invalid position");
+    throw new Error("Ungültige Position");
   const tile = await db.tile.findUnique({
     where: { id: tileId },
     include: { group: { include: { category: true } } },
   });
-  if (!tile) throw new Error("Tile not found");
+  if (!tile) throw new Error("Kachel nicht gefunden");
   await requireBoardAccess(tile.group.category.boardId, "editor");
   await db.tile.update({ where: { id: tileId }, data: { x, y } });
   await revalidateBoard(tile.group.category.boardId);

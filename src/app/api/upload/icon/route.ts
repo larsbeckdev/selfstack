@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   try {
     session = await requireAuth();
   } catch {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return Response.json({ error: "Nicht angemeldet" }, { status: 401 });
   }
 
   const formData = await request.formData();
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     typeof orgIdRaw === "string" && orgIdRaw.trim() ? orgIdRaw.trim() : null;
 
   if (!file) {
-    return Response.json({ error: "No file provided" }, { status: 400 });
+    return Response.json({ error: "Keine Datei übermittelt" }, { status: 400 });
   }
 
   if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
 
   const ext = path.extname(file.name).toLowerCase();
   if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
-    return Response.json({ error: "Invalid file extension" }, { status: 400 });
+    return Response.json({ error: "Ungültige Dateiendung" }, { status: 400 });
   }
 
   // Resolve scope: org upload requires membership (or global view rights).
