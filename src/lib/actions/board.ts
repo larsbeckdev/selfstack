@@ -379,17 +379,65 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
   const board = await db.board.findUnique({ where: { id: parsed.boardId } });
   if (!board) throw new Error("Board nicht gefunden");
 
-  const maxY = await db.category.aggregate({
-    where: { boardId: parsed.boardId },
-    _max: { y: true, h: true },
-  });
+  // Find the next free slot in the board's CATEGORY_COLS-wide grid so the
+  // new category never overlaps an existing one.
+  const newW = getCategoryWidth(parsed.w ?? 6);
+  let placedX = parsed.x ?? null;
+  let placedY = parsed.y ?? null;
+  if (placedX === null || placedY === null) {
+    const existing = await db.category.findMany({
+      where: { boardId: parsed.boardId },
+      select: { x: true, y: true, w: true },
+    });
+    const occupied = new Map<number, boolean[]>();
+    for (const c of existing) {
+      const w = getCategoryWidth(c.w);
+      const x = Math.max(0, Math.min(c.x ?? 0, CATEGORY_COLS - w));
+      const y = Math.max(0, c.y ?? 0);
+      let row = occupied.get(y);
+      if (!row) {
+        row = new Array(CATEGORY_COLS).fill(false);
+        occupied.set(y, row);
+      }
+      for (let i = x; i < x + w; i++) row[i] = true;
+    }
+    let foundX = 0;
+    let foundY = 0;
+    let placed = false;
+    for (let y = 0; !placed; y++) {
+      const row = occupied.get(y);
+      if (!row) {
+        foundX = 0;
+        foundY = y;
+        placed = true;
+        break;
+      }
+      for (let x = 0; x <= CATEGORY_COLS - newW; x++) {
+        let free = true;
+        for (let i = x; i < x + newW; i++) {
+          if (row[i]) {
+            free = false;
+            break;
+          }
+        }
+        if (free) {
+          foundX = x;
+          foundY = y;
+          placed = true;
+          break;
+        }
+      }
+    }
+    if (placedX === null) placedX = foundX;
+    if (placedY === null) placedY = foundY;
+  }
 
   const category = await db.category.create({
     data: {
       ...parsed,
       iconUrl: parsed.iconUrl || null,
-      x: parsed.x ?? 0,
-      y: parsed.y ?? (maxY._max.y ?? 0) + (maxY._max.h ?? 0),
+      x: placedX,
+      y: placedY,
       w: parsed.w ?? 6,
       h: parsed.h ?? 4,
     },
