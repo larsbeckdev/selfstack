@@ -386,8 +386,8 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
   const newW = getCategoryWidth(parsed.w ?? 6);
   const xProvided = typeof data.x === "number";
   const yProvided = typeof data.y === "number";
-  let placedX = xProvided ? parsed.x ?? 0 : 0;
-  let placedY = yProvided ? parsed.y ?? 0 : 0;
+  let placedX = xProvided ? (parsed.x ?? 0) : 0;
+  let placedY = yProvided ? (parsed.y ?? 0) : 0;
   if (!xProvided || !yProvided) {
     const existing = await db.category.findMany({
       where: { boardId: parsed.boardId },
