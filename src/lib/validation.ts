@@ -2,10 +2,10 @@ import { z } from "zod";
 
 /**
  * Allowed characters for board, category, group and tile names:
- * latin letters (A-Z, a-z), digits (0-9), spaces and hyphens (-).
+ * latin letters (A-Z, a-z), digits (0-9), spaces, hyphens (-) and ampersand (&).
  * No umlauts, no other special characters.
  */
-export const ENTITY_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9 -]*$/;
+export const ENTITY_NAME_REGEX = /^[A-Za-z0-9][A-Za-z0-9 &-]*$/;
 
 /**
  * Translation key describing the rule (used for tooltips & error messages).
@@ -16,7 +16,7 @@ export const ENTITY_NAME_RULE_KEY = "validation.nameRule" as const;
 
 /** Human-readable description (English fallback). */
 export const ENTITY_NAME_RULE_TEXT =
-  "Only letters (A-Z, a-z), digits, spaces and hyphens (-). No umlauts or other special characters.";
+  "Only letters (A-Z, a-z), digits, spaces, hyphens (-) and ampersand (&). No umlauts or other special characters.";
 
 export function isValidEntityName(value: string): boolean {
   return ENTITY_NAME_REGEX.test(value.trim());

@@ -25,7 +25,7 @@ const en: Record<TranslationKey, string> = {
   "common.no": "No",
   "common.name": "Name",
   "validation.nameRule":
-    "Only letters (A-Z, a-z), digits, spaces and hyphens (-). No umlauts or other special characters.",
+    "Only letters (A-Z, a-z), digits, spaces, hyphens (-) and ampersand (&). No umlauts or other special characters.",
   "common.username": "Username",
   "common.email": "Email",
   "common.password": "Password",

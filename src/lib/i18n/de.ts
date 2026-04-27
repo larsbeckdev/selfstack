@@ -23,7 +23,7 @@ const de = {
   "common.no": "Nein",
   "common.name": "Name",
   "validation.nameRule":
-    "Nur Buchstaben (A-Z, a-z), Ziffern, Leerzeichen und Bindestrich (-). Keine Umlaute oder anderen Sonderzeichen.",
+    "Nur Buchstaben (A-Z, a-z), Ziffern, Leerzeichen, Bindestrich (-) und Und-Zeichen (&). Keine Umlaute oder anderen Sonderzeichen.",
   "common.username": "Username",
   "common.email": "E-Mail",
   "common.password": "Passwort",
