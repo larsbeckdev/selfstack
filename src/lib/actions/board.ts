@@ -380,11 +380,15 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
   if (!board) throw new Error("Board nicht gefunden");
 
   // Find the next free slot in the board's CATEGORY_COLS-wide grid so the
-  // new category never overlaps an existing one.
+  // new category never overlaps an existing one. Note that the zod schema
+  // applies `.default(0)` to x/y, so we can't tell from `parsed` whether the
+  // caller provided coordinates — check the raw input instead.
   const newW = getCategoryWidth(parsed.w ?? 6);
-  let placedX = parsed.x ?? null;
-  let placedY = parsed.y ?? null;
-  if (placedX === null || placedY === null) {
+  const xProvided = typeof data.x === "number";
+  const yProvided = typeof data.y === "number";
+  let placedX = xProvided ? parsed.x ?? 0 : 0;
+  let placedY = yProvided ? parsed.y ?? 0 : 0;
+  if (!xProvided || !yProvided) {
     const existing = await db.category.findMany({
       where: { boardId: parsed.boardId },
       select: { x: true, y: true, w: true },
@@ -428,8 +432,8 @@ export async function createCategory(data: z.infer<typeof categorySchema>) {
         }
       }
     }
-    if (placedX === null) placedX = foundX;
-    if (placedY === null) placedY = foundY;
+    if (!xProvided) placedX = foundX;
+    if (!yProvided) placedY = foundY;
   }
 
   const category = await db.category.create({
