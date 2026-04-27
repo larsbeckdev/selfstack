@@ -48,13 +48,21 @@ type IconLibrary = "lucide" | "tabler" | "selfhst";
 let selfhstCache: string[] | null = null;
 let selfhstPromise: Promise<string[]> | null = null;
 function loadSelfhstIcons(): Promise<string[]> {
-  if (selfhstCache) return Promise.resolve(selfhstCache);
+  if (selfhstCache && selfhstCache.length > 0)
+    return Promise.resolve(selfhstCache);
   if (selfhstPromise) return selfhstPromise;
   selfhstPromise = fetch("/api/icons/selfhst")
-    .then((r) => r.json())
-    .then((d: { icons?: string[] }) => {
-      selfhstCache = d.icons ?? [];
-      return selfhstCache;
+    .then(async (r) => {
+      if (!r.ok) throw new Error(`selfhst icons HTTP ${r.status}`);
+      return (await r.json()) as { icons?: string[] };
+    })
+    .then((d) => {
+      const list = d.icons ?? [];
+      // Don't cache an empty result so a transient upstream failure can be
+      // retried the next time the picker is opened.
+      if (list.length > 0) selfhstCache = list;
+      selfhstPromise = null;
+      return list;
     })
     .catch(() => {
       selfhstPromise = null;
@@ -160,10 +168,32 @@ export function IconPicker({
         : library === "tabler"
           ? tablerNames
           : (selfhstNames ?? []);
-    if (!search) return source.slice(0, 500);
+    if (!search) return source;
     const lower = search.toLowerCase();
-    return source.filter((name) => name.includes(lower)).slice(0, 500);
+    return source.filter((name) => name.includes(lower));
   }, [search, library, selfhstNames]);
+
+  // ── Virtualized grid ────────────────────────────────────────────────
+  // The full lucide / tabler / selfh.st sets are 1.7k–6k icons each; rendering
+  // them all blocks the UI thread, so we window the visible rows.
+  const ICON_COLS = 8;
+  const ROW_HEIGHT = 36; // size-8 (32px) + gap-1 (4px)
+  const VIEWPORT_HEIGHT = 256; // h-64
+  const OVERSCAN = 3;
+  const totalRows = Math.ceil(filtered.length / ICON_COLS);
+  const [scrollTop, setScrollTop] = useState(0);
+  const iconScrollRef = useRef<HTMLDivElement>(null);
+  // Reset scroll position whenever the visible list changes. The scroll
+  // handler will then update `scrollTop` in state.
+  useEffect(() => {
+    if (iconScrollRef.current) iconScrollRef.current.scrollTop = 0;
+  }, [search, library]);
+  const startRow = Math.max(0, Math.floor(scrollTop / ROW_HEIGHT) - OVERSCAN);
+  const endRow = Math.min(
+    totalRows,
+    Math.ceil((scrollTop + VIEWPORT_HEIGHT) / ROW_HEIGHT) + OVERSCAN,
+  );
+  const visibleIcons = filtered.slice(startRow * ICON_COLS, endRow * ICON_COLS);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -219,52 +249,70 @@ export function IconPicker({
               />
             </div>
             <div
+              ref={iconScrollRef}
               className="h-64 overflow-y-auto overscroll-contain"
-              onWheel={(e) => e.stopPropagation()}>
+              onWheel={(e) => e.stopPropagation()}
+              onScroll={(e) =>
+                setScrollTop((e.target as HTMLDivElement).scrollTop)
+              }>
               {library === "selfhst" && selfhstLoading ? (
                 <p className="py-6 text-center text-xs text-muted-foreground">
                   {t("common.loading")}
                 </p>
+              ) : filtered.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  {t("iconPicker.noneFound")}
+                </p>
               ) : (
-                <div className="grid grid-cols-8 gap-1">
-                  {filtered.map((name) => {
-                    const storedValue =
-                      library === "lucide"
-                        ? name
-                        : library === "tabler"
-                          ? `tabler:${name}`
-                          : `selfhst:${name}`;
-                    const selected = value === storedValue && !iconUrl;
-                    const isSelfhst = library === "selfhst";
-                    return (
-                      <button
-                        key={storedValue}
-                        type="button"
-                        style={
-                          isSelfhst
-                            ? { backgroundColor: "rgba(148,163,184,0.25)" }
-                            : undefined
-                        }
-                        className={`flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
-                          selected
-                            ? "bg-accent text-foreground ring-1 ring-primary"
-                            : ""
-                        }`}
-                        title={name}
-                        onClick={() => {
-                          onChange(storedValue);
-                          onIconUrlChange?.(null);
-                          setOpen(false);
-                        }}>
-                        <DynamicIcon name={storedValue} className="size-4" />
-                      </button>
-                    );
-                  })}
-                  {filtered.length === 0 && (
-                    <p className="col-span-8 py-4 text-center text-sm text-muted-foreground">
-                      {t("iconPicker.noneFound")}
-                    </p>
-                  )}
+                <div
+                  style={{
+                    height: totalRows * ROW_HEIGHT,
+                    position: "relative",
+                  }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: startRow * ROW_HEIGHT,
+                      left: 0,
+                      right: 0,
+                      display: "grid",
+                      gridTemplateColumns: `repeat(${ICON_COLS}, minmax(0, 1fr))`,
+                      gap: 4,
+                    }}>
+                    {visibleIcons.map((name) => {
+                      const storedValue =
+                        library === "lucide"
+                          ? name
+                          : library === "tabler"
+                            ? `tabler:${name}`
+                            : `selfhst:${name}`;
+                      const selected = value === storedValue && !iconUrl;
+                      const isSelfhst = library === "selfhst";
+                      return (
+                        <button
+                          key={storedValue}
+                          type="button"
+                          style={
+                            isSelfhst
+                              ? { backgroundColor: "rgba(148,163,184,0.25)" }
+                              : undefined
+                          }
+                          className={`flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground ${
+                            selected
+                              ? "bg-accent text-foreground ring-1 ring-primary"
+                              : ""
+                          }`}
+                          title={name}
+                          onClick={() => {
+                            onChange(storedValue);
+                            onIconUrlChange?.(null);
+                            setOpen(false);
+                          }}>
+                          <DynamicIcon name={storedValue} className="size-4" />
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
