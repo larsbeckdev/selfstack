@@ -273,12 +273,20 @@ export function OrgTable({
             <CardTitle>{t("org.title")}</CardTitle>
             <CardDescription>{t("org.description")}</CardDescription>
           </div>
-          <Button size="sm" onClick={() => setCreateOpen(true)}>
+          <Button
+            size="sm"
+            onClick={() => setCreateOpen(true)}
+            disabled={DEMO_MODE}>
             <Plus className="mr-2 size-4" />
             {t("org.create")}
           </Button>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {DEMO_MODE && (
+            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+              {t("demo.settingsLocked")}
+            </p>
+          )}
           {orgs.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               {t("org.noOrganizations")}
@@ -331,7 +339,9 @@ export function OrgTable({
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(org)}>
+                          <DropdownMenuItem
+                            onClick={() => openEdit(org)}
+                            disabled={DEMO_MODE}>
                             <Building2 className="mr-2 size-3.5" />
                             {t("org.edit")}
                           </DropdownMenuItem>
@@ -344,6 +354,7 @@ export function OrgTable({
                             <AlertDialogTrigger asChild>
                               <DropdownMenuItem
                                 className="text-destructive"
+                                disabled={DEMO_MODE}
                                 onSelect={(e) => e.preventDefault()}>
                                 <Trash2 className="mr-2 size-3.5" />
                                 {t("common.delete")}
