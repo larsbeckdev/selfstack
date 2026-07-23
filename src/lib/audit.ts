@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { db } from "./db";
+import { DEMO_MODE } from "./demo";
 
 export type AuditEvent =
   | "login.success"
@@ -20,11 +21,14 @@ export async function logAudit(input: {
 }) {
   try {
     const h = await headers();
-    const ip =
-      h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      h.get("x-real-ip") ||
-      null;
-    const userAgent = h.get("user-agent") || null;
+    // In demo mode the app is public, so visitor IPs / user-agents must not be
+    // persisted to the audit log (which any admin/demo login can read).
+    const ip = DEMO_MODE
+      ? null
+      : h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+        h.get("x-real-ip") ||
+        null;
+    const userAgent = DEMO_MODE ? null : h.get("user-agent") || null;
 
     await db.auditLog.create({
       data: {
