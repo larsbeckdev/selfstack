@@ -588,6 +588,9 @@ const en: Record<TranslationKey, string> = {
   "demo.active": "Demo mode active",
   "demo.settingsDisabled": "changes are disabled",
   "demo.resetsEvery": "automatic reset every {minutes} minutes",
+  "demo.credentialsTitle": "Demo credentials",
+  "demo.credentialsEmail": "Email",
+  "demo.credentialsPassword": "Password",
 };
 
 export default en;

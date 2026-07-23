@@ -594,6 +594,9 @@ const de = {
   "demo.active": "Demo-Modus aktiv",
   "demo.settingsDisabled": "Änderungen sind deaktiviert",
   "demo.resetsEvery": "automatischer Reset alle {minutes} Minuten",
+  "demo.credentialsTitle": "Demo-Zugangsdaten",
+  "demo.credentialsEmail": "E-Mail",
+  "demo.credentialsPassword": "Passwort",
 } as const;
 
 export type TranslationKey = keyof typeof de;

@@ -23,10 +23,17 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+// Demo login shown on the sign-in card when demo mode is active. Matches the
+// demo user seeded in `src/lib/demo-seed.ts`.
+const DEMO_EMAIL = "demo@selfstack.local";
+const DEMO_PASSWORD = "demo1234";
+
 export function LoginForm({
   registrationEnabled = true,
+  demoMode = false,
 }: {
   registrationEnabled?: boolean;
+  demoMode?: boolean;
 }) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(
     login,
@@ -82,6 +89,19 @@ export function LoginForm({
               </p>
             )}
           </div>
+          {demoMode && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm dark:border-amber-400/40 dark:bg-amber-400/10">
+              <p className="mb-1 font-medium text-amber-900 dark:text-amber-200">
+                {t("demo.credentialsTitle")}
+              </p>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-amber-900/90 dark:text-amber-100/90">
+                <dt>{t("demo.credentialsEmail")}:</dt>
+                <dd className="font-mono">{DEMO_EMAIL}</dd>
+                <dt>{t("demo.credentialsPassword")}:</dt>
+                <dd className="font-mono">{DEMO_PASSWORD}</dd>
+              </dl>
+            </div>
+          )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
           <Button type="submit" className="w-full" disabled={pending}>
