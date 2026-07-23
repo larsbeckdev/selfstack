@@ -19,6 +19,9 @@ export async function seedDemoData(): Promise<void> {
     db.organizationMember.deleteMany({}),
     db.organization.deleteMany({}),
     db.session.deleteMany({}),
+    // Clear the audit log too — on a public demo it would otherwise accumulate
+    // visitor login records between resets.
+    db.auditLog.deleteMany({}),
     db.user.deleteMany({}),
     db.systemSetting.deleteMany({}),
   ]);
