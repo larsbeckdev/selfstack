@@ -19,7 +19,19 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DEMO_MODE } from "@/lib/demo";
 import { toast } from "sonner";
+
+/** Small inline notice shown on admin cards while demo mode locks saving. */
+function DemoNotice() {
+  const { t } = useTranslation();
+  if (!DEMO_MODE) return null;
+  return (
+    <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+      {t("demo.settingsLocked")}
+    </p>
+  );
+}
 
 export function AdminSystemSettings({
   registrationEnabled: initialEnabled,
@@ -71,6 +83,7 @@ export function AdminSystemSettings({
           <CardDescription>{t("admin.description")}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          <DemoNotice />
           <div className="flex items-center justify-between gap-4">
             <div className="space-y-0.5">
               <Label
@@ -86,7 +99,7 @@ export function AdminSystemSettings({
               id="registration-toggle"
               checked={enabled}
               onCheckedChange={handleToggle}
-              disabled={pending}
+              disabled={pending || DEMO_MODE}
             />
           </div>
 
@@ -104,12 +117,14 @@ export function AdminSystemSettings({
                 value={appUrl}
                 onChange={(e) => setAppUrl(e.target.value)}
                 placeholder="https://example.com"
-                disabled={savingUrl}
+                disabled={savingUrl || DEMO_MODE}
               />
               <Button
                 type="button"
                 onClick={handleSaveAppUrl}
-                disabled={savingUrl || appUrl.trim() === initialAppUrl}>
+                disabled={
+                  savingUrl || DEMO_MODE || appUrl.trim() === initialAppUrl
+                }>
                 {t("common.save")}
               </Button>
             </div>
@@ -192,6 +207,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
         <CardDescription>{t("admin.smtpDesc")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <DemoNotice />
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="smtp-host" className="text-sm">
@@ -202,7 +218,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
               value={host}
               onChange={(e) => setHost(e.target.value)}
               placeholder="smtp.example.com"
-              disabled={saving}
+              disabled={saving || DEMO_MODE}
             />
           </div>
           <div className="space-y-1.5">
@@ -216,7 +232,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
               max={65535}
               value={port}
               onChange={(e) => setPort(e.target.value)}
-              disabled={saving}
+              disabled={saving || DEMO_MODE}
             />
           </div>
         </div>
@@ -234,7 +250,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
             id="smtp-secure"
             checked={secure}
             onCheckedChange={setSecure}
-            disabled={saving}
+            disabled={saving || DEMO_MODE}
           />
         </div>
 
@@ -248,7 +264,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
               value={user}
               onChange={(e) => setUser(e.target.value)}
               autoComplete="off"
-              disabled={saving}
+              disabled={saving || DEMO_MODE}
             />
           </div>
           <div className="space-y-1.5">
@@ -269,7 +285,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
                   : t("admin.smtpPasswordEmpty")
               }
               autoComplete="new-password"
-              disabled={saving || clearPassword}
+              disabled={saving || clearPassword || DEMO_MODE}
             />
             {hasPassword && (
               <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -280,7 +296,7 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
                     setClearPassword(e.target.checked);
                     if (e.target.checked) setPassword("");
                   }}
-                  disabled={saving}
+                  disabled={saving || DEMO_MODE}
                 />
                 {t("admin.smtpClearPassword")}
               </label>
@@ -297,12 +313,15 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
             value={from}
             onChange={(e) => setFrom(e.target.value)}
             placeholder="Selfstack <noreply@example.com>"
-            disabled={saving}
+            disabled={saving || DEMO_MODE}
           />
         </div>
 
         <div className="flex justify-end">
-          <Button type="button" onClick={handleSave} disabled={saving}>
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || DEMO_MODE}>
             {saving ? t("common.saving") : t("common.save")}
           </Button>
         </div>
@@ -321,13 +340,13 @@ function SmtpCard({ initial }: { initial: SmtpSettings }) {
               value={testTo}
               onChange={(e) => setTestTo(e.target.value)}
               placeholder="you@example.com"
-              disabled={testing}
+              disabled={testing || DEMO_MODE}
             />
             <Button
               type="button"
               variant="outline"
               onClick={handleTest}
-              disabled={testing}>
+              disabled={testing || DEMO_MODE}>
               {testing ? t("admin.smtpTesting") : t("admin.smtpSendTest")}
             </Button>
           </div>

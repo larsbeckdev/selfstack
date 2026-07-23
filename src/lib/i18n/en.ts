@@ -591,6 +591,8 @@ const en: Record<TranslationKey, string> = {
   "demo.credentialsTitle": "Demo credentials",
   "demo.credentialsEmail": "Email",
   "demo.credentialsPassword": "Password",
+  "demo.settingsLocked":
+    "Demo mode: changes are disabled and won't be saved.",
 };
 
 export default en;

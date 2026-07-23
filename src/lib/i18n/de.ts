@@ -597,6 +597,8 @@ const de = {
   "demo.credentialsTitle": "Demo-Zugangsdaten",
   "demo.credentialsEmail": "E-Mail",
   "demo.credentialsPassword": "Passwort",
+  "demo.settingsLocked":
+    "Demo-Modus: Änderungen sind deaktiviert und werden nicht gespeichert.",
 } as const;
 
 export type TranslationKey = keyof typeof de;
