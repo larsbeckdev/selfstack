@@ -617,6 +617,8 @@ export async function setSystemSetting(key: string, value: string) {
 }
 
 export async function isRegistrationEnabled(): Promise<boolean> {
+  // Env kill switch wins over DB setting.
+  if (process.env.DISABLE_REGISTRATION === "true") return false;
   const val = await getSystemSetting("registration_enabled");
   return val !== "false"; // default to true
 }

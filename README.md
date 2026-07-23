@@ -76,16 +76,52 @@ heavier homelab dashboards, designed to be deployed in a single container.
 - [nodemailer](https://nodemailer.com) for transactional email
 - [jose](https://github.com/panva/jose) for JWT, [bcryptjs](https://github.com/dcodeIO/bcrypt.js) for password hashing
 
-## Quick start with Docker
+## Deploy with Docker Compose
+
+The whole app runs in a single container. SQLite database and uploaded
+icons live in Docker volumes, so your data survives rebuilds and updates.
+
+### 1. Get the files
 
 ```bash
 git clone https://github.com/larsbeckdev/selfstack.git
 cd selfstack
+```
 
-# Generate a secret and start the container
+### 2. Generate a JWT secret
+
+The `JWT_SECRET` signs session tokens. Generate a random one:
+
+```bash
 export JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+```
+
+No Node.js on the host? Use OpenSSL instead:
+
+```bash
+export JWT_SECRET=$(openssl rand -hex 32)
+```
+
+Prefer a `.env` file next to `docker-compose.yml` (Compose reads it
+automatically) so the secret survives a new shell:
+
+```env
+JWT_SECRET=your-generated-secret-here
+APP_URL=https://dash.example.com
+```
+
+### 3. Start
+
+```bash
 docker compose up -d --build
 ```
+
+On every start the container runs `prisma db push` (idempotent schema
+sync) and, on first boot only, seeds an admin user — no manual migration
+step. The entrypoint also repairs volume ownership on boot, so
+bind-mounts work out of the box.
+
+### 4. Sign in
 
 Open <http://localhost:3026> and sign in with the seeded admin:
 
@@ -93,17 +129,71 @@ Open <http://localhost:3026> and sign in with the seeded admin:
 |---|---|
 | `admin@selfstack.local` | `admin123` |
 
-**Change the admin password immediately** after first login.
+> **Change the admin password immediately** after first login.
 
-Data is stored in two named volumes (`selfstack-data` for the SQLite
-database, `selfstack-uploads` for user-uploaded icons) so your content
-survives container rebuilds. The entrypoint also repairs ownership on
-boot, so bind-mounts (e.g. `./selfstack-data:/data`) work out of the
-box if you prefer those for backups.
+### Standalone compose (build not required)
 
-On every start the container runs `prisma db push` (idempotent schema
-sync) and seeds an admin user on first boot — a fresh `docker compose
-up -d --build` is enough, no manual migration step.
+Once you have built the `selfstack:latest` image (step 3 above builds and
+tags it), you can run it anywhere without the source tree using a minimal
+`docker-compose.yml`:
+
+```yaml
+services:
+  selfstack:
+    image: selfstack:latest
+    container_name: selfstack
+    restart: unless-stopped
+    ports:
+      - "3026:3026"
+    environment:
+      DATABASE_URL: "file:/data/selfstack.db"
+      JWT_SECRET: "${JWT_SECRET}"
+      APP_URL: "${APP_URL:-http://localhost:3026}"
+      # SECURE_COOKIES: "true"        # enable behind HTTPS
+    volumes:
+      - selfstack-data:/data
+      - selfstack-uploads:/app/public/uploads
+
+volumes:
+  selfstack-data:
+  selfstack-uploads:
+```
+
+Swap `build: .` for `image: selfstack:latest` to skip rebuilding.
+
+## Updating
+
+Pull the new code, rebuild, and restart. Your data stays in the volumes —
+the schema is re-synced automatically on boot.
+
+```bash
+cd selfstack
+git pull
+docker compose up -d --build
+```
+
+`prisma db push` runs on every start, so schema changes from an update
+apply without a separate migration command. To reclaim disk from old
+image layers afterwards:
+
+```bash
+docker image prune -f
+```
+
+### Back up before updating
+
+Both volumes are worth backing up. Copy them to a tarball:
+
+```bash
+docker run --rm \
+  -v selfstack-data:/data \
+  -v selfstack-uploads:/uploads \
+  -v "$(pwd):/backup" \
+  busybox tar czf /backup/selfstack-backup.tar.gz /data /uploads
+```
+
+Restore by extracting the tarball back into fresh volumes with the same
+`docker run ... tar xzf` pattern.
 
 ### Environment variables
 
@@ -114,7 +204,8 @@ up -d --build` is enough, no manual migration step.
 | `SECURE_COOKIES` | *(unset)* | Set to `"true"` when serving over HTTPS. |
 | `PORT` | `3026` | HTTP port inside the container. |
 | `APP_URL` | *(unset)* | Public base URL (e.g. `https://dash.example.com`). Used for share links and email links. Can also be set in the admin UI. |
-| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASSWORD` / `SMTP_FROM` / `SMTP_SECURE` | *(unset)* | Fallback SMTP config. Admin UI values override env. |
+| `DISABLE_REGISTRATION` | *(unset)* | Set to `"true"` to hard-disable self-registration regardless of the admin toggle. |
+| `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` / `SMTP_SECURE` | *(unset)* | Fallback SMTP config. Admin UI values override env. |
 | `ALLOW_SEARCH_INDEXING` | `false` | Set to `"true"` to drop the `noindex` meta tag and allow `/robots.txt` crawling. |
 | `NEXT_PUBLIC_DEMO_MODE` | `false` | Set to `"true"` to enable demo mode (auto-reset + mutation lock). |
 | `DEMO_RESET_MINUTES` | `60` | How often the demo database is wiped + re-seeded. |
