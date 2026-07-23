@@ -46,6 +46,11 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4 pb-6">
+          {DEMO_MODE && (
+            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+              {t("demo.settingsLocked")}
+            </p>
+          )}
           <div className="space-y-2">
             <Label htmlFor="settings-name">{t("common.name")}</Label>
             <Input
@@ -53,6 +58,7 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              disabled={DEMO_MODE}
             />
           </div>
           <div className="space-y-2">
@@ -69,6 +75,7 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
                 )
               }
               required
+              disabled={DEMO_MODE}
             />
             <p className="text-xs text-muted-foreground">
               {t("admin.usernameHelp")}
@@ -82,6 +89,7 @@ export function GeneralSettings({ user }: { user: SessionUser }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={DEMO_MODE}
             />
           </div>
         </CardContent>
