@@ -13,6 +13,8 @@ services:
       JWT_SECRET: "${JWT_SECRET:-change-me-in-production}"
       # Public base URL (used in outgoing emails). Override via env or Admin UI.
       APP_URL: "${APP_URL:-http://localhost:3026}"
+      # Hard-disable self-registration regardless of the admin UI toggle.
+      DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
       # Enable when serving over HTTPS
       # SECURE_COOKIES: "true"
     volumes:
