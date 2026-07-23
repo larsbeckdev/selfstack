@@ -80,6 +80,11 @@ export function AccountSettings({
         </CardHeader>
         <form onSubmit={handlePasswordChange}>
           <CardContent className="space-y-4 pb-6">
+            {DEMO_MODE && (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+                {t("demo.settingsLocked")}
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="current-password">
                 {t("settings.currentPassword")}
@@ -89,6 +94,7 @@ export function AccountSettings({
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 required
+                disabled={DEMO_MODE}
               />
             </div>
             <div className="space-y-2">
@@ -100,6 +106,7 @@ export function AccountSettings({
                 placeholder={t("auth.passwordPlaceholder")}
                 required
                 minLength={8}
+                disabled={DEMO_MODE}
               />
               <PasswordStrength value={newPassword} />
             </div>

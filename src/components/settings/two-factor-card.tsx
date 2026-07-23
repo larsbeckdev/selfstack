@@ -8,6 +8,7 @@ import {
   disableTwoFactor,
 } from "@/lib/actions/settings";
 import { useTranslation } from "@/components/locale-provider";
+import { DEMO_MODE } from "@/lib/demo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
