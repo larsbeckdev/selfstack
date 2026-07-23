@@ -123,7 +123,7 @@ export function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
             <Button
               variant="destructive"
               onClick={disable}
-              disabled={busy || !password}>
+              disabled={busy || !password || DEMO_MODE}>
               {t("settings.twoFactorDisable")}
             </Button>
           </CardFooter>
@@ -173,20 +173,25 @@ export function TwoFactorCard({ initialEnabled }: { initialEnabled: boolean }) {
               disabled={busy}>
               {t("common.cancel")}
             </Button>
-            <Button onClick={confirmEnroll} disabled={busy}>
+            <Button onClick={confirmEnroll} disabled={busy || DEMO_MODE}>
               {t("settings.twoFactorConfirm")}
             </Button>
           </CardFooter>
         </>
       ) : (
         <>
-          <CardContent>
+          <CardContent className="space-y-3">
+            {DEMO_MODE && (
+              <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+                {t("demo.settingsLocked")}
+              </p>
+            )}
             <p className="text-sm text-muted-foreground">
               {t("settings.twoFactorInactive")}
             </p>
           </CardContent>
           <CardFooter>
-            <Button onClick={startEnroll} disabled={busy}>
+            <Button onClick={startEnroll} disabled={busy || DEMO_MODE}>
               {t("settings.twoFactorEnable")}
             </Button>
           </CardFooter>
