@@ -24,6 +24,12 @@ RUN apt-get update \
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Demo mode is a NEXT_PUBLIC_* flag, so it is inlined into the client bundle
+# at build time — a runtime env var cannot switch it on. Accept it as a build
+# arg (default off) so `docker compose build` can bake a demo image.
+ARG NEXT_PUBLIC_DEMO_MODE=false
+ENV NEXT_PUBLIC_DEMO_MODE=${NEXT_PUBLIC_DEMO_MODE}
+
 # Dummy values so `next build` can collect page data without a real DB.
 # These are NOT used at runtime — the runner stage overrides DATABASE_URL.
 ENV DATABASE_URL="file:./dev.db" \

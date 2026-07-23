@@ -1,6 +1,12 @@
 services:
   selfstack:
-    build: .
+    build:
+      context: .
+      args:
+        # NEXT_PUBLIC_* is inlined into the client bundle at build time, so
+        # demo mode must be set here (build), not only under `environment`.
+        # Rebuild after changing: `docker compose up -d --build`.
+        NEXT_PUBLIC_DEMO_MODE: "${NEXT_PUBLIC_DEMO_MODE:-false}"
     image: selfstack:latest
     container_name: selfstack
     restart: unless-stopped
@@ -15,6 +21,11 @@ services:
       APP_URL: "${APP_URL:-http://localhost:3026}"
       # Hard-disable self-registration regardless of the admin UI toggle.
       DISABLE_REGISTRATION: "${DISABLE_REGISTRATION:-}"
+      # Demo mode: also passed as a build arg above (client bundle needs it at
+      # build time). Kept here so server code + instrumentation reset agree.
+      NEXT_PUBLIC_DEMO_MODE: "${NEXT_PUBLIC_DEMO_MODE:-false}"
+      # How often the demo DB is wiped + re-seeded (server-side, runtime only).
+      DEMO_RESET_MINUTES: "${DEMO_RESET_MINUTES:-60}"
       # Enable when serving over HTTPS
       # SECURE_COOKIES: "true"
     volumes:
