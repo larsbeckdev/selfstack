@@ -33,6 +33,7 @@ import {
   getUserOrganizations,
 } from "@/lib/actions/organization";
 import { assignableRoles, canModifyUser, type Role } from "@/lib/permissions";
+import { DEMO_MODE } from "@/lib/demo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -413,7 +414,7 @@ export function UserTable({
               if (!open) resetForm();
             }}>
             <DialogTrigger asChild>
-              <Button size="sm">
+              <Button size="sm" disabled={DEMO_MODE}>
                 <UserPlus className="mr-2 size-4" />
                 {t("admin.createUser")}
               </Button>
@@ -534,7 +535,12 @@ export function UserTable({
             </DialogContent>
           </Dialog>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
+          {DEMO_MODE && (
+            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-200">
+              {t("demo.settingsLocked")}
+            </p>
+          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -563,7 +569,7 @@ export function UserTable({
                         currentUserRole,
                         user.role,
                       );
-                      const editable = canModify && !isSelf;
+                      const editable = canModify && !isSelf && !DEMO_MODE;
                       // Make sure the user's current role is selectable in the
                       // dropdown so it remains the visible value.
                       const options = Array.from(
@@ -617,10 +623,10 @@ export function UserTable({
                   </TableCell>
                   <TableCell>
                     {(() => {
-                      const canModify = canModifyUser(
-                        currentUserRole,
-                        user.role,
-                      );
+                      // In demo mode, block all mutating row actions. Viewing
+                      // boards stays allowed (read-only).
+                      const canModify =
+                        canModifyUser(currentUserRole, user.role) && !DEMO_MODE;
                       const isSelf = user.id === currentUserId;
                       return (
                         <DropdownMenu>
@@ -781,7 +787,7 @@ export function UserTable({
                 onClick={() => setEditUser(null)}>
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" disabled={editLoading}>
+              <Button type="submit" disabled={editLoading || DEMO_MODE}>
                 {editLoading ? t("common.saving") : t("common.save")}
               </Button>
             </DialogFooter>
@@ -814,6 +820,7 @@ export function UserTable({
           <DialogFooter>
             <Button
               variant="outline"
+              disabled={DEMO_MODE}
               onClick={async () => {
                 const user = users.find((u) => u.name === shownUserName);
                 if (user) {
@@ -951,7 +958,7 @@ export function UserTable({
             </div>
             <Button
               onClick={handleAddUserOrg}
-              disabled={!addOrgId}
+              disabled={!addOrgId || DEMO_MODE}
               className="sm:w-auto">
               <UserPlus className="mr-2 size-4" />
               {t("org.addMember")}
