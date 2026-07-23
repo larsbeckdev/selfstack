@@ -466,13 +466,13 @@ export async function seedDemoData(): Promise<void> {
     ],
   });
 
-  // 6) Demo user personal board
+  // 6) Demo user personal board (sorts after the showcase board above)
   await buildBoard({
     userId: demo.id,
     name: "Mein Dashboard",
     slug: "demo/dashboard",
     icon: "home",
-    order: 0,
+    order: 1,
     categories: [
       {
         name: "Daily",
