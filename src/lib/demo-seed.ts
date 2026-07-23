@@ -174,9 +174,11 @@ export async function seedDemoData(): Promise<void> {
     return board;
   }
 
-  // 5) Admin system board (public)
+  // 5) Showcase board — owned by the demo user so it lands on their
+  // dashboard immediately after the demo login (the dashboard lists own +
+  // shared + org boards, not merely public ones).
   await buildBoard({
-    userId: admin.id,
+    userId: demo.id,
     name: "Selfstack Demo",
     slug: "demo",
     icon: "sparkles",
