@@ -19,6 +19,7 @@ import {
   updateOrgMemberRole,
   removeOrgMember,
 } from "@/lib/actions/organization";
+import { DEMO_MODE } from "@/lib/demo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
