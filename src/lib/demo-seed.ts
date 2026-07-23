@@ -513,6 +513,83 @@ export async function seedDemoData(): Promise<void> {
                 color: "#1db954",
                 url: "https://spotify.com",
               },
+              {
+                name: "Twitch",
+                icon: "twitch",
+                color: "#9146ff",
+                url: "https://twitch.tv",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Produktivität",
+        icon: "check-circle",
+        color: "#0ea5e9",
+        groups: [
+          {
+            name: "Aufgaben",
+            icon: "list-checks",
+            tiles: [
+              {
+                name: "Todoist",
+                icon: "check-square",
+                color: "#e44332",
+                url: "https://todoist.com",
+              },
+              {
+                name: "TickTick",
+                icon: "calendar-check",
+                color: "#4772fa",
+                url: "https://ticktick.com",
+              },
+            ],
+          },
+          {
+            name: "Notizen",
+            icon: "notebook-pen",
+            tiles: [
+              {
+                name: "Obsidian",
+                icon: "gem",
+                color: "#7c3aed",
+                url: "https://obsidian.md",
+              },
+              {
+                name: "Notion",
+                icon: "book-open",
+                color: "#000000",
+                url: "https://notion.so",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Finanzen",
+        icon: "wallet",
+        color: "#22c55e",
+        groups: [
+          {
+            name: "Banking",
+            icon: "landmark",
+            layout: "list",
+            tiles: [
+              {
+                name: "PayPal",
+                icon: "credit-card",
+                color: "#003087",
+                url: "https://paypal.com",
+                description: "Online payments",
+              },
+              {
+                name: "Wise",
+                icon: "arrow-left-right",
+                color: "#9fe870",
+                url: "https://wise.com",
+                description: "International transfers",
+              },
             ],
           },
         ],
