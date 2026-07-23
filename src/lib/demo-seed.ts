@@ -53,7 +53,11 @@ export async function seedDemoData(): Promise<void> {
       username: "demo",
       name: "Demo-Nutzer",
       password: demoHash,
-      role: "user",
+      // Must be a valid role from `permissions.ts` (guest|viewer|member|
+      // editor|admin|superadmin). "user" is NOT valid — asRole() would fall
+      // back to "guest", which cannot see OR create any boards, leaving the
+      // demo dashboard empty. "member" = sees + manages own personal boards.
+      role: "member",
     },
   });
 
