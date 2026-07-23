@@ -447,7 +447,7 @@ export function OrgTable({
               <IconPicker value={newIcon} onChange={setNewIcon} />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || DEMO_MODE}>
                 {loading ? t("common.creating") : t("common.create")}
               </Button>
             </DialogFooter>
@@ -494,7 +494,7 @@ export function OrgTable({
               <IconPicker value={editIcon} onChange={setEditIcon} />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading || DEMO_MODE}>
                 {loading ? t("common.saving") : t("common.save")}
               </Button>
             </DialogFooter>
@@ -561,7 +561,9 @@ export function OrgTable({
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={handleAddMember} disabled={!addUserId}>
+            <Button
+              onClick={handleAddMember}
+              disabled={!addUserId || DEMO_MODE}>
               <UserPlus className="mr-2 size-4" />
               {t("org.addMember")}
             </Button>
@@ -595,6 +597,7 @@ export function OrgTable({
                     <TableCell>
                       <Select
                         value={m.role}
+                        disabled={DEMO_MODE}
                         onValueChange={(v) =>
                           handleChangeRole(m.userId, v as Role)
                         }>
@@ -615,6 +618,7 @@ export function OrgTable({
                         variant="ghost"
                         size="icon"
                         className="size-8"
+                        disabled={DEMO_MODE}
                         onClick={() => handleRemoveMember(m.userId)}
                         title={t("org.removeMember")}>
                         <UserMinus className="size-4" />
