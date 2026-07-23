@@ -7,6 +7,8 @@ heavier homelab dashboards, designed to be deployed in a single container.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
 
+**[Live demo →](https://selfstack-demo.larsbeck.dev/)** — sign in with `demo@selfstack.local` / `demo1234` (resets hourly).
+
 ## Features
 
 ### Boards, categories, groups, tiles
@@ -51,6 +53,7 @@ heavier homelab dashboards, designed to be deployed in a single container.
 - Role management
 
 ### Demo mode
+- Live instance: <https://selfstack-demo.larsbeck.dev/>
 - Single-flag deployment (`NEXT_PUBLIC_DEMO_MODE=true`)
 - Database is wiped + re-seeded with demo content on boot and every `DEMO_RESET_MINUTES` (default 60)
 - All settings mutations are blocked server-side
