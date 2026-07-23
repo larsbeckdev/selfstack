@@ -597,6 +597,203 @@ export async function seedDemoData(): Promise<void> {
     ],
   });
 
+  // 6b) Second demo-user board — a homelab/self-hosting theme so the demo
+  // shows a user with more than one board.
+  await buildBoard({
+    userId: demo.id,
+    name: "Homelab",
+    slug: "demo/homelab",
+    icon: "server",
+    order: 2,
+    categories: [
+      {
+        name: "Infrastruktur",
+        icon: "network",
+        color: "#8b5cf6",
+        groups: [
+          {
+            name: "Container",
+            icon: "container",
+            tiles: [
+              {
+                name: "Portainer",
+                icon: "container",
+                color: "#13bef9",
+                url: "https://www.portainer.io",
+              },
+              {
+                name: "Proxmox",
+                icon: "server-cog",
+                color: "#e57000",
+                url: "https://www.proxmox.com",
+              },
+              {
+                name: "Traefik",
+                icon: "route",
+                color: "#24a1c1",
+                url: "https://traefik.io",
+              },
+            ],
+          },
+          {
+            name: "Netzwerk",
+            icon: "wifi",
+            tiles: [
+              {
+                name: "Pi-hole",
+                icon: "shield",
+                color: "#96060c",
+                url: "https://pi-hole.net",
+                statusCheck: true,
+              },
+              {
+                name: "OPNsense",
+                icon: "shield-check",
+                color: "#d94f00",
+                url: "https://opnsense.org",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Apps",
+        icon: "boxes",
+        color: "#f43f5e",
+        groups: [
+          {
+            name: "Medien",
+            icon: "clapperboard",
+            tiles: [
+              {
+                name: "Jellyfin",
+                icon: "clapperboard",
+                color: "#00a4dc",
+                url: "https://jellyfin.org",
+              },
+              {
+                name: "Immich",
+                icon: "image",
+                color: "#4250af",
+                url: "https://immich.app",
+              },
+            ],
+          },
+          {
+            name: "Cloud",
+            icon: "cloud",
+            tiles: [
+              {
+                name: "Nextcloud",
+                icon: "cloud",
+                color: "#0082c9",
+                url: "https://nextcloud.com",
+              },
+              {
+                name: "Vaultwarden",
+                icon: "key-round",
+                color: "#175ddc",
+                url: "https://github.com/dani-garcia/vaultwarden",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  // 6c) Admin personal board — a private ops/admin board so the admin account
+  // also has content of its own beyond the org board.
+  await buildBoard({
+    userId: admin.id,
+    name: "Admin-Tools",
+    slug: "admin/tools",
+    icon: "wrench",
+    order: 0,
+    categories: [
+      {
+        name: "Betrieb",
+        icon: "gauge",
+        color: "#ef4444",
+        groups: [
+          {
+            name: "Monitoring",
+            icon: "activity",
+            tiles: [
+              {
+                name: "Grafana",
+                icon: "line-chart",
+                color: "#f46800",
+                url: "https://grafana.com",
+              },
+              {
+                name: "Prometheus",
+                icon: "flame",
+                color: "#e6522c",
+                url: "https://prometheus.io",
+              },
+              {
+                name: "Netdata",
+                icon: "gauge",
+                color: "#00ab44",
+                url: "https://www.netdata.cloud",
+              },
+            ],
+          },
+          {
+            name: "Logs",
+            icon: "scroll-text",
+            tiles: [
+              {
+                name: "Loki",
+                icon: "align-left",
+                color: "#f5a623",
+                url: "https://grafana.com/oss/loki",
+              },
+              {
+                name: "Sentry",
+                icon: "bug",
+                color: "#362d59",
+                url: "https://sentry.io",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        name: "Cloud",
+        icon: "cloud",
+        color: "#3b82f6",
+        groups: [
+          {
+            name: "Provider",
+            icon: "server",
+            tiles: [
+              {
+                name: "Hetzner",
+                icon: "server",
+                color: "#d50c2d",
+                url: "https://www.hetzner.com",
+              },
+              {
+                name: "Cloudflare",
+                icon: "cloud",
+                color: "#f38020",
+                url: "https://www.cloudflare.com",
+              },
+              {
+                name: "AWS",
+                icon: "cloud-cog",
+                color: "#ff9900",
+                url: "https://aws.amazon.com",
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
   // 7) Org-owned board
   await buildBoard({
     userId: admin.id,
