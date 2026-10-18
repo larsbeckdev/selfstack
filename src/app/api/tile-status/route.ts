@@ -108,13 +108,14 @@ export async function GET(request: Request) {
     // Try HEAD first (cheap).
     let { status } = await probe(target, "HEAD");
 
-    // Many servers mishandle HEAD (some return 400/403/405/501 or close the
+    // Many servers mishandle HEAD (some return 400/403/404/405/501 or close the
     // connection). If the HEAD response looks like a rejection of the method
     // itself, retry with GET before declaring the endpoint broken.
     if (
       status === 0 ||
       status === 400 ||
       status === 403 ||
+      status === 404 ||
       status === 405 ||
       status === 501
     ) {
